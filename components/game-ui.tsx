@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card"
 import { ProgrammingPanel } from "@/components/programming-panel"
 import { RewardSelection } from "@/components/reward-selection"
 import { Codex } from "@/components/codex"
+import { BattleStatsChart } from "@/components/battle-stats-chart"
+import { EnemyIntroduction } from "@/components/enemy-introduction"
 import type { GameState } from "@/types/game"
 import { Code, BookOpen } from "lucide-react"
 
@@ -106,6 +108,13 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
                     ? "You earned a new trigger or action!"
                     : "Your run is over. Try again!"}
                 </p>
+
+                {gameState.battleHistory && gameState.battleHistory.length > 0 && (
+                  <div className="mb-4 sm:mb-6">
+                    <BattleStatsChart history={gameState.battleHistory} />
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Button className="flex-1 bg-transparent h-12 active:scale-95" variant="outline" onClick={onNewRun}>
                     New Run
@@ -123,6 +132,17 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
             </div>
           )}
       </div>
+
+      {/* Enemy Introduction Screen */}
+      {gameState.showEnemyIntro && (
+        <EnemyIntroduction
+          wave={gameState.wave}
+          enemyCustomization={gameState.enemyCustomization}
+          enemyMaxHp={gameState.enemy.maxHp}
+          onBeginBattle={gameState.continueAfterIntro}
+          isOpen={gameState.showEnemyIntro}
+        />
+      )}
 
       <ProgrammingPanel
         pairs={gameState.triggerActionPairs}

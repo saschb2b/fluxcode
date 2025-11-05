@@ -66,6 +66,14 @@ export interface CharacterPreset {
   startingActions: Action[]
 }
 
+export interface BattleHistoryPoint {
+  time: number
+  playerHP: number
+  enemyHP: number
+}
+
+import type { FighterCustomization } from "@/lib/fighter-parts"
+
 export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
   wave: number
@@ -88,4 +96,10 @@ export interface GameState {
   selectRewardAction: (action: Action) => void
   selectedCharacter: CharacterPreset | null
   setCharacter: (character: CharacterPreset) => void
+  fighterCustomization: FighterCustomization | null
+  setCustomization: (customization: FighterCustomization) => void
+  enemyCustomization: FighterCustomization
+  battleHistory: BattleHistoryPoint[]
+  showEnemyIntro: boolean
+  continueAfterIntro: () => void
 }

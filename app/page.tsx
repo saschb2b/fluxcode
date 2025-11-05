@@ -5,12 +5,15 @@ import { BattleArena } from "@/components/battle-arena"
 import { GameUI } from "@/components/game-ui"
 import { StartScreen } from "@/components/start-screen"
 import { CharacterSelection } from "@/components/character-selection"
+import { FighterCustomization } from "@/components/fighter-customization"
 import { useGameState } from "@/hooks/use-game-state"
 import type { CharacterPreset } from "@/lib/character-presets"
+import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 
 export default function Home() {
   const gameState = useGameState()
-  const [gamePhase, setGamePhase] = useState<"start" | "character-select" | "game">("start")
+  const [gamePhase, setGamePhase] = useState<"start" | "character-select" | "customize" | "game">("start")
+  const [fighterCustomization, setFighterCustomization] = useState<FighterCustomizationType | undefined>(undefined)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -43,6 +46,11 @@ export default function Home() {
 
   const handleCharacterSelect = (character: CharacterPreset) => {
     gameState.setCharacter(character)
+    setGamePhase("customize")
+  }
+
+  const handleCustomizationConfirm = (customization: FighterCustomizationType) => {
+    setFighterCustomization(customization)
     setGamePhase("game")
   }
 
@@ -50,8 +58,13 @@ export default function Home() {
     setGamePhase("start")
   }
 
+  const handleBackToCharacterSelect = () => {
+    setGamePhase("character-select")
+  }
+
   const handleNewRun = () => {
     gameState.resetGame()
+    setFighterCustomization(undefined)
     setGamePhase("character-select")
   }
 
@@ -69,12 +82,22 @@ export default function Home() {
         </main>
       )}
 
+      {gamePhase === "customize" && (
+        <main className="relative w-full h-screen overflow-hidden bg-background">
+          <FighterCustomization onConfirm={handleCustomizationConfirm} onBack={handleBackToCharacterSelect} />
+        </main>
+      )}
+
       {gamePhase === "game" && (
         <main className="relative w-full h-screen overflow-hidden bg-background">
           <div className="crt-effect absolute inset-0" />
 
           <div className="absolute inset-0">
-            <BattleArena gameState={gameState} />
+            <BattleArena
+              gameState={gameState}
+              fighterCustomization={fighterCustomization}
+              enemyCustomization={gameState.enemyCustomization}
+            />
           </div>
 
           <GameUI gameState={gameState} onNewRun={handleNewRun} />

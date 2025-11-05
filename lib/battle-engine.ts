@@ -9,6 +9,12 @@ export interface BattleState {
   justTookDamage: boolean
 }
 
+export interface BattleHistoryPoint {
+  time: number
+  playerHP: number
+  enemyHP: number
+}
+
 export interface BattleUpdate {
   playerPos?: Position
   playerHP?: number
@@ -18,6 +24,7 @@ export interface BattleUpdate {
   justTookDamage?: boolean
   battleOver?: boolean
   playerWon?: boolean
+  battleHistory?: BattleHistoryPoint[]
 }
 
 export class BattleEngine {
@@ -26,16 +33,34 @@ export class BattleEngine {
   private enemyPairs: TriggerActionPair[]
   private actionCooldowns: Map<string, number> = new Map()
   private projectileIdCounter = 0
+  private battleHistory: BattleHistoryPoint[] = []
+  private battleTime = 0
+  private lastHistoryRecord = 0
 
   constructor(initialState: BattleState, playerPairs: TriggerActionPair[], enemyPairs: TriggerActionPair[]) {
     this.state = { ...initialState }
     this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
     this.enemyPairs = [...enemyPairs].sort((a, b) => b.priority - a.priority)
+    this.battleHistory.push({
+      time: 0,
+      playerHP: initialState.playerHP,
+      enemyHP: initialState.enemyHP,
+    })
   }
 
   // Main battle tick - called every frame
   tick(deltaTime: number): BattleUpdate {
     const update: BattleUpdate = {}
+
+    this.battleTime += deltaTime
+    if (this.battleTime - this.lastHistoryRecord >= 500) {
+      this.battleHistory.push({
+        time: Math.floor(this.battleTime / 1000), // Convert to seconds
+        playerHP: this.state.playerHP,
+        enemyHP: this.state.enemyHP,
+      })
+      this.lastHistoryRecord = this.battleTime
+    }
 
     const newProjectiles = this.updateProjectiles(deltaTime)
     update.projectiles = newProjectiles
@@ -56,13 +81,25 @@ export class BattleEngine {
 
     // Check for battle end
     if (this.state.playerHP <= 0) {
+      this.battleHistory.push({
+        time: Math.floor(this.battleTime / 1000),
+        playerHP: 0,
+        enemyHP: this.state.enemyHP,
+      })
       update.battleOver = true
       update.playerWon = false
+      update.battleHistory = this.battleHistory
       return update
     }
     if (this.state.enemyHP <= 0) {
+      this.battleHistory.push({
+        time: Math.floor(this.battleTime / 1000),
+        playerHP: this.state.playerHP,
+        enemyHP: 0,
+      })
       update.battleOver = true
       update.playerWon = true
+      update.battleHistory = this.battleHistory
       return update
     }
 

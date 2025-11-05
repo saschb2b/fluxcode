@@ -1,10 +1,20 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
-import type { GameState, Position, TriggerActionPair, Trigger, Action, CharacterPreset } from "@/types/game"
+import type {
+  GameState,
+  Position,
+  TriggerActionPair,
+  Trigger,
+  Action,
+  CharacterPreset,
+  FighterCustomization,
+  BattleHistoryPoint,
+} from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
+import { generateRandomCustomization } from "@/lib/fighter-parts"
 
 export function useGameState(): GameState {
   const [battleState, setBattleState] = useState<"idle" | "fighting" | "victory" | "defeat">("idle")
@@ -34,11 +44,18 @@ export function useGameState(): GameState {
   const [availableRewardTriggers, setAvailableRewardTriggers] = useState<Trigger[]>([])
   const [availableRewardActions, setAvailableRewardActions] = useState<Action[]>([])
 
+  const [showEnemyIntro, setShowEnemyIntro] = useState(false)
+
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterPreset | null>(null)
+
+  const [fighterCustomization, setFighterCustomization] = useState<FighterCustomization | null>(null)
+  const [enemyCustomization, setEnemyCustomization] = useState<FighterCustomization>(generateRandomCustomization())
 
   const battleEngineRef = useRef<BattleEngine | null>(null)
   const animationFrameRef = useRef<number>()
   const lastTimeRef = useRef<number>(0)
+
+  const [battleHistory, setBattleHistory] = useState<BattleHistoryPoint[]>([])
 
   useEffect(() => {
     if (battleState !== "fighting" || !battleEngineRef.current) {
@@ -62,6 +79,9 @@ export function useGameState(): GameState {
       if (update.projectiles) setProjectiles(update.projectiles)
 
       if (update.battleOver) {
+        if (update.battleHistory) {
+          setBattleHistory(update.battleHistory)
+        }
         setBattleState(update.playerWon ? "victory" : "defeat")
         return
       }
@@ -82,37 +102,31 @@ export function useGameState(): GameState {
     console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
 
     const enemyPairs: TriggerActionPair[] = [
-      // High priority: Dodge when taking damage
       {
         trigger: AVAILABLE_TRIGGERS[11], // Just Took Damage
         action: AVAILABLE_ACTIONS[10], // Dodge
         priority: 6,
       },
-      // Aggressive: Shoot when in same row
       {
         trigger: AVAILABLE_TRIGGERS[19], // Same Row
         action: AVAILABLE_ACTIONS[0], // Shoot
         priority: 5,
       },
-      // Tactical: Move to align with player when in different row
       {
         trigger: AVAILABLE_TRIGGERS[20], // Different Row
         action: wave >= 3 ? AVAILABLE_ACTIONS[13] : AVAILABLE_ACTIONS[8], // Teleport (wave 3+) or Move Up
         priority: 4,
       },
-      // Close range: Use rapid fire when enemy is close
       {
         trigger: AVAILABLE_TRIGGERS[1], // Enemy Close
         action: AVAILABLE_ACTIONS[3], // Rapid Fire
         priority: 3,
       },
-      // Movement: Advance forward to pressure player
       {
         trigger: AVAILABLE_TRIGGERS[0], // Enemy in Range
         action: AVAILABLE_ACTIONS[6], // Move Forward
         priority: 2,
       },
-      // Fallback: Always shoot if nothing else triggers
       {
         trigger: AVAILABLE_TRIGGERS[23], // Always
         action: AVAILABLE_ACTIONS[0], // Shoot
@@ -120,7 +134,6 @@ export function useGameState(): GameState {
       },
     ]
 
-    // Wave 2+: Add defensive tactics
     if (wave >= 2) {
       enemyPairs.push({
         trigger: AVAILABLE_TRIGGERS[5], // Low HP
@@ -129,7 +142,6 @@ export function useGameState(): GameState {
       })
     }
 
-    // Wave 3+: Add more aggressive tactics
     if (wave >= 3) {
       enemyPairs.push({
         trigger: AVAILABLE_TRIGGERS[4], // High HP
@@ -138,7 +150,6 @@ export function useGameState(): GameState {
       })
     }
 
-    // Wave 4+: Add advanced movement
     if (wave >= 4) {
       enemyPairs.push({
         trigger: AVAILABLE_TRIGGERS[2], // Enemy Far
@@ -147,7 +158,6 @@ export function useGameState(): GameState {
       })
     }
 
-    // Wave 5+: Add special attacks
     if (wave >= 5) {
       enemyPairs.push({
         trigger: AVAILABLE_TRIGGERS[6], // Critical HP
@@ -169,27 +179,44 @@ export function useGameState(): GameState {
       },
       triggerActionPairs,
       enemyPairs,
+      fighterCustomization,
+      enemyCustomization,
     )
 
     console.log("[v0] Battle engine created, starting animation loop")
     lastTimeRef.current = 0
     setBattleState("fighting")
-  }, [player, enemy, triggerActionPairs, wave])
+  }, [player, enemy, triggerActionPairs, wave, fighterCustomization, enemyCustomization])
 
   const nextWave = useCallback(() => {
     const allTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.includes(t))
     const allActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.includes(a))
 
     if (allTriggers.length > 0 || allActions.length > 0) {
-      // Show reward selection
       setAvailableRewardTriggers(allTriggers)
       setAvailableRewardActions(allActions)
       setShowRewardSelection(true)
     } else {
-      // No more rewards, just continue
-      continueToNextWave()
+      prepareNextWave()
     }
   }, [unlockedTriggers, unlockedActions])
+
+  const prepareNextWave = useCallback(() => {
+    setWave((w) => w + 1)
+    const nextWave = wave + 1
+    const enemyMaxHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
+    setEnemyCustomization(generateRandomCustomization())
+    setShowEnemyIntro(true)
+  }, [wave])
+
+  const continueAfterIntro = useCallback(() => {
+    setPlayer({ position: { x: 1, y: 1 }, hp: 100, maxHp: 100 })
+    setProjectiles([])
+    setBattleHistory([])
+    setBattleState("idle")
+    setShowEnemyIntro(false)
+  }, [])
 
   const continueToNextWave = useCallback(() => {
     setWave((w) => w + 1)
@@ -197,9 +224,10 @@ export function useGameState(): GameState {
     const enemyMaxHp = wave === 1 ? 100 : 100 + (wave - 1) * 20
     setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
     setProjectiles([])
+    setBattleHistory([])
+    setEnemyCustomization(generateRandomCustomization())
     setBattleState("idle")
     setShowRewardSelection(false)
-    // Note: We keep triggerActionPairs, unlockedTriggers, unlockedActions, and selectedCharacter
   }, [wave])
 
   const resetGame = useCallback(() => {
@@ -211,8 +239,12 @@ export function useGameState(): GameState {
     setUnlockedTriggers([])
     setUnlockedActions([])
     setSelectedCharacter(null)
+    setFighterCustomization(null)
+    setEnemyCustomization(generateRandomCustomization())
+    setBattleHistory([])
     setBattleState("idle")
     setShowRewardSelection(false)
+    setShowEnemyIntro(false)
   }, [])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
@@ -237,17 +269,19 @@ export function useGameState(): GameState {
   const selectRewardTrigger = useCallback(
     (trigger: Trigger) => {
       setUnlockedTriggers((prev) => [...prev, trigger])
-      continueToNextWave()
+      setShowRewardSelection(false)
+      prepareNextWave()
     },
-    [continueToNextWave],
+    [prepareNextWave],
   )
 
   const selectRewardAction = useCallback(
     (action: Action) => {
       setUnlockedActions((prev) => [...prev, action])
-      continueToNextWave()
+      setShowRewardSelection(false)
+      prepareNextWave()
     },
-    [continueToNextWave],
+    [prepareNextWave],
   )
 
   const setCharacter = useCallback((character: CharacterPreset) => {
@@ -255,6 +289,10 @@ export function useGameState(): GameState {
     setTriggerActionPairs(character.startingPairs)
     setUnlockedTriggers(character.startingTriggers)
     setUnlockedActions(character.startingActions)
+  }, [])
+
+  const setCustomization = useCallback((customization: FighterCustomization) => {
+    setFighterCustomization(customization)
   }, [])
 
   return {
@@ -279,5 +317,11 @@ export function useGameState(): GameState {
     selectRewardAction,
     setCharacter,
     selectedCharacter,
+    fighterCustomization,
+    setCustomization,
+    enemyCustomization,
+    battleHistory,
+    showEnemyIntro,
+    continueAfterIntro,
   }
 }

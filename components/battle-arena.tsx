@@ -3,17 +3,20 @@
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import { BattleGrid } from "./battle-grid"
-import { Fighter } from "./fighter"
+import { CustomizableFighter } from "./customizable-fighter"
 import { Projectiles } from "./projectiles"
 import { FloatingGeometry, CircuitLayer, DataStreams, StarField, AmbientParticles } from "./cyberpunk-background"
 import { GlitchOverlay } from "./glitch-effect"
 import type { GameState } from "@/types/game"
+import type { FighterCustomization } from "@/lib/fighter-parts"
 
 interface BattleArenaProps {
   gameState: GameState
+  fighterCustomization?: FighterCustomization
+  enemyCustomization?: FighterCustomization
 }
 
-export function BattleArena({ gameState }: BattleArenaProps) {
+export function BattleArena({ gameState, fighterCustomization, enemyCustomization }: BattleArenaProps) {
   return (
     <>
       <Canvas shadows className="crt-effect">
@@ -52,19 +55,21 @@ export function BattleArena({ gameState }: BattleArenaProps) {
         <BattleGrid />
 
         {/* Player Fighter */}
-        <Fighter
+        <CustomizableFighter
           position={gameState.player.position}
           isPlayer={true}
           hp={gameState.player.hp}
           maxHp={gameState.player.maxHp}
+          customization={fighterCustomization}
         />
 
         {/* Enemy Fighter */}
-        <Fighter
+        <CustomizableFighter
           position={gameState.enemy.position}
           isPlayer={false}
           hp={gameState.enemy.hp}
           maxHp={gameState.enemy.maxHp}
+          customization={enemyCustomization}
         />
 
         {/* Projectiles */}
