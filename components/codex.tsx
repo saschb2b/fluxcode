@@ -253,35 +253,42 @@ export function Codex({ isOpen, onClose }: CodexProps) {
   const items = activeTab === "triggers" ? AVAILABLE_TRIGGERS : AVAILABLE_ACTIONS
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
-      <Card className="w-[90vw] h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4">
+      <Card className="w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between p-3 sm:p-6 border-b border-border">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Zap className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Battle Protocol Codex</h2>
-              <p className="text-sm text-muted-foreground">Complete reference of all triggers and actions</p>
+              <h2 className="text-lg sm:text-2xl font-bold text-foreground">Battle Protocol Codex</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                Complete reference of all triggers and actions
+              </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-destructive/20">
-            <X className="w-6 h-6" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="hover:bg-destructive/20 h-8 w-8 sm:h-10 sm:w-10"
+          >
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </Button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 p-4 border-b border-border">
+        <div className="flex gap-2 p-2 sm:p-4 border-b border-border">
           <Button
             variant={activeTab === "triggers" ? "default" : "outline"}
             onClick={() => {
               setActiveTab("triggers")
               setSelectedItem(null)
             }}
-            className="flex-1"
+            className="flex-1 h-10 sm:h-12 text-xs sm:text-base active:scale-95"
           >
-            <Target className="w-4 h-4 mr-2" />
+            <Target className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Triggers ({AVAILABLE_TRIGGERS.length})
           </Button>
           <Button
@@ -290,42 +297,44 @@ export function Codex({ isOpen, onClose }: CodexProps) {
               setActiveTab("actions")
               setSelectedItem(null)
             }}
-            className="flex-1"
+            className="flex-1 h-10 sm:h-12 text-xs sm:text-base active:scale-95"
           >
-            <Zap className="w-4 h-4 mr-2" />
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Actions ({AVAILABLE_ACTIONS.length})
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
           {/* List */}
-          <ScrollArea className="w-1/3 border-r border-border">
-            <div className="p-4 space-y-2">
+          <ScrollArea className="w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-border max-h-[40vh] sm:max-h-none">
+            <div className="p-2 sm:p-4 space-y-1.5 sm:space-y-2">
               {items.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`w-full text-left p-2 sm:p-3 rounded-lg border transition-all active:scale-95 ${
                     selectedItem?.id === item.id
                       ? "bg-primary/20 border-primary"
                       : "bg-card/50 border-border hover:bg-card hover:border-primary/50"
                   }`}
                 >
-                  <div className="font-semibold text-foreground">{item.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</div>
-                  {"cooldown" in item && <div className="text-xs text-secondary mt-1">Cooldown: {item.cooldown}ms</div>}
+                  <div className="font-semibold text-foreground text-sm sm:text-base">{item.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">{item.description}</div>
+                  {"cooldown" in item && (
+                    <div className="text-xs text-secondary mt-0.5 sm:mt-1">Cooldown: {item.cooldown}ms</div>
+                  )}
                 </button>
               ))}
             </div>
           </ScrollArea>
 
           {/* Detail View */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0">
             {selectedItem ? (
               <>
                 {/* 3D Visualization */}
-                <div className="h-64 bg-background/50 border-b border-border">
+                <div className="h-40 sm:h-64 bg-background/50 border-b border-border">
                   <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
                     <RotatingVisualization>
                       {activeTab === "triggers" ? (
@@ -339,33 +348,35 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                 </div>
 
                 {/* Details */}
-                <ScrollArea className="flex-1 p-6">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 p-3 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <h3 className="text-2xl font-bold text-foreground mb-2">{selectedItem.name}</h3>
-                      <p className="text-muted-foreground">{selectedItem.description}</p>
+                      <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">
+                        {selectedItem.name}
+                      </h3>
+                      <p className="text-muted-foreground text-sm sm:text-base">{selectedItem.description}</p>
                     </div>
 
                     {"cooldown" in selectedItem && (
-                      <div className="p-4 rounded-lg bg-secondary/20 border border-secondary">
-                        <div className="text-sm font-semibold text-secondary mb-1">Cooldown</div>
-                        <div className="text-2xl font-bold text-foreground">{selectedItem.cooldown}ms</div>
+                      <div className="p-3 sm:p-4 rounded-lg bg-secondary/20 border border-secondary">
+                        <div className="text-xs sm:text-sm font-semibold text-secondary mb-1">Cooldown</div>
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">{selectedItem.cooldown}ms</div>
                         <div className="text-xs text-muted-foreground mt-1">
                           Time before this action can be used again
                         </div>
                       </div>
                     )}
 
-                    <div className="p-4 rounded-lg bg-card border border-border">
-                      <div className="text-sm font-semibold text-foreground mb-2">Type</div>
-                      <div className="text-muted-foreground">
+                    <div className="p-3 sm:p-4 rounded-lg bg-card border border-border">
+                      <div className="text-xs sm:text-sm font-semibold text-foreground mb-2">Type</div>
+                      <div className="text-muted-foreground text-sm">
                         {activeTab === "triggers" ? "Condition Trigger" : "Battle Action"}
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                      <div className="text-sm font-semibold text-primary mb-2">Usage Tip</div>
-                      <div className="text-sm text-foreground">
+                    <div className="p-3 sm:p-4 rounded-lg bg-primary/10 border border-primary/30">
+                      <div className="text-xs sm:text-sm font-semibold text-primary mb-2">Usage Tip</div>
+                      <div className="text-xs sm:text-sm text-foreground">
                         {activeTab === "triggers"
                           ? "Triggers determine WHEN an action should execute. Combine multiple triggers with different priorities to create complex AI behavior."
                           : "Actions define WHAT your fighter does. Balance offensive, defensive, and movement actions for optimal strategy."}
@@ -375,10 +386,12 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                 </ScrollArea>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="flex-1 flex items-center justify-center text-muted-foreground p-4">
                 <div className="text-center">
-                  <Zap className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Select a {activeTab === "triggers" ? "trigger" : "action"} to view details</p>
+                  <Zap className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">
+                    Select a {activeTab === "triggers" ? "trigger" : "action"} to view details
+                  </p>
                 </div>
               </div>
             )}

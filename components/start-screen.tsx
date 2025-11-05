@@ -53,12 +53,12 @@ export function StartScreen({ onStart }: StartScreenProps) {
       />
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 sm:px-6">
         {/* Game Title */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 sm:mb-12 text-center">
           <div className="relative inline-block">
             <h1
-              className={`text-7xl md:text-9xl font-black tracking-wider mb-4 transition-all duration-100 ${
+              className={`text-5xl sm:text-7xl md:text-9xl font-black tracking-wider mb-2 sm:mb-4 transition-all duration-100 ${
                 glitchActive ? "text-magenta-500 translate-x-1" : "text-cyan-400"
               }`}
               style={{
@@ -70,29 +70,26 @@ export function StartScreen({ onStart }: StartScreenProps) {
             >
               BATTLE
             </h1>
-            <div className="absolute -top-2 -right-2 w-4 h-4 bg-cyan-400 animate-pulse" />
-            <div
-              className="absolute -bottom-2 -left-2 w-4 h-4 bg-magenta-500 animate-pulse"
-              style={{ animationDelay: "0.5s" }}
-            />
           </div>
           <h2
-            className="text-3xl md:text-5xl font-bold text-magenta-400 tracking-widest"
+            className="text-2xl sm:text-3xl md:text-5xl font-bold text-magenta-400 tracking-widest"
             style={{ fontFamily: "monospace" }}
           >
             PROTOCOL
           </h2>
-          <div className="mt-4 text-sm text-cyan-300/60 tracking-[0.3em] uppercase">Program • Fight • Evolve</div>
+          <div className="mt-2 sm:mt-4 text-xs sm:text-sm text-cyan-300/60 tracking-[0.3em] uppercase">
+            Program • Fight • Evolve
+          </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-4 w-full max-w-md">
+        <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-md px-4 sm:px-0">
           <Button
             size="lg"
             onClick={onStart}
-            className="relative group h-16 text-2xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black border-2 border-cyan-300 shadow-[0_0_20px_rgba(0,255,255,0.5)] hover:shadow-[0_0_30px_rgba(0,255,255,0.8)] transition-all duration-300"
+            className="relative group h-14 sm:h-16 text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black border-2 border-cyan-300 shadow-[0_0_20px_rgba(0,255,255,0.5)] hover:shadow-[0_0_30px_rgba(0,255,255,0.8)] transition-all duration-300 active:scale-95"
           >
-            <Play className="w-6 h-6 mr-2" />
+            <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
             START GAME
             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
@@ -101,38 +98,41 @@ export function StartScreen({ onStart }: StartScreenProps) {
             size="lg"
             variant="outline"
             onClick={() => setShowHowToPlay(true)}
-            className="h-14 text-lg font-bold bg-transparent border-2 border-magenta-500 text-magenta-400 hover:bg-magenta-500/20 hover:text-magenta-300 shadow-[0_0_15px_rgba(255,0,255,0.3)] hover:shadow-[0_0_25px_rgba(255,0,255,0.5)] transition-all duration-300"
+            className="h-12 sm:h-14 text-base sm:text-lg font-bold bg-transparent border-2 border-magenta-500 text-magenta-400 hover:bg-magenta-500/20 hover:text-magenta-300 shadow-[0_0_15px_rgba(255,0,255,0.3)] hover:shadow-[0_0_25px_rgba(255,0,255,0.5)] transition-all duration-300 active:scale-95"
           >
-            <Info className="w-5 h-5 mr-2" />
+            <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             HOW TO PLAY
           </Button>
         </div>
 
         {/* Version/Credits */}
-        <div className="absolute bottom-8 text-center text-cyan-300/40 text-sm tracking-wider">
+        <div className="absolute bottom-4 sm:bottom-8 text-center text-cyan-300/40 text-xs sm:text-sm tracking-wider px-4">
           <div>v1.0.0 • ALPHA BUILD</div>
-          <div className="mt-1 text-xs">Inspired by Megaman Battle Network</div>
+          <div className="mt-1 text-[10px] sm:text-xs">Inspired by Megaman Battle Network</div>
         </div>
       </div>
 
       {/* How to Play Modal */}
       {showHowToPlay && (
-        <div className="absolute inset-0 z-[400] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-          <Card className="relative max-w-2xl max-h-[80vh] overflow-y-auto bg-[#0a0015] border-2 border-cyan-500 shadow-[0_0_30px_rgba(0,255,255,0.5)] p-8">
+        <div className="absolute inset-0 z-[400] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+          <Card className="relative w-full max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto bg-[#0a0015] border-2 border-cyan-500 shadow-[0_0_30px_rgba(0,255,255,0.5)] p-4 sm:p-8">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowHowToPlay(false)}
-              className="absolute top-4 right-4 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </Button>
 
-            <h2 className="text-3xl font-bold text-cyan-400 mb-6 tracking-wider" style={{ fontFamily: "monospace" }}>
+            <h2
+              className="text-2xl sm:text-3xl font-bold text-cyan-400 mb-4 sm:mb-6 tracking-wider pr-8"
+              style={{ fontFamily: "monospace" }}
+            >
               HOW TO PLAY
             </h2>
 
-            <div className="space-y-6 text-cyan-100">
+            <div className="space-y-4 sm:space-y-6 text-cyan-100 text-sm sm:text-base">
               <section>
                 <h3 className="text-xl font-bold text-magenta-400 mb-2">OBJECTIVE</h3>
                 <p className="text-cyan-200/80">
@@ -180,7 +180,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
             <Button
               onClick={() => setShowHowToPlay(false)}
-              className="w-full mt-6 bg-cyan-500 hover:bg-cyan-400 text-black font-bold"
+              className="w-full mt-4 sm:mt-6 h-12 bg-cyan-500 hover:bg-cyan-400 text-black font-bold"
             >
               GOT IT
             </Button>
