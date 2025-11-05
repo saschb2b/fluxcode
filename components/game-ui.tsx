@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ProgrammingPanel } from "@/components/programming-panel"
 import { RewardSelection } from "@/components/reward-selection"
+import { Codex } from "@/components/codex"
 import type { GameState } from "@/types/game"
-import { Code } from "lucide-react"
+import { Code, BookOpen } from "lucide-react"
 
 interface GameUIProps {
   gameState: GameState
@@ -15,6 +16,7 @@ interface GameUIProps {
 
 export function GameUI({ gameState, onNewRun }: GameUIProps) {
   const [isProgrammingOpen, setIsProgrammingOpen] = useState(false)
+  const [isCodexOpen, setIsCodexOpen] = useState(false)
 
   return (
     <>
@@ -48,15 +50,26 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
 
         {gameState.battleState === "idle" && (
           <div className="absolute top-4 right-4 pointer-events-auto">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-transparent"
-              onClick={() => setIsProgrammingOpen(true)}
-            >
-              <Code className="w-5 h-5 mr-2" />
-              PROGRAM
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground bg-transparent"
+                onClick={() => setIsCodexOpen(true)}
+              >
+                <BookOpen className="w-5 h-5 mr-2" />
+                CODEX
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-transparent"
+                onClick={() => setIsProgrammingOpen(true)}
+              >
+                <Code className="w-5 h-5 mr-2" />
+                PROGRAM
+              </Button>
+            </div>
           </div>
         )}
 
@@ -124,6 +137,9 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
         onSelectAction={gameState.selectRewardAction}
         isOpen={gameState.showRewardSelection}
       />
+
+      {/* Codex component */}
+      <Codex isOpen={isCodexOpen} onClose={() => setIsCodexOpen(false)} />
     </>
   )
 }

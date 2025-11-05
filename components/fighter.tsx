@@ -33,10 +33,13 @@ export function Fighter({ position, isPlayer, hp, maxHp }: FighterProps) {
 
   useEffect(() => {
     currentPosRef.current = targetWorldPos
+    velocityRef.current = [0, 0, 0]
     if (groupRef.current) {
       groupRef.current.position.set(...targetWorldPos)
+      groupRef.current.rotation.z = 0
+      groupRef.current.rotation.x = 0
     }
-  }, [])
+  }, [targetWorldPos])
 
   useFrame((state, delta) => {
     if (!groupRef.current) return
