@@ -170,6 +170,8 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
         onSelectTrigger={gameState.selectRewardTrigger}
         onSelectAction={gameState.selectRewardAction}
         isOpen={gameState.showRewardSelection}
+        rerollsRemaining={gameState.rerollsRemaining}
+        onReroll={gameState.rerollRewards}
       />
 
       {/* Codex component */}

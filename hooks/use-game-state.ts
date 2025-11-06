@@ -63,6 +63,8 @@ export function useGameState(): GameState {
 
   const [battleHistory, setBattleHistory] = useState<BattleHistoryPoint[]>([])
 
+  const [rerollsRemaining, setRerollsRemaining] = useState(3)
+
   useEffect(() => {
     if (battleState !== "fighting" || !battleEngineRef.current) {
       return
@@ -210,18 +212,47 @@ export function useGameState(): GameState {
     setBattleState("fighting")
   }, [player, enemy, triggerActionPairs, wave, fighterCustomization, enemyCustomization])
 
+  const getRandomRewards = useCallback((allTriggers: Trigger[], allActions: Action[]) => {
+    const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
+      ...allTriggers.map((t) => ({ type: "trigger" as const, item: t })),
+      ...allActions.map((a) => ({ type: "action" as const, item: a })),
+    ]
+
+    // Shuffle and take 3
+    const shuffled = allRewards.sort(() => Math.random() - 0.5)
+    const selected = shuffled.slice(0, Math.min(3, shuffled.length))
+
+    const triggers = selected.filter((r) => r.type === "trigger").map((r) => r.item as Trigger)
+    const actions = selected.filter((r) => r.type === "action").map((r) => r.item as Action)
+
+    return { triggers, actions }
+  }, [])
+
   const nextWave = useCallback(() => {
     const allTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.includes(t))
     const allActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.includes(a))
 
     if (allTriggers.length > 0 || allActions.length > 0) {
-      setAvailableRewardTriggers(allTriggers)
-      setAvailableRewardActions(allActions)
+      const { triggers, actions } = getRandomRewards(allTriggers, allActions)
+      setAvailableRewardTriggers(triggers)
+      setAvailableRewardActions(actions)
       setShowRewardSelection(true)
     } else {
       prepareNextWave()
     }
-  }, [unlockedTriggers, unlockedActions])
+  }, [unlockedTriggers, unlockedActions, getRandomRewards])
+
+  const rerollRewards = useCallback(() => {
+    if (rerollsRemaining <= 0) return
+
+    const allTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.includes(t))
+    const allActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.includes(a))
+
+    const { triggers, actions } = getRandomRewards(allTriggers, allActions)
+    setAvailableRewardTriggers(triggers)
+    setAvailableRewardActions(actions)
+    setRerollsRemaining((prev) => prev - 1)
+  }, [rerollsRemaining, unlockedTriggers, unlockedActions, getRandomRewards])
 
   const prepareNextWave = useCallback(() => {
     setWave((w) => w + 1)
@@ -273,6 +304,7 @@ export function useGameState(): GameState {
     setBattleState("idle")
     setShowRewardSelection(false)
     setShowEnemyIntro(false)
+    setRerollsRemaining(3)
   }, [playerProgress])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
@@ -363,6 +395,8 @@ export function useGameState(): GameState {
     availableRewardActions,
     selectRewardTrigger,
     selectRewardAction,
+    rerollsRemaining,
+    rerollRewards,
     setCharacter,
     selectedCharacter,
     fighterCustomization,

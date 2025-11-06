@@ -95,6 +95,8 @@ export interface GameState {
   availableRewardActions: Action[]
   selectRewardTrigger: (trigger: Trigger) => void
   selectRewardAction: (action: Action) => void
+  rerollsRemaining: number
+  rerollRewards: () => void
   selectedCharacter: CharacterPreset | null
   setCharacter: (character: CharacterPreset) => void
   fighterCustomization: FighterCustomization | null
