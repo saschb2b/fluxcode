@@ -5,6 +5,7 @@ import { PerspectiveCamera } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { FighterPreview } from "@/components/fighter-preview"
+import { AnimatedBackdrop } from "@/components/animated-backdrop"
 import type { FighterCustomization } from "@/types/game"
 import { generateEnemyName } from "@/lib/enemy-names"
 
@@ -40,14 +41,19 @@ export function EnemyIntroduction({
             <p className="text-lg sm:text-xl text-secondary italic">{title}</p>
           </div>
 
-          {/* 3D Preview */}
           <div className="relative w-full h-64 sm:h-80 mb-6 rounded-lg overflow-hidden border-2 border-primary/50 bg-background/50">
             <Canvas>
-              <PerspectiveCamera makeDefault position={[0, 1.5, 4]} />
+              <PerspectiveCamera makeDefault position={[0, 0.5, 4]} />
               <ambientLight intensity={0.5} />
               <pointLight position={[10, 10, 10]} intensity={1} />
               <pointLight position={[-10, -10, -10]} intensity={0.5} color="#06b6d4" />
-              <FighterPreview customization={enemyCustomization} autoRotate />
+              <pointLight position={[0, 5, 5]} intensity={0.8} color="#ec4899" />
+
+              <AnimatedBackdrop />
+
+              <group position={[0, 0.3, 0]}>
+                <FighterPreview customization={enemyCustomization} autoRotate />
+              </group>
             </Canvas>
             <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur px-3 py-1 rounded border border-primary/50 text-xs text-muted-foreground">
               Auto-rotating

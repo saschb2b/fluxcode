@@ -9,52 +9,77 @@ import { Codex } from "@/components/codex"
 import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import type { GameState } from "@/types/game"
-import { Code, BookOpen } from "lucide-react"
+import { Code, BookOpen, User, Coins, TrendingUp } from "lucide-react"
+import { calculateCurrencyReward } from "@/lib/meta-progression"
 
 interface GameUIProps {
   gameState: GameState
-  onNewRun: () => void // Added onNewRun prop
+  onNewRun: () => void
+  onOpenCustomization: () => void
+  onOpenMetaShop: () => void
 }
 
-export function GameUI({ gameState, onNewRun }: GameUIProps) {
+export function GameUI({ gameState, onNewRun, onOpenCustomization, onOpenMetaShop }: GameUIProps) {
   const [isProgrammingOpen, setIsProgrammingOpen] = useState(false)
   const [isCodexOpen, setIsCodexOpen] = useState(false)
+
+  const currencyEarned = gameState.battleState === "defeat" ? calculateCurrencyReward(gameState.wave - 1) : 0
 
   return (
     <>
       <div className="absolute inset-0 pointer-events-none z-10">
-        {/* Top HUD */}
-        <div className="absolute top-2 sm:top-4 left-0 right-0 flex justify-center pointer-events-auto px-2">
-          <Card className="px-3 sm:px-6 py-2 sm:py-3 bg-card/90 backdrop-blur border-2 border-primary">
-            <div className="flex items-center gap-3 sm:gap-8">
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Wave</div>
-                <div className="text-lg sm:text-2xl font-bold text-primary">{gameState.wave}</div>
-              </div>
-              <div className="w-px h-6 sm:h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Status</div>
-                <div className="text-xs sm:text-sm font-bold text-foreground">
-                  {gameState.battleState === "idle" && "READY"}
-                  {gameState.battleState === "fighting" && "FIGHTING"}
-                  {gameState.battleState === "victory" && "VICTORY"}
-                  {gameState.battleState === "defeat" && "DEFEAT"}
+        <div className="absolute top-2 left-0 right-0 flex flex-col sm:flex-row sm:justify-between items-center gap-2 pointer-events-auto px-2 sm:px-4">
+          {/* Status Card - centered on mobile, left-aligned on desktop */}
+          <div className="flex justify-center sm:justify-start flex-1">
+            <Card className="px-3 sm:px-6 py-2 sm:py-3 bg-card/90 backdrop-blur border-2 border-primary">
+              <div className="flex items-center gap-2 sm:gap-8">
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Wave</div>
+                  <div className="text-lg sm:text-2xl font-bold text-primary">{gameState.wave}</div>
+                </div>
+                <div className="w-px h-6 sm:h-8 bg-border" />
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Status</div>
+                  <div className="text-xs sm:text-sm font-bold text-foreground">
+                    {gameState.battleState === "idle" && "READY"}
+                    {gameState.battleState === "fighting" && "FIGHTING"}
+                    {gameState.battleState === "victory" && "VICTORY"}
+                    {gameState.battleState === "defeat" && "DEFEAT"}
+                  </div>
+                </div>
+                <div className="w-px h-6 sm:h-8 bg-border" />
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Rules</div>
+                  <div className="text-lg sm:text-2xl font-bold text-secondary">
+                    {gameState.triggerActionPairs.length}
+                  </div>
+                </div>
+                <div className="w-px h-6 sm:h-8 bg-border" />
+                <div className="text-center">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Currency</div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <Coins className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
+                    <span className="text-lg sm:text-2xl font-bold text-yellow-400">
+                      {gameState.playerProgress.currency}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="w-px h-6 sm:h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Rules</div>
-                <div className="text-lg sm:text-2xl font-bold text-secondary">
-                  {gameState.triggerActionPairs.length}
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
+            </Card>
+          </div>
 
-        {gameState.battleState === "idle" && (
-          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 pointer-events-auto">
+          {/* Action Buttons - below status card on mobile, right-aligned on desktop */}
+          {gameState.battleState === "idle" && (
             <div className="flex gap-1.5 sm:gap-2">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white bg-transparent h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base active:scale-95"
+                onClick={onOpenCustomization}
+              >
+                <User className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                <span className="hidden sm:inline">CUSTOMIZE</span>
+              </Button>
               <Button
                 size="lg"
                 variant="outline"
@@ -74,8 +99,8 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
                 <span className="hidden sm:inline">PROGRAM</span>
               </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Battle Controls */}
         {gameState.battleState === "idle" && (
@@ -103,6 +128,19 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
                     <span className="text-destructive">DEFEAT</span>
                   )}
                 </h2>
+
+                {gameState.battleState === "defeat" && currencyEarned > 0 && (
+                  <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 text-yellow-400">
+                      <Coins className="w-5 h-5" />
+                      <span className="font-bold text-lg">+{currencyEarned} Currency Earned</span>
+                    </div>
+                    <p className="text-center text-xs text-yellow-400/80 mt-1">
+                      Completed {gameState.wave - 1} wave{gameState.wave - 1 !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                )}
+
                 <p className="text-center text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
                   {gameState.battleState === "victory"
                     ? "You earned a new trigger or action!"
@@ -116,6 +154,15 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  {gameState.battleState === "defeat" && gameState.playerProgress.totalRuns > 1 && (
+                    <Button
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white h-12 active:scale-95"
+                      onClick={onOpenMetaShop}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Upgrades
+                    </Button>
+                  )}
                   <Button className="flex-1 bg-transparent h-12 active:scale-95" variant="outline" onClick={onNewRun}>
                     New Run
                   </Button>

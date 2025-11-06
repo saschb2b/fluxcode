@@ -18,14 +18,17 @@ import {
 interface FighterCustomizationProps {
   onConfirm: (customization: FighterCustomizationType) => void
   onBack: () => void
+  currentCustomization?: FighterCustomizationType // Added optional prop for current customization
 }
 
-export function FighterCustomization({ onConfirm, onBack }: FighterCustomizationProps) {
-  const [customization, setCustomization] = useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION)
+export function FighterCustomization({ onConfirm, onBack, currentCustomization }: FighterCustomizationProps) {
+  const [customization, setCustomization] = useState<FighterCustomizationType>(
+    currentCustomization || DEFAULT_CUSTOMIZATION,
+  )
   const [activeTab, setActiveTab] = useState<"head" | "body" | "arms" | "accessory" | "colors">("head")
 
   return (
-    <div className="relative w-full h-screen bg-background overflow-hidden">
+    <div className="relative w-full h-dvh bg-background overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 grid-background opacity-20" />
       <div className="scanline" />

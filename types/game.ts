@@ -73,6 +73,7 @@ export interface BattleHistoryPoint {
 }
 
 import type { FighterCustomization } from "@/lib/fighter-parts"
+import type { PlayerProgress } from "@/lib/meta-progression"
 
 export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
@@ -102,4 +103,6 @@ export interface GameState {
   battleHistory: BattleHistoryPoint[]
   showEnemyIntro: boolean
   continueAfterIntro: () => void
+  playerProgress: PlayerProgress
+  updatePlayerProgress: (progress: PlayerProgress) => void
 }
