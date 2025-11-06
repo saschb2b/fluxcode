@@ -9,7 +9,7 @@ import { Codex } from "@/components/codex"
 import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import type { GameState } from "@/types/game"
-import { Code, BookOpen, Coins, TrendingUp } from "lucide-react"
+import { Code, Coins, TrendingUp } from "lucide-react"
 import { calculateCurrencyReward } from "@/lib/meta-progression"
 
 interface GameUIProps {
@@ -27,74 +27,46 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
   return (
     <>
       <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="absolute top-2 left-0 right-0 flex flex-col sm:flex-row sm:justify-between items-center gap-2 pointer-events-auto px-2 sm:px-4">
-          {/* Status Card - centered on mobile, left-aligned on desktop */}
-          <div className="flex justify-center sm:justify-start flex-1">
-            <Card className="px-3 sm:px-6 py-2 sm:py-3 bg-card/90 backdrop-blur border-2 border-primary">
-              <div className="flex items-center gap-2 sm:gap-8">
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Wave</div>
-                  <div className="text-lg sm:text-2xl font-bold text-primary">{gameState.wave}</div>
-                </div>
-                <div className="w-px h-6 sm:h-8 bg-border" />
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Status</div>
-                  <div className="text-xs sm:text-sm font-bold text-foreground">
-                    {gameState.battleState === "idle" && "READY"}
-                    {gameState.battleState === "fighting" && "FIGHTING"}
-                    {gameState.battleState === "victory" && "VICTORY"}
-                    {gameState.battleState === "defeat" && "DEFEAT"}
-                  </div>
-                </div>
-                <div className="w-px h-6 sm:h-8 bg-border" />
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Rules</div>
-                  <div className="text-lg sm:text-2xl font-bold text-secondary">
-                    {gameState.triggerActionPairs.length}
-                  </div>
-                </div>
-                <div className="w-px h-6 sm:h-8 bg-border" />
-                <div className="text-center">
-                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Currency</div>
-                  <div className="flex items-center gap-1 justify-center">
-                    <Coins className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
-                    <span className="text-lg sm:text-2xl font-bold text-yellow-400">
-                      {gameState.playerProgress.currency}
-                    </span>
-                  </div>
+        <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-auto px-2 sm:px-4">
+          <Card className="px-3 sm:px-6 py-2 sm:py-3 bg-card/90 backdrop-blur border-2 border-primary">
+            <div className="flex items-center gap-2 sm:gap-8">
+              <div className="text-center">
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Wave</div>
+                <div className="text-lg sm:text-2xl font-bold text-primary">{gameState.wave}</div>
+              </div>
+              <div className="w-px h-6 sm:h-8 bg-border" />
+              <div className="text-center">
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Status</div>
+                <div className="text-xs sm:text-sm font-bold text-foreground">
+                  {gameState.battleState === "idle" && "READY"}
+                  {gameState.battleState === "fighting" && "FIGHTING"}
+                  {gameState.battleState === "victory" && "VICTORY"}
+                  {gameState.battleState === "defeat" && "DEFEAT"}
                 </div>
               </div>
-            </Card>
-          </div>
-
-          {/* Action Buttons - below status card on mobile, right-aligned on desktop */}
-          {gameState.battleState === "idle" && (
-            <div className="flex gap-1.5 sm:gap-2">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground bg-transparent h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base active:scale-95"
-                onClick={() => setIsCodexOpen(true)}
-              >
-                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                <span className="hidden sm:inline">CODEX</span>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-transparent h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base active:scale-95"
-                onClick={() => setIsProgrammingOpen(true)}
-              >
-                <Code className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                <span className="hidden sm:inline">PROGRAM</span>
-              </Button>
+              <div className="w-px h-6 sm:h-8 bg-border" />
+              <div className="text-center">
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Protocols</div>
+                <div className="text-lg sm:text-2xl font-bold text-secondary">
+                  {gameState.triggerActionPairs.length}
+                </div>
+              </div>
             </div>
-          )}
+          </Card>
         </div>
 
         {/* Battle Controls */}
         {gameState.battleState === "idle" && (
-          <div className="absolute bottom-4 sm:bottom-8 left-0 right-0 flex justify-center pointer-events-auto px-4">
+          <div className="absolute bottom-4 sm:bottom-8 left-0 right-0 flex flex-col items-center gap-3 pointer-events-auto px-4">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-card/90 backdrop-blur h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-bold shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
+              onClick={() => setIsProgrammingOpen(true)}
+            >
+              <Code className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+              ADJUST PROTOCOLS
+            </Button>
             <Button
               size="lg"
               className="text-base sm:text-lg font-bold px-6 sm:px-8 py-5 sm:py-6 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
