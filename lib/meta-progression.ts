@@ -6,7 +6,17 @@ export interface MetaUpgrade {
   cost: number
   maxLevel: number
   effect: {
-    type: "hp" | "damage" | "cooldown" | "unlock_action" | "unlock_trigger"
+    type:
+      | "hp"
+      | "damage"
+      | "cooldown"
+      | "evasion"
+      | "crit_chance"
+      | "crit_damage"
+      | "defense"
+      | "lifesteal"
+      | "unlock_action"
+      | "unlock_trigger"
     value: number
     actionId?: string
     triggerId?: string
@@ -79,6 +89,180 @@ export const META_UPGRADES: MetaUpgrade[] = [
     cost: 400,
     maxLevel: 2,
     effect: { type: "damage", value: 0.25 },
+  },
+
+  // Evasion Boosts (NEW)
+  {
+    id: "evasion_boost_1",
+    name: "Agile Movement I",
+    description: "5% chance to dodge incoming attacks",
+    category: "stat",
+    cost: 100,
+    maxLevel: 4,
+    effect: { type: "evasion", value: 0.05 },
+  },
+  {
+    id: "evasion_boost_2",
+    name: "Agile Movement II",
+    description: "8% chance to dodge incoming attacks",
+    category: "stat",
+    cost: 250,
+    maxLevel: 3,
+    effect: { type: "evasion", value: 0.08 },
+  },
+  {
+    id: "evasion_boost_3",
+    name: "Agile Movement III",
+    description: "12% chance to dodge incoming attacks",
+    category: "stat",
+    cost: 450,
+    maxLevel: 2,
+    effect: { type: "evasion", value: 0.12 },
+  },
+
+  // Critical Hit Chance (NEW)
+  {
+    id: "crit_chance_1",
+    name: "Precision Targeting I",
+    description: "5% chance to land critical hits",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "crit_chance", value: 0.05 },
+  },
+  {
+    id: "crit_chance_2",
+    name: "Precision Targeting II",
+    description: "8% chance to land critical hits",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "crit_chance", value: 0.08 },
+  },
+  {
+    id: "crit_chance_3",
+    name: "Precision Targeting III",
+    description: "12% chance to land critical hits",
+    category: "stat",
+    cost: 500,
+    maxLevel: 2,
+    effect: { type: "crit_chance", value: 0.12 },
+  },
+
+  // Critical Hit Damage (NEW)
+  {
+    id: "crit_damage_1",
+    name: "Devastating Strikes I",
+    description: "Critical hits deal 25% more damage",
+    category: "stat",
+    cost: 150,
+    maxLevel: 4,
+    effect: { type: "crit_damage", value: 0.25 },
+  },
+  {
+    id: "crit_damage_2",
+    name: "Devastating Strikes II",
+    description: "Critical hits deal 40% more damage",
+    category: "stat",
+    cost: 320,
+    maxLevel: 3,
+    effect: { type: "crit_damage", value: 0.4 },
+  },
+  {
+    id: "crit_damage_3",
+    name: "Devastating Strikes III",
+    description: "Critical hits deal 60% more damage",
+    category: "stat",
+    cost: 550,
+    maxLevel: 2,
+    effect: { type: "crit_damage", value: 0.6 },
+  },
+
+  // Cooldown Reduction (NEW)
+  {
+    id: "cooldown_reduction_1",
+    name: "Rapid Systems I",
+    description: "Reduce all cooldowns by 5%",
+    category: "stat",
+    cost: 130,
+    maxLevel: 4,
+    effect: { type: "cooldown", value: 0.05 },
+  },
+  {
+    id: "cooldown_reduction_2",
+    name: "Rapid Systems II",
+    description: "Reduce all cooldowns by 8%",
+    category: "stat",
+    cost: 300,
+    maxLevel: 3,
+    effect: { type: "cooldown", value: 0.08 },
+  },
+  {
+    id: "cooldown_reduction_3",
+    name: "Rapid Systems III",
+    description: "Reduce all cooldowns by 12%",
+    category: "stat",
+    cost: 520,
+    maxLevel: 2,
+    effect: { type: "cooldown", value: 0.12 },
+  },
+
+  // Defense/Armor (NEW)
+  {
+    id: "defense_1",
+    name: "Hardened Plating I",
+    description: "Reduce incoming damage by 5%",
+    category: "stat",
+    cost: 110,
+    maxLevel: 4,
+    effect: { type: "defense", value: 0.05 },
+  },
+  {
+    id: "defense_2",
+    name: "Hardened Plating II",
+    description: "Reduce incoming damage by 8%",
+    category: "stat",
+    cost: 260,
+    maxLevel: 3,
+    effect: { type: "defense", value: 0.08 },
+  },
+  {
+    id: "defense_3",
+    name: "Hardened Plating III",
+    description: "Reduce incoming damage by 12%",
+    category: "stat",
+    cost: 480,
+    maxLevel: 2,
+    effect: { type: "defense", value: 0.12 },
+  },
+
+  // Lifesteal (NEW)
+  {
+    id: "lifesteal_1",
+    name: "Energy Drain I",
+    description: "Heal for 5% of damage dealt",
+    category: "stat",
+    cost: 180,
+    maxLevel: 3,
+    effect: { type: "lifesteal", value: 0.05 },
+  },
+  {
+    id: "lifesteal_2",
+    name: "Energy Drain II",
+    description: "Heal for 8% of damage dealt",
+    category: "stat",
+    cost: 350,
+    maxLevel: 3,
+    effect: { type: "lifesteal", value: 0.08 },
+  },
+  {
+    id: "lifesteal_3",
+    name: "Energy Drain III",
+    description: "Heal for 12% of damage dealt",
+    category: "stat",
+    cost: 600,
+    maxLevel: 2,
+    effect: { type: "lifesteal", value: 0.12 },
   },
 
   // Basic Action Unlocks (Tier 1 - 100-150 cost)
@@ -703,7 +887,10 @@ export function getUpgradeLevel(progress: PlayerProgress, upgradeId: string): nu
   return progress.upgrades[upgradeId] || 0
 }
 
-export function getTotalStatBonus(progress: PlayerProgress, type: "hp" | "damage"): number {
+export function getTotalStatBonus(
+  progress: PlayerProgress,
+  type: "hp" | "damage" | "evasion" | "crit_chance" | "crit_damage" | "cooldown" | "defense" | "lifesteal",
+): number {
   let total = 0
 
   for (const upgrade of META_UPGRADES) {
