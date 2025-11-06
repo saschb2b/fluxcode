@@ -20,6 +20,8 @@ export interface PlayerProgress {
   unlockedTriggers: string[]
   totalWavesCompleted: number
   totalRuns: number
+  bestWave: number
+  selectedCharacterId: string | null
 }
 
 export const META_UPGRADES: MetaUpgrade[] = [
@@ -650,6 +652,8 @@ export function getDefaultProgress(): PlayerProgress {
     unlockedTriggers: [],
     totalWavesCompleted: 0,
     totalRuns: 0,
+    bestWave: 0,
+    selectedCharacterId: null,
   }
 }
 

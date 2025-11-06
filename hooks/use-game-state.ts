@@ -90,12 +90,14 @@ export function useGameState(): GameState {
         }
 
         if (!update.playerWon) {
-          const currencyEarned = calculateCurrencyReward(wave - 1)
+          const wavesCompleted = wave - 1
+          const currencyEarned = calculateCurrencyReward(wavesCompleted)
           const newProgress = {
             ...playerProgress,
             currency: playerProgress.currency + currencyEarned,
-            totalWavesCompleted: playerProgress.totalWavesCompleted + (wave - 1),
+            totalWavesCompleted: playerProgress.totalWavesCompleted + wavesCompleted,
             totalRuns: playerProgress.totalRuns + 1,
+            bestWave: Math.max(playerProgress.bestWave, wavesCompleted),
           }
           setPlayerProgress(newProgress)
           saveProgress(newProgress)
@@ -310,12 +312,22 @@ export function useGameState(): GameState {
     [prepareNextWave],
   )
 
-  const setCharacter = useCallback((character: CharacterPreset) => {
-    setSelectedCharacter(character)
-    setTriggerActionPairs(character.startingPairs)
-    setUnlockedTriggers(character.startingTriggers)
-    setUnlockedActions(character.startingActions)
-  }, [])
+  const setCharacter = useCallback(
+    (character: CharacterPreset) => {
+      setSelectedCharacter(character)
+      setTriggerActionPairs(character.startingPairs)
+      setUnlockedTriggers(character.startingTriggers)
+      setUnlockedActions(character.startingActions)
+
+      const newProgress = {
+        ...playerProgress,
+        selectedCharacterId: character.id,
+      }
+      setPlayerProgress(newProgress)
+      saveProgress(newProgress)
+    },
+    [playerProgress],
+  )
 
   const setCustomization = useCallback((customization: FighterCustomization) => {
     setFighterCustomization(customization)

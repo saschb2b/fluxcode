@@ -9,17 +9,16 @@ import { Codex } from "@/components/codex"
 import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import type { GameState } from "@/types/game"
-import { Code, BookOpen, User, Coins, TrendingUp } from "lucide-react"
+import { Code, BookOpen, Coins, TrendingUp } from "lucide-react"
 import { calculateCurrencyReward } from "@/lib/meta-progression"
 
 interface GameUIProps {
   gameState: GameState
   onNewRun: () => void
-  onOpenCustomization: () => void
   onOpenMetaShop: () => void
 }
 
-export function GameUI({ gameState, onNewRun, onOpenCustomization, onOpenMetaShop }: GameUIProps) {
+export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
   const [isProgrammingOpen, setIsProgrammingOpen] = useState(false)
   const [isCodexOpen, setIsCodexOpen] = useState(false)
 
@@ -71,15 +70,6 @@ export function GameUI({ gameState, onNewRun, onOpenCustomization, onOpenMetaSho
           {/* Action Buttons - below status card on mobile, right-aligned on desktop */}
           {gameState.battleState === "idle" && (
             <div className="flex gap-1.5 sm:gap-2">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white bg-transparent h-10 sm:h-12 px-3 sm:px-4 text-sm sm:text-base active:scale-95"
-                onClick={onOpenCustomization}
-              >
-                <User className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                <span className="hidden sm:inline">CUSTOMIZE</span>
-              </Button>
               <Button
                 size="lg"
                 variant="outline"
