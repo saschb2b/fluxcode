@@ -74,6 +74,7 @@ export interface BattleHistoryPoint {
 
 import type { FighterCustomization } from "@/lib/fighter-parts"
 import type { PlayerProgress } from "@/lib/meta-progression"
+import type { NetworkLayer } from "@/lib/network-layers"
 
 export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
@@ -107,4 +108,8 @@ export interface GameState {
   continueAfterIntro: () => void
   playerProgress: PlayerProgress
   updatePlayerProgress: (progress: PlayerProgress) => void
+  networkLayers: NetworkLayer[]
+  currentLayerIndex: number
+  currentNodeIndex: number
+  isGuardianBattle: boolean
 }

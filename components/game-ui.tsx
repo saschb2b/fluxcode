@@ -8,6 +8,8 @@ import { RewardSelection } from "@/components/reward-selection"
 import { Codex } from "@/components/codex"
 import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
+import { LayerProgressWidget } from "@/components/layer-progress-widget"
+import { NetworkMap } from "@/components/network-map"
 import type { GameState } from "@/types/game"
 import { Code, Coins, TrendingUp } from "lucide-react"
 import { calculateCurrencyReward } from "@/lib/meta-progression"
@@ -21,6 +23,7 @@ interface GameUIProps {
 export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
   const [isProgrammingOpen, setIsProgrammingOpen] = useState(false)
   const [isCodexOpen, setIsCodexOpen] = useState(false)
+  const [isNetworkMapOpen, setIsNetworkMapOpen] = useState(false)
 
   const currencyEarned = gameState.battleState === "defeat" ? calculateCurrencyReward(gameState.wave - 1) : 0
 
@@ -28,31 +31,13 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
     <>
       <div className="absolute inset-0 pointer-events-none z-10">
         <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-auto px-2 sm:px-4">
-          <Card className="px-3 sm:px-6 py-2 sm:py-3 bg-card/90 backdrop-blur border-2 border-primary">
-            <div className="flex items-center gap-2 sm:gap-8">
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Wave</div>
-                <div className="text-lg sm:text-2xl font-bold text-primary">{gameState.wave}</div>
-              </div>
-              <div className="w-px h-6 sm:h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Status</div>
-                <div className="text-xs sm:text-sm font-bold text-foreground">
-                  {gameState.battleState === "idle" && "READY"}
-                  {gameState.battleState === "fighting" && "FIGHTING"}
-                  {gameState.battleState === "victory" && "VICTORY"}
-                  {gameState.battleState === "defeat" && "DEFEAT"}
-                </div>
-              </div>
-              <div className="w-px h-6 sm:h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Protocols</div>
-                <div className="text-lg sm:text-2xl font-bold text-secondary">
-                  {gameState.triggerActionPairs.length}
-                </div>
-              </div>
-            </div>
-          </Card>
+          <LayerProgressWidget
+            layers={gameState.networkLayers}
+            currentLayerIndex={gameState.currentLayerIndex}
+            currentNodeIndex={gameState.currentNodeIndex}
+            isGuardianBattle={gameState.isGuardianBattle}
+            onOpenMap={() => setIsNetworkMapOpen(true)}
+          />
         </div>
 
         {/* Battle Controls */}
@@ -150,6 +135,9 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
           enemyMaxHp={gameState.enemy.maxHp}
           onBeginBattle={gameState.continueAfterIntro}
           isOpen={gameState.showEnemyIntro}
+          currentLayer={gameState.networkLayers[gameState.currentLayerIndex]}
+          currentNodeIndex={gameState.currentNodeIndex}
+          isGuardianBattle={gameState.isGuardianBattle}
         />
       )}
 
@@ -172,6 +160,15 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
         isOpen={gameState.showRewardSelection}
         rerollsRemaining={gameState.rerollsRemaining}
         onReroll={gameState.rerollRewards}
+      />
+
+      {/* Network Map Modal */}
+      <NetworkMap
+        layers={gameState.networkLayers}
+        currentLayerIndex={gameState.currentLayerIndex}
+        currentNodeIndex={gameState.currentNodeIndex}
+        isOpen={isNetworkMapOpen}
+        onClose={() => setIsNetworkMapOpen(false)}
       />
 
       {/* Codex component */}

@@ -1,13 +1,16 @@
 "use client"
 
 import { Canvas } from "@react-three/fiber"
-import { PerspectiveCamera } from "@react-three/drei"
+import { PerspectiveCamera, Html } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { FighterPreview } from "@/components/fighter-preview"
 import { AnimatedBackdrop } from "@/components/animated-backdrop"
 import type { FighterCustomization } from "@/types/game"
+import type { NetworkLayer } from "@/lib/network-layers"
 import { generateEnemyName } from "@/lib/enemy-names"
+import { getNodeIcon } from "@/lib/network-layers"
+import { Crown, MapPin } from "lucide-react"
 
 interface EnemyIntroductionProps {
   wave: number
@@ -15,6 +18,9 @@ interface EnemyIntroductionProps {
   enemyMaxHp: number
   onBeginBattle: () => void
   isOpen: boolean
+  currentLayer?: NetworkLayer
+  currentNodeIndex?: number
+  isGuardianBattle?: boolean
 }
 
 export function EnemyIntroduction({
@@ -23,25 +29,68 @@ export function EnemyIntroduction({
   enemyMaxHp,
   onBeginBattle,
   isOpen,
+  currentLayer,
+  currentNodeIndex,
+  isGuardianBattle,
 }: EnemyIntroductionProps) {
   if (!isOpen) return null
 
   const { name, title } = generateEnemyName(wave)
 
+  const currentNode = currentLayer && typeof currentNodeIndex === "number" ? currentLayer.nodes[currentNodeIndex] : null
+  const nodeType = currentNode?.type || "battle"
+  const totalNodes = currentLayer?.nodes.length || 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
       <Card className="w-full max-w-2xl border-4 border-primary bg-card/95 backdrop-blur">
-        <div className="p-6 sm:p-8">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <div className="text-sm sm:text-base text-muted-foreground uppercase tracking-wider mb-2">
-              Wave {wave} - New Challenger
+        <div className="p-4">
+          {currentLayer && typeof currentNodeIndex === "number" && (
+            <div className="mb-3 p-2 rounded-lg border-2 border-primary/30 bg-background/50">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary uppercase tracking-wider">
+                    {currentLayer.name}
+                  </span>
+                </div>
+                {isGuardianBattle && (
+                  <div className="flex items-center gap-1 text-yellow-400 animate-pulse">
+                    <Crown className="w-4 h-4" />
+                    <span className="text-xs font-bold uppercase">Guardian</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Node {currentNodeIndex + 1} of {totalNodes}
+                </span>
+                <span className="text-primary">•</span>
+                <span className="flex items-center gap-1">
+                  <span>{getNodeIcon(nodeType)}</span>
+                  <span className="capitalize">{nodeType === "guardian" ? "Layer Guardian" : `${nodeType} Node`}</span>
+                </span>
+              </div>
+
+              <div className="mt-1.5 h-1.5 bg-background rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+                  style={{ width: `${((currentNodeIndex + 1) / totalNodes) * 100}%` }}
+                />
+              </div>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-bold text-primary mb-2">{name}</h2>
-            <p className="text-lg sm:text-xl text-secondary italic">{title}</p>
+          )}
+
+          <div className="text-center mb-3">
+            <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider mb-1">
+              {isGuardianBattle ? "Layer Guardian" : `Wave ${wave}`} - New Challenger
+            </div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-primary mb-1">{name}</h2>
+            <p className="text-base sm:text-lg md:text-xl text-secondary italic">{title}</p>
           </div>
 
-          <div className="relative w-full h-64 sm:h-80 mb-6 rounded-lg overflow-hidden border-2 border-primary/50 bg-background/50">
+          <div className="relative w-full h-48 sm:h-64 mb-3 rounded-lg overflow-hidden border-2 border-primary/50 bg-background/50">
             <Canvas>
               <PerspectiveCamera makeDefault position={[0, 0.5, 4]} />
               <ambientLight intensity={0.5} />
@@ -54,30 +103,30 @@ export function EnemyIntroduction({
               <group position={[0, 0.3, 0]}>
                 <FighterPreview customization={enemyCustomization} autoRotate />
               </group>
+
+              <Html position={[-1.5, 1.2, 0]} center>
+                <div className="bg-background/90 backdrop-blur-sm border-2 border-destructive/50 rounded-lg px-3 py-2 min-w-[100px]">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 text-center">
+                    HP
+                  </div>
+                  <div className="text-xl font-bold text-destructive text-center">{enemyMaxHp}</div>
+                </div>
+              </Html>
+
+              <Html position={[1.5, 1.2, 0]} center>
+                <div className="bg-background/90 backdrop-blur-sm border-2 border-primary/50 rounded-lg px-3 py-2 min-w-[100px]">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 text-center">
+                    Threat
+                  </div>
+                  <div className="text-xl font-bold text-primary text-center">{wave}</div>
+                </div>
+              </Html>
             </Canvas>
-            <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur px-3 py-1 rounded border border-primary/50 text-xs text-muted-foreground">
-              Auto-rotating
-            </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="text-center p-3 sm:p-4 rounded-lg bg-background/50 border border-primary/30">
-              <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider mb-1">
-                Health Points
-              </div>
-              <div className="text-2xl sm:text-3xl font-bold text-destructive">{enemyMaxHp}</div>
-            </div>
-            <div className="text-center p-3 sm:p-4 rounded-lg bg-background/50 border border-primary/30">
-              <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider mb-1">Threat Level</div>
-              <div className="text-2xl sm:text-3xl font-bold text-primary">{wave}</div>
-            </div>
-          </div>
-
-          {/* Action Button */}
           <Button
             size="lg"
-            className="w-full text-lg sm:text-xl font-bold py-6 sm:py-8 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95"
+            className="w-full text-base sm:text-lg md:text-xl font-bold py-4 sm:py-5 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95"
             onClick={onBeginBattle}
           >
             FIGHT!

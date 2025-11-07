@@ -10,22 +10,22 @@ import type {
   CharacterPreset,
   FighterCustomization,
   BattleHistoryPoint,
+  PlayerProgress,
 } from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
 import { generateRandomCustomization } from "@/lib/fighter-parts"
-import {
-  loadProgress,
-  saveProgress,
-  calculateCurrencyReward,
-  getTotalStatBonus,
-  type PlayerProgress,
-} from "@/lib/meta-progression"
+import { loadProgress, saveProgress, calculateCurrencyReward, getTotalStatBonus } from "@/lib/meta-progression"
+import { initializeRun, type NetworkLayer } from "@/lib/network-layers"
 
 export function useGameState(): GameState {
   const [battleState, setBattleState] = useState<"idle" | "fighting" | "victory" | "defeat">("idle")
   const [wave, setWave] = useState(1)
+
+  const [networkLayers, setNetworkLayers] = useState<NetworkLayer[]>(initializeRun())
+  const [currentLayerIndex, setCurrentLayerIndex] = useState(0)
+  const [currentNodeIndex, setCurrentNodeIndex] = useState(0)
 
   const [playerProgress, setPlayerProgress] = useState<PlayerProgress>(loadProgress())
 
@@ -38,6 +38,11 @@ export function useGameState(): GameState {
     hp: playerMaxHp,
     maxHp: playerMaxHp,
   })
+
+  const isGuardianBattle =
+    networkLayers.length > 0 &&
+    networkLayers[currentLayerIndex] &&
+    networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
 
   const [enemy, setEnemy] = useState({
     position: { x: 4, y: 1 } as Position,
@@ -92,18 +97,40 @@ export function useGameState(): GameState {
         }
 
         if (!update.playerWon) {
-          const wavesCompleted = wave - 1
-          const currencyEarned = calculateCurrencyReward(wavesCompleted)
+          // Count total nodes completed in this run
+          let nodesCompleted = 0
+          for (let i = 0; i <= currentLayerIndex; i++) {
+            const layer = networkLayers[i]
+            if (!layer) continue
+
+            if (i < currentLayerIndex) {
+              // All nodes in previous layers
+              nodesCompleted += layer.nodes.length
+            } else {
+              // Nodes up to current in current layer
+              nodesCompleted += currentNodeIndex
+            }
+          }
+
+          const currencyEarned = calculateCurrencyReward(nodesCompleted)
           const newProgress = {
             ...playerProgress,
             currency: playerProgress.currency + currencyEarned,
-            totalWavesCompleted: playerProgress.totalWavesCompleted + wavesCompleted,
+            totalNodesCompleted: playerProgress.totalNodesCompleted + nodesCompleted,
             totalRuns: playerProgress.totalRuns + 1,
-            bestWave: Math.max(playerProgress.bestWave, wavesCompleted),
+            bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
+            bestNodeInBestLayer:
+              currentLayerIndex === playerProgress.bestLayerReached
+                ? Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex)
+                : currentLayerIndex > playerProgress.bestLayerReached
+                  ? currentNodeIndex
+                  : playerProgress.bestNodeInBestLayer,
           }
           setPlayerProgress(newProgress)
           saveProgress(newProgress)
-          console.log(`[v0] Run ended. Earned ${currencyEarned} currency. Total: ${newProgress.currency}`)
+          console.log(
+            `[v0] Run ended. Completed ${nodesCompleted} nodes. Earned ${currencyEarned} currency. Total: ${newProgress.currency}`,
+          )
         }
 
         setBattleState(update.playerWon ? "victory" : "defeat")
@@ -120,7 +147,7 @@ export function useGameState(): GameState {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [battleState, wave, playerProgress])
+  }, [battleState, wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex])
 
   const startBattle = useCallback(() => {
     console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
@@ -255,13 +282,48 @@ export function useGameState(): GameState {
   }, [rerollsRemaining, unlockedTriggers, unlockedActions, getRandomRewards])
 
   const prepareNextWave = useCallback(() => {
+    if (networkLayers.length > 0) {
+      const updatedLayers = [...networkLayers]
+      const currentLayer = updatedLayers[currentLayerIndex]
+
+      // Mark current node as completed
+      if (currentLayer.nodes[currentNodeIndex]) {
+        currentLayer.nodes[currentNodeIndex].completed = true
+        currentLayer.nodes[currentNodeIndex].current = false
+      }
+
+      // Move to next node or layer
+      if (currentNodeIndex + 1 < currentLayer.nodes.length) {
+        const nextNodeIndex = currentNodeIndex + 1
+        currentLayer.nodes[nextNodeIndex].current = true
+        setCurrentNodeIndex(nextNodeIndex)
+      } else {
+        // Layer completed, move to next layer
+        currentLayer.completed = true
+        if (currentLayerIndex + 1 < updatedLayers.length) {
+          setCurrentLayerIndex(currentLayerIndex + 1)
+          setCurrentNodeIndex(0)
+          updatedLayers[currentLayerIndex + 1].nodes[0].current = true
+        }
+      }
+
+      setNetworkLayers(updatedLayers)
+    }
+
     setWave((w) => w + 1)
     const nextWave = wave + 1
-    const enemyMaxHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    const nextNodeIsGuardian =
+      networkLayers.length > 0 &&
+      networkLayers[currentLayerIndex] &&
+      (currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length
+        ? networkLayers[currentLayerIndex].nodes[currentNodeIndex + 1]?.type === "guardian"
+        : false)
+    const enemyMaxHp = nextNodeIsGuardian ? baseHp * 2 : baseHp
     setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
     setEnemyCustomization(generateRandomCustomization())
     setShowEnemyIntro(true)
-  }, [wave])
+  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex])
 
   const continueAfterIntro = useCallback(() => {
     const hpBonus = getTotalStatBonus(playerProgress, "hp")
@@ -278,17 +340,28 @@ export function useGameState(): GameState {
     const hpBonus = getTotalStatBonus(playerProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
     setPlayer((prev) => ({ ...prev, maxHp, hp: Math.min(prev.hp, maxHp) }))
-    const enemyMaxHp = wave === 1 ? 100 : 100 + (wave - 1) * 20
+
+    const nextWave = wave + 1
+    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    const currentNodeIsGuardian =
+      networkLayers.length > 0 &&
+      networkLayers[currentLayerIndex] &&
+      networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
+    const enemyMaxHp = currentNodeIsGuardian ? baseHp * 2 : baseHp
+
     setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
     setProjectiles([])
     setBattleHistory([])
     setEnemyCustomization(generateRandomCustomization())
     setBattleState("idle")
     setShowRewardSelection(false)
-  }, [wave, playerProgress])
+  }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex])
 
   const resetGame = useCallback(() => {
     setWave(1)
+    setNetworkLayers(initializeRun())
+    setCurrentLayerIndex(0)
+    setCurrentNodeIndex(0)
     const hpBonus = getTotalStatBonus(playerProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
     setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
@@ -407,5 +480,9 @@ export function useGameState(): GameState {
     continueAfterIntro,
     playerProgress,
     updatePlayerProgress,
+    networkLayers,
+    currentLayerIndex,
+    currentNodeIndex,
+    isGuardianBattle,
   }
 }

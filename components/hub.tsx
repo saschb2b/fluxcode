@@ -117,16 +117,18 @@ export function Hub({
                 <div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                     <Target className="w-4 h-4" />
-                    <span>Waves Completed</span>
+                    <span>Nodes Completed</span>
                   </div>
-                  <div className="text-3xl font-bold text-green-400">{playerProgress.totalWavesCompleted}</div>
+                  <div className="text-3xl font-bold text-green-400">{playerProgress.totalNodesCompleted}</div>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                     <Trophy className="w-4 h-4" />
-                    <span>Best Wave</span>
+                    <span>Deepest Reach</span>
                   </div>
-                  <div className="text-3xl font-bold text-yellow-400">{playerProgress.bestWave}</div>
+                  <div className="text-3xl font-bold text-yellow-400">
+                    L{playerProgress.bestLayerReached + 1}-N{playerProgress.bestNodeInBestLayer + 1}
+                  </div>
                 </div>
               </div>
             </Card>
@@ -248,18 +250,20 @@ export function Hub({
                 <div>
                   <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
                     <Target className="w-3 h-3" />
-                    <span>Waves</span>
+                    <span>Nodes</span>
                   </div>
                   <div className="text-lg sm:text-2xl font-bold text-green-400">
-                    {playerProgress.totalWavesCompleted}
+                    {playerProgress.totalNodesCompleted}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
                     <Trophy className="w-3 h-3" />
-                    <span>Record</span>
+                    <span>Best</span>
                   </div>
-                  <div className="text-lg sm:text-2xl font-bold text-yellow-400">{playerProgress.bestWave}</div>
+                  <div className="text-lg sm:text-2xl font-bold text-yellow-400">
+                    L{playerProgress.bestLayerReached + 1}-N{playerProgress.bestNodeInBestLayer + 1}
+                  </div>
                 </div>
               </div>
             </Card>

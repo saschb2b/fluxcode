@@ -28,9 +28,10 @@ export interface PlayerProgress {
   upgrades: Record<string, number> // upgrade id -> level
   unlockedActions: string[]
   unlockedTriggers: string[]
-  totalWavesCompleted: number
+  totalNodesCompleted: number
   totalRuns: number
-  bestWave: number
+  bestLayerReached: number // 0-3 (4 layers total)
+  bestNodeInBestLayer: number // Track how far in that layer
   selectedCharacterId: string | null
 }
 
@@ -809,7 +810,29 @@ export function loadProgress(): PlayerProgress {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
-      return JSON.parse(saved)
+      const parsed = JSON.parse(saved)
+
+      // If old format exists (totalWavesCompleted, bestWave), migrate it
+      if (parsed.totalWavesCompleted !== undefined && parsed.bestLayerReached === undefined) {
+        // Estimate layer/node from old wave count (assuming ~7 nodes per layer)
+        const bestWave = parsed.bestWave || 0
+        parsed.bestLayerReached = Math.min(Math.floor(bestWave / 7), 3) // Max 4 layers (0-3)
+        parsed.bestNodeInBestLayer = bestWave % 7
+        parsed.totalNodesCompleted = parsed.totalWavesCompleted || 0
+
+        // Remove old properties
+        delete parsed.totalWavesCompleted
+        delete parsed.bestWave
+
+        // Save migrated data
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed))
+      }
+
+      // Ensure all required properties exist with defaults
+      return {
+        ...getDefaultProgress(),
+        ...parsed,
+      }
     }
   } catch (e) {
     console.error("Failed to load progress:", e)
@@ -834,18 +857,19 @@ export function getDefaultProgress(): PlayerProgress {
     upgrades: {},
     unlockedActions: [],
     unlockedTriggers: [],
-    totalWavesCompleted: 0,
+    totalNodesCompleted: 0,
     totalRuns: 0,
-    bestWave: 0,
+    bestLayerReached: 0,
+    bestNodeInBestLayer: 0,
     selectedCharacterId: null,
   }
 }
 
-export function calculateCurrencyReward(wavesCompleted: number): number {
-  // Base reward: 10 currency per wave
-  // Bonus for reaching milestones
-  const baseReward = wavesCompleted * 10
-  const milestoneBonus = Math.floor(wavesCompleted / 5) * 25
+export function calculateCurrencyReward(nodesCompleted: number): number {
+  // Base reward: 10 currency per node
+  // Bonus for reaching milestones (every 5 nodes)
+  const baseReward = nodesCompleted * 10
+  const milestoneBonus = Math.floor(nodesCompleted / 5) * 25
   return baseReward + milestoneBonus
 }
 
