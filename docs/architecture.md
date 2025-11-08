@@ -6,54 +6,54 @@ This document provides a high-level overview of Battle Protocol's system archite
 
 Battle Protocol uses a layered architecture with clear separation between game logic, rendering, and UI:
 
-\`\`\`mermaid
+```mermaid
 graph TB
     subgraph "Presentation Layer"
         UI[Game UI Components]
         Arena[3D Battle Arena]
         HUD[HUD Overlay]
     end
-    
+
     subgraph "State Management Layer"
         GameState[Game State Hook]
         WaveManager[Wave Manager]
         DDAEngine[DDA Engine]
         BattleManager[Battle Manager]
     end
-    
+
     subgraph "Game Logic Layer"
         BattleEngine[Battle Engine]
         AIExecutor[AI Executor]
         Physics[Physics System]
         Collision[Collision Detection]
     end
-    
+
     subgraph "Data Layer"
         Triggers[Trigger Definitions]
         Actions[Action Definitions]
         Characters[Character Presets]
     end
-    
+
     UI --> GameState
     Arena --> GameState
     HUD --> GameState
-    
+
     GameState --> WaveManager
     GameState --> DDAEngine
     GameState --> BattleManager
-    
+
     WaveManager --> BattleEngine
     DDAEngine --> BattleEngine
     BattleManager --> BattleEngine
-    
+
     BattleEngine --> AIExecutor
     BattleEngine --> Physics
     BattleEngine --> Collision
-    
+
     AIExecutor --> Triggers
     AIExecutor --> Actions
     BattleManager --> Characters
-\`\`\`
+```
 
 ## Core Systems
 
@@ -91,13 +91,13 @@ Tracks player performance and adjusts difficulty:
 
 ### Battle Start Sequence
 
-\`\`\`mermaid
+```mermaid
 sequenceDiagram
     participant Player
     participant GameUI
     participant GameState
     participant BattleEngine
-    
+
     Player->>GameUI: Click "Start Battle"
     GameUI->>GameState: startBattle()
     GameState->>GameState: Calculate Enemy HP
@@ -106,17 +106,17 @@ sequenceDiagram
     BattleEngine->>GameState: Return engine instance
     GameState->>GameUI: Update state to "fighting"
     GameUI->>Player: Show battle arena
-\`\`\`
+```
 
 ### Wave Progression Sequence
 
-\`\`\`mermaid
+```mermaid
 sequenceDiagram
     participant Player
     participant GameUI
     participant GameState
     participant DDA
-    
+
     Player->>GameUI: Defeat Enemy
     GameUI->>GameState: Enemy HP reaches 0
     GameState->>DDA: Record performance metrics
@@ -129,11 +129,11 @@ sequenceDiagram
     GameState->>GameUI: Show enemy intro
     Player->>GameUI: Begin battle
     GameUI->>GameState: Start new battle
-\`\`\`
+```
 
 ## Component Hierarchy
 
-\`\`\`
+```
 App (page.tsx)
 ├── Start Screen
 ├── Character Selection
@@ -154,13 +154,13 @@ App (page.tsx)
     ├── Victory/Defeat Screen
     ├── Reward Selection
     └── Codex
-\`\`\`
+```
 
 ## State Machine
 
 The game follows a clear state machine pattern:
 
-\`\`\`mermaid
+```mermaid
 stateDiagram-v2
     [*] --> Start
     Start --> CharacterSelection
@@ -175,7 +175,7 @@ stateDiagram-v2
     GameOver --> CharacterSelection: Restart
     Programming --> Codex: View abilities
     Codex --> Programming: Close codex
-\`\`\`
+```
 
 ## Performance Considerations
 
@@ -186,7 +186,7 @@ stateDiagram-v2
 
 ## File Organization
 
-\`\`\`
+```
 battle-protocol/
 ├── app/                    # Next.js app router
 ├── components/             # React components
@@ -202,3 +202,4 @@ battle-protocol/
 │   └── character-presets.ts
 ├── types/                 # TypeScript definitions
 └── docs/                  # Documentation
+```
