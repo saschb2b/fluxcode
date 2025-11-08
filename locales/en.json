@@ -1,0 +1,163 @@
+{
+  "common": {
+    "back": "BACK",
+    "close": "CLOSE",
+    "confirm": "CONFIRM",
+    "cancel": "CANCEL",
+    "gotIt": "GOT IT",
+    "startGame": "START GAME",
+    "howToPlay": "HOW TO PLAY",
+    "version": "v1.0.0 • ALPHA BUILD",
+    "inspiration": "Inspired by Megaman Battle Network"
+  },
+  "startScreen": {
+    "title": "BATTLE",
+    "subtitle": "PROTOCOL",
+    "tagline": "Program • Fight • Evolve"
+  },
+  "howToPlay": {
+    "title": "HOW TO PLAY",
+    "objective": {
+      "title": "OBJECTIVE",
+      "description": "Program your fighter with IF-THEN rules (Battle Protocols) to defeat waves of enemies. Each victory unlocks new triggers and actions to build more powerful strategies."
+    },
+    "protocols": {
+      "title": "BATTLE PROTOCOLS",
+      "description": "Click PROGRAM to create IF-THEN rules:",
+      "ifTrigger": "IF (Trigger) - Condition to check (e.g., \"Same Row as Enemy\")",
+      "thenAction": "THEN (Action) - What to do (e.g., \"Shoot\")",
+      "priority": "Higher priority protocols execute first",
+      "reorder": "Use ↑↓ arrows to reorder priorities"
+    },
+    "combat": {
+      "title": "COMBAT",
+      "description": "Fighters execute on a 6×3 grid (3×3 per side):",
+      "blueSide": "Blue side = Your fighter",
+      "redSide": "Red side = Enemy fighter",
+      "noCross": "Fighters can't cross to enemy territory",
+      "battleEnds": "Battle ends when one fighter reaches 0 HP"
+    },
+    "progression": {
+      "title": "PROGRESSION",
+      "description": "Win battles to unlock new triggers and actions. Lose and you restart from scratch. Build the ultimate AI to survive as long as possible!"
+    }
+  },
+  "hub": {
+    "title": "HUB",
+    "subtitle": "Prepare for battle",
+    "fighterClass": "Fighter Class",
+    "changeFighter": "Change Fighter",
+    "selectFighter": "Select Fighter",
+    "noFighterSelected": "NO FIGHTER SELECTED",
+    "operations": "OPERATIONS",
+    "careerStats": "CAREER STATS",
+    "totalRuns": "Total Runs",
+    "runs": "RUNS",
+    "nodesCompleted": "Nodes Completed",
+    "nodes": "NODES",
+    "deepestReach": "Deepest Reach",
+    "best": "BEST",
+    "cipherFragments": "Cipher Fragments",
+    "cipherFragmentsShort": "CF",
+    "configureLoadout": "Configure Loadout",
+    "protocolVault": "Protocol Vault",
+    "dataArchive": "Data Archive",
+    "initiateBreach": "INITIATE BREACH",
+    "breach": {
+      "title": "BREACH",
+      "connecting": "> CONNECTING TO NETWORK...",
+      "bypassing": "> BYPASSING FIREWALL...",
+      "accessGranted": "> ACCESS GRANTED",
+      "initiated": "BREACH INITIATED"
+    }
+  },
+  "metaShop": {
+    "title": "PROTOCOL VAULT",
+    "affordable": "Affordable",
+    "showAll": "Show All",
+    "owned": "Owned",
+    "install": "INSTALL",
+    "installed": "INSTALLED",
+    "cost": "CF",
+    "level": "Lv",
+    "tabs": {
+      "stats": "Stats",
+      "actions": "Actions",
+      "triggers": "Triggers",
+      "upgrades": "Upgrades"
+    },
+    "empty": {
+      "statsAffordable": "No affordable stat upgrades. Complete more runs to earn Cipher Fragments!",
+      "statsPurchased": "You haven't purchased any stat upgrades yet.",
+      "statsAll": "No stat upgrades available.",
+      "actionsAffordable": "No affordable action unlocks. Keep playing to earn more Cipher Fragments!",
+      "actionsPurchased": "You haven't unlocked any actions yet.",
+      "actionsAll": "No action unlocks available.",
+      "triggersAffordable": "No affordable trigger unlocks right now.",
+      "triggersPurchased": "You haven't unlocked any triggers yet.",
+      "triggersAll": "No trigger unlocks available.",
+      "upgradesAffordable": "No affordable action upgrades available.",
+      "upgradesPurchased": "You haven't upgraded any actions yet.",
+      "upgradesAll": "No action upgrades available."
+    },
+    "descriptions": {
+      "statsHint": "Permanent stat boosts that apply to all runs. Affordable items shown first.",
+      "actionsHint": "Unlock new actions to use in your protocols. Affordable items shown first.",
+      "triggersHint": "Unlock new triggers for your protocols. Affordable items shown first.",
+      "upgradesHint": "Enhance specific actions to make them more powerful. Affordable items shown first."
+    },
+    "footer": "Earn CF from defeated nodes • Protocol upgrades are permanent",
+    "installing": {
+      "title": "INSTALLING PROTOCOL UPGRADE",
+      "integrated": "PROTOCOL INTEGRATED"
+    }
+  },
+  "gameUI": {
+    "wave": "Wave",
+    "victory": "VICTORY",
+    "defeat": "DEFEAT",
+    "newRun": "New Run",
+    "continueRun": "Continue Run",
+    "shop": "Shop",
+    "earnedFragments": "Earned"
+  },
+  "characterSelection": {
+    "title": "SELECT FIGHTER",
+    "select": "SELECT"
+  },
+  "fighterCustomization": {
+    "title": "FIGHTER CUSTOMIZATION",
+    "tabs": {
+      "chassis": "CHASSIS",
+      "head": "HEAD",
+      "body": "BODY",
+      "modules": "MODULES",
+      "weapon": "WEAPON",
+      "array": "ARRAY",
+      "paint": "PAINT"
+    }
+  },
+  "codex": {
+    "title": "DATA ARCHIVE",
+    "tabs": {
+      "triggers": "TRIGGERS",
+      "actions": "ACTIONS"
+    },
+    "conditionTrigger": "Condition Trigger",
+    "battleAction": "Battle Action",
+    "selectPrompt": "Select a {type} to view details",
+    "cooldown": "Cooldown"
+  },
+  "enemyIntroduction": {
+    "layerGuardian": "Layer Guardian",
+    "battleNode": "battle Node",
+    "upgradeNode": "upgrade Node",
+    "newChallenger": "New Challenger"
+  },
+  "battleStats": {
+    "timeLabel": "Time (s)",
+    "hpLabel": "HP",
+    "yourHP": "Your HP",
+    "enemyHP": "Enemy HP"
+  }
+}
