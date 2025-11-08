@@ -10,9 +10,10 @@ import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import { LayerProgressWidget } from "@/components/layer-progress-widget"
 import { NetworkMap } from "@/components/network-map"
+import { RunSummaryStats } from "@/components/run-summary-stats"
 import type { GameState } from "@/types/game"
-import { Code, Coins, TrendingUp } from "lucide-react"
-import { calculateCurrencyReward } from "@/lib/meta-progression"
+import { Coins, TrendingUp, LogOut, Sparkles, Code } from "lucide-react"
+import { calculateCipherFragmentReward } from "@/lib/meta-progression"
 
 interface GameUIProps {
   gameState: GameState
@@ -25,7 +26,15 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
   const [isCodexOpen, setIsCodexOpen] = useState(false)
   const [isNetworkMapOpen, setIsNetworkMapOpen] = useState(false)
 
-  const currencyEarned = gameState.battleState === "defeat" ? calculateCurrencyReward(gameState.wave - 1) : 0
+  const totalNodesCompleted = gameState.currentLayerIndex * 7 + gameState.currentNodeIndex
+  const fragmentsEarned = gameState.battleState === "defeat" ? calculateCipherFragmentReward(totalNodesCompleted) : 0
+
+  console.log(
+    "[v0] GameUI render - battleState:",
+    gameState.battleState,
+    "justEarnedReward:",
+    gameState.justEarnedReward,
+  )
 
   return (
     <>
@@ -43,15 +52,30 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
         {/* Battle Controls */}
         {gameState.battleState === "idle" && (
           <div className="absolute bottom-4 sm:bottom-8 left-0 right-0 flex flex-col items-center gap-3 pointer-events-auto px-4">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-card/90 backdrop-blur h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-bold shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
-              onClick={() => setIsProgrammingOpen(true)}
-            >
-              <Code className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
-              ADJUST PROTOCOLS
-            </Button>
+            {gameState.justEarnedReward && (
+              <div className="mb-2 p-3 rounded-lg border-2 border-green-500/50 bg-green-500/10 shadow-lg shadow-green-500/20 animate-pulse max-w-xs w-full">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-bold text-green-400 uppercase tracking-wider">Protocol Acquired</span>
+                </div>
+                <p className="text-xs text-green-300">
+                  <span className="font-mono font-bold">{gameState.justEarnedReward.name}</span> is now available!
+                </p>
+              </div>
+            )}
+
+            {gameState.justEarnedReward && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full max-w-xs text-base font-bold px-6 py-5 border-2 border-green-500 text-green-400 hover:bg-green-500/20 hover:text-green-300 bg-transparent shadow-lg shadow-green-500/20 animate-pulse active:scale-95"
+                onClick={() => setIsProgrammingOpen(true)}
+              >
+                <Code className="w-5 h-5 mr-2" />
+                CONFIGURE NEW PROTOCOL
+              </Button>
+            )}
+
             <Button
               size="lg"
               className="text-base sm:text-lg font-bold px-6 sm:px-8 py-5 sm:py-6 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
@@ -63,63 +87,89 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
           </div>
         )}
 
-        {/* Victory/Defeat Screen */}
         {(gameState.battleState === "victory" || gameState.battleState === "defeat") &&
           !gameState.showRewardSelection && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur pointer-events-auto p-4">
               <Card className="p-6 sm:p-8 bg-card border-4 border-primary max-w-md w-full">
                 <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3 sm:mb-4">
                   {gameState.battleState === "victory" ? (
-                    <span className="text-primary">VICTORY!</span>
+                    <span className="text-primary">BREACH SUCCESSFUL</span>
                   ) : (
-                    <span className="text-destructive">DEFEAT</span>
+                    <span className="text-yellow-400">DATA EXTRACTED</span>
                   )}
                 </h2>
 
-                {gameState.battleState === "defeat" && currencyEarned > 0 && (
+                {fragmentsEarned > 0 && (
                   <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
                     <div className="flex items-center justify-center gap-2 text-yellow-400">
                       <Coins className="w-5 h-5" />
-                      <span className="font-bold text-lg">+{currencyEarned} Currency Earned</span>
+                      <span className="font-bold text-lg">+{fragmentsEarned} Cipher Fragments</span>
                     </div>
                     <p className="text-center text-xs text-yellow-400/80 mt-1">
-                      Completed {gameState.wave - 1} wave{gameState.wave - 1 !== 1 ? "s" : ""}
+                      Secured from {totalNodesCompleted} nodes
                     </p>
                   </div>
                 )}
 
-                <p className="text-center text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
-                  {gameState.battleState === "victory"
-                    ? "You earned a new trigger or action!"
-                    : "Your run is over. Try again!"}
-                </p>
-
-                {gameState.battleHistory && gameState.battleHistory.length > 0 && (
-                  <div className="mb-4 sm:mb-6">
-                    <BattleStatsChart history={gameState.battleHistory} />
-                  </div>
+                {gameState.battleState === "victory" && (
+                  <p className="text-center text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
+                    New protocol available. Continue deeper or extract now.
+                  </p>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  {gameState.battleState === "defeat" && gameState.playerProgress.totalRuns > 1 && (
-                    <Button
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white h-12 active:scale-95"
-                      onClick={onOpenMetaShop}
-                    >
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Upgrades
-                    </Button>
+                <div className="mb-4 sm:mb-6">
+                  {gameState.battleState === "defeat" ? (
+                    <RunSummaryStats
+                      wavesCompleted={gameState.wave - 1}
+                      layerReached={gameState.currentLayerIndex}
+                      nodeReached={gameState.currentNodeIndex}
+                      totalNodes={totalNodesCompleted}
+                    />
+                  ) : (
+                    gameState.battleHistory &&
+                    gameState.battleHistory.length > 0 && <BattleStatsChart history={gameState.battleHistory} />
                   )}
-                  <Button className="flex-1 bg-transparent h-12 active:scale-95" variant="outline" onClick={onNewRun}>
-                    New Run
-                  </Button>
-                  {gameState.battleState === "victory" && (
-                    <Button
-                      className="flex-1 bg-primary hover:bg-primary/80 h-12 active:scale-95"
-                      onClick={gameState.nextWave}
-                    >
-                      Next Wave
-                    </Button>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {gameState.battleState === "victory" ? (
+                    <>
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/80 h-12 text-base font-bold active:scale-95"
+                        onClick={gameState.nextWave}
+                      >
+                        Continue Breach
+                      </Button>
+                      {gameState.wave > 1 && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-12 text-base font-bold border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500/10 active:scale-95 bg-transparent"
+                          onClick={gameState.extractFromBreach}
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Extract ({calculateCipherFragmentReward(totalNodesCompleted)} CF)
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/80 h-12 text-base font-bold active:scale-95"
+                        onClick={onNewRun}
+                      >
+                        Return to Hub
+                      </Button>
+                      {gameState.playerProgress.totalRuns > 1 && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-12 text-base font-bold border-2 border-purple-500 text-purple-500 hover:bg-purple-500/10 active:scale-95 bg-transparent"
+                          onClick={onOpenMetaShop}
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Protocol Vault
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </Card>

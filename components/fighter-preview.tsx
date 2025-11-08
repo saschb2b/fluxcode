@@ -57,13 +57,28 @@ export function FighterPreview({ customization, autoRotate = false }: FighterPre
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       <group ref={meshRef}>
-        {/* Body */}
-        {customization.body && <PartMesh part={customization.body} color={primaryColor} />}
-
-        {/* Head */}
+        {/* Core (Head - AI Processor) */}
         {customization.head && <PartMesh part={customization.head} color={primaryColor} />}
 
-        {/* Left Arm */}
+        {/* Chassis (Body Structure) */}
+        {customization.body && <PartMesh part={customization.body} color={primaryColor} />}
+
+        {/* Hull (Outer Armor) - rendered slightly larger than chassis */}
+        {customization.chassis && (
+          <PartMesh
+            part={{
+              ...customization.chassis,
+              scale: [
+                customization.chassis.scale[0] * 1.08,
+                customization.chassis.scale[1] * 1.05,
+                customization.chassis.scale[2] * 1.08,
+              ] as [number, number, number],
+            }}
+            color={secondaryColor}
+          />
+        )}
+
+        {/* Modules (Left Arm - System Modules) */}
         {customization.leftArm && (
           <PartMesh
             part={{
@@ -74,7 +89,7 @@ export function FighterPreview({ customization, autoRotate = false }: FighterPre
           />
         )}
 
-        {/* Right Arm */}
+        {/* Weapon (Right Arm - Weapon Systems) */}
         {customization.rightArm && (
           <PartMesh
             part={{
@@ -85,7 +100,7 @@ export function FighterPreview({ customization, autoRotate = false }: FighterPre
           />
         )}
 
-        {/* Accessory */}
+        {/* Array (Accessory - Sensor Array) */}
         {customization.accessory && customization.accessory.id !== "none" && (
           <PartMesh part={customization.accessory} color={secondaryColor} />
         )}

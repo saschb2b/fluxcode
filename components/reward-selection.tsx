@@ -3,7 +3,8 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { Trigger, Action } from "@/types/game"
-import { Sparkles, RefreshCw } from "lucide-react"
+import { Sparkles, RefreshCw, Zap } from "lucide-react"
+import { useState } from "react"
 
 interface RewardSelectionProps {
   availableTriggers: Trigger[]
@@ -24,7 +25,21 @@ export function RewardSelection({
   rerollsRemaining,
   onReroll,
 }: RewardSelectionProps) {
+  const [isIntegrating, setIsIntegrating] = useState(false)
+  const [selectedReward, setSelectedReward] = useState<string>("")
+
   if (!isOpen) return null
+
+  const handleRewardSelection = (callback: () => void, rewardName: string) => {
+    setSelectedReward(rewardName)
+    setIsIntegrating(true)
+
+    setTimeout(() => {
+      callback()
+      setIsIntegrating(false)
+      setSelectedReward("")
+    }, 2000)
+  }
 
   const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
     ...availableTriggers.map((t) => ({ type: "trigger" as const, item: t })),
@@ -33,7 +48,47 @@ export function RewardSelection({
 
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <Card className="w-full max-w-3xl border-2 sm:border-4 border-primary p-4 sm:p-8 my-auto">
+      <Card className="w-full max-w-3xl border-2 sm:border-4 border-primary p-4 sm:p-8 my-auto relative">
+        {isIntegrating && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/90 backdrop-blur-md rounded-lg">
+            <div className="text-center space-y-4">
+              {/* Spinning hexagon rings */}
+              <div className="relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-lg animate-spin-slow" />
+                <div className="absolute inset-2 border-4 border-primary/50 rounded-lg animate-spin-reverse" />
+                <div className="absolute inset-4 border-4 border-magenta-500/30 rounded-lg animate-spin-slow" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Zap className="w-10 h-10 text-primary animate-pulse" />
+                </div>
+              </div>
+
+              {/* Status text */}
+              <div className="space-y-2">
+                <div className="text-lg sm:text-xl font-bold text-primary font-mono tracking-wider animate-pulse-glow">
+                  INTEGRATING
+                </div>
+                <div className="text-xs sm:text-sm text-cyan-400 font-mono truncate max-w-[250px]">
+                  {selectedReward}
+                </div>
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground font-mono">
+                  <span className="animate-typing-1">.</span>
+                  <span className="animate-typing-2">.</span>
+                  <span className="animate-typing-3">.</span>
+                </div>
+              </div>
+
+              {/* Binary code scroll effect - smaller area */}
+              <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none rounded-lg">
+                <div className="absolute inset-0 animate-binary-scroll font-mono text-xs text-green-400 leading-tight">
+                  {Array.from({ length: 30 }, (_, i) => (
+                    <div key={i}>{Math.random().toString(2).substring(2, 40)}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-4 sm:mb-6">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-4">
             <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -63,9 +118,9 @@ export function RewardSelection({
                   }`}
                   onClick={() => {
                     if (isTrigger) {
-                      onSelectTrigger(item as Trigger)
+                      handleRewardSelection(() => onSelectTrigger(item as Trigger), item.name)
                     } else {
-                      onSelectAction(item as Action)
+                      handleRewardSelection(() => onSelectAction(item as Action), item.name)
                     }
                   }}
                 >

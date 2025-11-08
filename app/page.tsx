@@ -136,6 +136,7 @@ export default function Home() {
             onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
+            bgmAudioRef={audioRef}
           />
         </main>
       )}

@@ -17,7 +17,7 @@ import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
 import { generateRandomCustomization } from "@/lib/fighter-parts"
-import { loadProgress, saveProgress, calculateCurrencyReward, getTotalStatBonus } from "@/lib/meta-progression"
+import { loadProgress, saveProgress, getTotalStatBonus, calculateCurrencyReward } from "@/lib/meta-progression"
 import { initializeRun, type NetworkLayer } from "@/lib/network-layers"
 
 export function useGameState(): GameState {
@@ -47,8 +47,8 @@ export function useGameState(): GameState {
 
   const [enemy, setEnemy] = useState({
     position: { x: 4, y: 1 } as Position,
-    hp: 100,
-    maxHp: 100,
+    hp: 40,
+    maxHp: 40,
     shields: 0,
     maxShields: 0,
     armor: 0,
@@ -77,6 +77,21 @@ export function useGameState(): GameState {
 
   const [rerollsRemaining, setRerollsRemaining] = useState(3)
 
+  const [performanceHistory, setPerformanceHistory] = useState<{
+    recentVictories: number[]
+    avgTimeToWin: number
+    avgHealthRemaining: number
+  }>({
+    recentVictories: [],
+    avgTimeToWin: 30,
+    avgHealthRemaining: 60,
+  })
+
+  const [justEarnedReward, setJustEarnedReward] = useState<{
+    type: "trigger" | "action"
+    name: string
+  } | null>(null)
+
   useEffect(() => {
     if (battleState !== "fighting" || !battleEngineRef.current) {
       return
@@ -101,43 +116,51 @@ export function useGameState(): GameState {
       if (update.battleOver) {
         if (update.battleHistory) {
           setBattleHistory(update.battleHistory)
-        }
 
-        if (!update.playerWon) {
-          // Count total nodes completed in this run
-          let nodesCompleted = 0
-          for (let i = 0; i <= currentLayerIndex; i++) {
-            const layer = networkLayers[i]
-            if (!layer) continue
+          if (update.playerWon) {
+            const battleDuration = update.battleHistory[update.battleHistory.length - 1]?.time || 30
+            const healthRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerHP || 0
 
-            if (i < currentLayerIndex) {
-              // All nodes in previous layers
-              nodesCompleted += layer.nodes.length
-            } else {
-              // Nodes up to current in current layer
-              nodesCompleted += currentNodeIndex
-            }
-          }
+            setPerformanceHistory((prev) => {
+              const recentWins = [...prev.recentVictories, 1].slice(-5)
+              const avgTime = prev.avgTimeToWin * 0.7 + battleDuration * 0.3
+              const avgHealth = prev.avgHealthRemaining * 0.7 + healthRemaining * 0.3
 
-          const currencyEarned = calculateCurrencyReward(nodesCompleted)
-          const newProgress = {
-            ...playerProgress,
-            currency: playerProgress.currency + currencyEarned,
-            totalNodesCompleted: playerProgress.totalNodesCompleted + nodesCompleted,
-            totalRuns: playerProgress.totalRuns + 1,
-            bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
-            bestNodeInBestLayer:
-              currentLayerIndex === playerProgress.bestLayerReached
-                ? Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex)
-                : currentLayerIndex > playerProgress.bestLayerReached
+              return {
+                recentVictories: recentWins,
+                avgTimeToWin: avgTime,
+                avgHealthRemaining: avgHealth,
+              }
+            })
+          } else {
+            const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
+            const currencyEarned = calculateCurrencyReward(currentTotalNodes)
+
+            console.log("[v0] Player defeated at layer", currentLayerIndex, "node", currentNodeIndex)
+            console.log("[v0] Total nodes completed:", currentTotalNodes)
+            console.log("[v0] Currency earned:", currencyEarned)
+
+            const newProgress: PlayerProgress = {
+              ...playerProgress,
+              cipherFragments: playerProgress.cipherFragments + currencyEarned,
+              totalNodesCompleted: playerProgress.totalNodesCompleted + currentTotalNodes,
+              totalRuns: playerProgress.totalRuns + 1,
+              bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
+              bestNodeInBestLayer:
+                currentLayerIndex > playerProgress.bestLayerReached
                   ? currentNodeIndex
-                  : playerProgress.bestNodeInBestLayer,
+                  : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
+            }
+
+            console.log("[v0] New cipher fragments total:", newProgress.cipherFragments)
+            setPlayerProgress(newProgress)
+            saveProgress(newProgress)
+
+            setPerformanceHistory((prev) => ({
+              ...prev,
+              recentVictories: [...prev.recentVictories, 0].slice(-5),
+            }))
           }
-          setPlayerProgress(newProgress)
-          saveProgress(newProgress)
-          console.log(
-            `[v0] Run ended. Completed ${nodesCompleted} nodes. Earned ${currencyEarned} currency. Total: ${newProgress.currency}`,
-          )
         }
 
         setBattleState(update.playerWon ? "victory" : "defeat")
@@ -158,6 +181,7 @@ export function useGameState(): GameState {
 
   const startBattle = useCallback(() => {
     console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
+    setJustEarnedReward(null)
 
     const enemyPairs: TriggerActionPair[] = [
       {
@@ -252,7 +276,6 @@ export function useGameState(): GameState {
       ...allActions.map((a) => ({ type: "action" as const, item: a })),
     ]
 
-    // Shuffle and take 3
     const shuffled = allRewards.sort(() => Math.random() - 0.5)
     const selected = shuffled.slice(0, Math.min(3, shuffled.length))
 
@@ -262,50 +285,74 @@ export function useGameState(): GameState {
     return { triggers, actions }
   }, [])
 
-  const nextWave = useCallback(() => {
-    const allTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.includes(t))
-    const allActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.includes(a))
+  const calculateDifficultyMultiplier = useCallback(
+    (waveNumber: number) => {
+      const { recentVictories, avgTimeToWin, avgHealthRemaining } = performanceHistory
 
-    if (allTriggers.length > 0 || allActions.length > 0) {
-      const { triggers, actions } = getRandomRewards(allTriggers, allActions)
-      setAvailableRewardTriggers(triggers)
-      setAvailableRewardActions(actions)
-      setShowRewardSelection(true)
-    } else {
-      prepareNextWave()
-    }
-  }, [unlockedTriggers, unlockedActions, getRandomRewards])
+      const winRate =
+        recentVictories.length > 0 ? recentVictories.reduce((a, b) => a + b, 0) / recentVictories.length : 0.5
 
-  const rerollRewards = useCallback(() => {
-    if (rerollsRemaining <= 0) return
+      let multiplier = 1.0
 
-    const allTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.includes(t))
-    const allActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.includes(a))
+      // Gradually introduce DDA rather than full impact
+      if (waveNumber === 4) {
+        multiplier = 1.0 // No DDA on wave 4 (difficulty saw pattern)
+      } else if (waveNumber === 5) {
+        // Only 50% of normal DDA adjustment
+        if (winRate > 0.8) {
+          multiplier += 0.15 // Half of normal +0.3
+        } else if (winRate > 0.6) {
+          multiplier += 0.075 // Half of normal +0.15
+        } else if (winRate < 0.3) {
+          multiplier -= 0.1 // Half of normal -0.2
+        } else if (winRate < 0.5) {
+          multiplier -= 0.05 // Half of normal -0.1
+        }
+      } else {
+        // Full DDA from wave 6 onwards
+        if (winRate > 0.8) {
+          multiplier += 0.3
+        } else if (winRate > 0.6) {
+          multiplier += 0.15
+        } else if (winRate < 0.3) {
+          multiplier -= 0.2
+        } else if (winRate < 0.5) {
+          multiplier -= 0.1
+        }
 
-    const { triggers, actions } = getRandomRewards(allTriggers, allActions)
-    setAvailableRewardTriggers(triggers)
-    setAvailableRewardActions(actions)
-    setRerollsRemaining((prev) => prev - 1)
-  }, [rerollsRemaining, unlockedTriggers, unlockedActions, getRandomRewards])
+        if (avgTimeToWin < 20 && winRate > 0.5) {
+          multiplier += 0.15
+        } else if (avgTimeToWin > 60) {
+          multiplier -= 0.1
+        }
+
+        if (avgHealthRemaining > 70 && winRate > 0.5) {
+          multiplier += 0.1
+        } else if (avgHealthRemaining < 30) {
+          multiplier -= 0.05
+        }
+      }
+
+      return Math.max(0.6, Math.min(1.5, multiplier))
+    },
+    [performanceHistory],
+  )
 
   const prepareNextWave = useCallback(() => {
     if (networkLayers.length > 0) {
       const updatedLayers = [...networkLayers]
       const currentLayer = updatedLayers[currentLayerIndex]
 
-      // Mark current node as completed
       if (currentLayer.nodes[currentNodeIndex]) {
         currentLayer.nodes[currentNodeIndex].completed = true
         currentLayer.nodes[currentNodeIndex].current = false
       }
 
-      // Move to next node or layer
       if (currentNodeIndex + 1 < currentLayer.nodes.length) {
         const nextNodeIndex = currentNodeIndex + 1
         currentLayer.nodes[nextNodeIndex].current = true
         setCurrentNodeIndex(nextNodeIndex)
       } else {
-        // Layer completed, move to next layer
         currentLayer.completed = true
         if (currentLayerIndex + 1 < updatedLayers.length) {
           setCurrentLayerIndex(currentLayerIndex + 1)
@@ -317,9 +364,34 @@ export function useGameState(): GameState {
       setNetworkLayers(updatedLayers)
     }
 
-    setWave((w) => w + 1)
     const nextWave = wave + 1
-    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 10
+    setWave(nextWave)
+
+    let baseHp: number
+
+    if (nextWave <= 3) {
+      baseHp = 30 + nextWave * 10 // 40, 50, 60
+    } else if (nextWave <= 6) {
+      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+    } else if (nextWave <= 15) {
+      baseHp = 40 + nextWave * 10
+    } else {
+      baseHp = 100 + Math.pow(nextWave - 15, 1.3) * 20
+    }
+
+    const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
+    baseHp = Math.floor(baseHp * difficultyMultiplier)
+
+    console.log("[v0] Preparing wave", nextWave)
+    console.log(
+      "[v0] Base HP calculation - raw:",
+      40 + nextWave * 10,
+      "multiplier:",
+      difficultyMultiplier.toFixed(2),
+      "final:",
+      baseHp,
+    )
+
     const nextNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
@@ -328,21 +400,19 @@ export function useGameState(): GameState {
         : false)
     const enemyMaxHp = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    const currentLayerData = networkLayers[currentLayerIndex]
     let shields = 0
     let armor = 0
     let resistances: Partial<Record<DamageType, number>> = {}
 
+    const currentLayerData = networkLayers[currentLayerIndex]
     if (currentLayerData) {
       switch (currentLayerData.id) {
         case "data-stream":
-          // Layer 1: Basic HP only - no shields, no armor, no resistances (tutorial layer)
           shields = 0
           armor = 0
           resistances = {}
           break
         case "firewall":
-          // Layer 2: Introduce ARMOR and basic resistances
           armor = Math.floor(enemyMaxHp * 0.25)
           resistances = {
             kinetic: 0.3,
@@ -350,7 +420,6 @@ export function useGameState(): GameState {
           }
           break
         case "archive":
-          // Layer 3: Introduce SHIELDS (enemies have shields but no armor)
           shields = Math.floor(enemyMaxHp * 0.3)
           armor = 0
           resistances = {
@@ -359,7 +428,6 @@ export function useGameState(): GameState {
           }
           break
         case "core-approach":
-          // Layer 4: Full complexity - both shields AND armor with full resistances
           shields = Math.floor(enemyMaxHp * 0.25)
           armor = Math.floor(enemyMaxHp * 0.2)
           resistances = {
@@ -370,7 +438,6 @@ export function useGameState(): GameState {
           break
       }
 
-      // Guardians get 30% extra defenses
       if (nextNodeIsGuardian) {
         shields = Math.floor(shields * 1.3)
         armor = Math.floor(armor * 1.3)
@@ -390,45 +457,51 @@ export function useGameState(): GameState {
     })
     setEnemyCustomization(generateRandomCustomization())
     setShowEnemyIntro(true)
-  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex])
+  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
   const continueToNextWave = useCallback(() => {
     setShowEnemyIntro(false)
 
-    setWave((w) => w + 1)
-    const hpBonus = getTotalStatBonus(playerProgress, "hp")
-    const maxHp = baseMaxHp + hpBonus
-
-    setPlayer((prev) => ({
-      ...prev,
-      position: { x: 1, y: 1 },
-      maxHp,
-      hp: maxHp, // Full HP restoration
-    }))
-
     const nextWave = wave + 1
-    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 10
+    setWave(nextWave)
+
+    let baseHp: number
+
+    if (nextWave <= 3) {
+      baseHp = 30 + nextWave * 10 // 40, 50, 60
+    } else if (nextWave <= 6) {
+      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+    } else if (nextWave <= 15) {
+      baseHp = 40 + nextWave * 10
+    } else {
+      baseHp = 100 + Math.pow(nextWave - 15, 1.3) * 20
+    }
+
+    const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
+    baseHp = Math.floor(baseHp * difficultyMultiplier)
+
+    console.log("[v0] Preparing wave", nextWave)
+    console.log("[v0] Wave", nextWave, "baseHp:", baseHp, "multiplier:", difficultyMultiplier.toFixed(2))
+
     const currentNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
       networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
     const enemyMaxHp = currentNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    const currentLayerData = networkLayers[currentLayerIndex]
     let shields = 0
     let armor = 0
     let resistances: Partial<Record<DamageType, number>> = {}
 
+    const currentLayerData = networkLayers[currentLayerIndex]
     if (currentLayerData) {
       switch (currentLayerData.id) {
         case "data-stream":
-          // Layer 1: No defenses
           shields = 0
           armor = 0
           resistances = {}
           break
         case "firewall":
-          // Layer 2: Armor only
           armor = Math.floor(enemyMaxHp * 0.25)
           resistances = {
             kinetic: 0.3,
@@ -436,7 +509,6 @@ export function useGameState(): GameState {
           }
           break
         case "archive":
-          // Layer 3: Shields only
           shields = Math.floor(enemyMaxHp * 0.3)
           armor = 0
           resistances = {
@@ -445,7 +517,6 @@ export function useGameState(): GameState {
           }
           break
         case "core-approach":
-          // Layer 4: Both shields and armor
           shields = Math.floor(enemyMaxHp * 0.25)
           armor = Math.floor(enemyMaxHp * 0.2)
           resistances = {
@@ -462,6 +533,12 @@ export function useGameState(): GameState {
       }
     }
 
+    setPlayer((prev) => ({
+      ...prev,
+      position: { x: 1, y: 1 },
+      hp: prev.maxHp,
+    }))
+
     setEnemy({
       position: { x: 4, y: 1 },
       hp: enemyMaxHp,
@@ -473,12 +550,13 @@ export function useGameState(): GameState {
       resistances,
       statusEffects: [],
     })
+    console.log("[v0] Enemy HP set to:", enemyMaxHp, "shields:", shields, "armor:", armor)
     setProjectiles([])
     setBattleHistory([])
     setEnemyCustomization(generateRandomCustomization())
     setBattleState("idle")
     setShowRewardSelection(false)
-  }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex])
+  }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
   const resetGame = useCallback(() => {
     setWave(1)
@@ -490,8 +568,8 @@ export function useGameState(): GameState {
     setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
     setEnemy({
       position: { x: 4, y: 1 },
-      hp: 100,
-      maxHp: 100,
+      hp: 40,
+      maxHp: 40,
       shields: 0,
       maxShields: 0,
       armor: 0,
@@ -511,6 +589,7 @@ export function useGameState(): GameState {
     setShowRewardSelection(false)
     setShowEnemyIntro(false)
     setRerollsRemaining(3)
+    setJustEarnedReward(null) // Clear the just earned reward notification
   }, [playerProgress])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
@@ -535,6 +614,7 @@ export function useGameState(): GameState {
   const selectRewardTrigger = useCallback(
     (trigger: Trigger) => {
       setUnlockedTriggers((prev) => [...prev, trigger])
+      setJustEarnedReward({ type: "trigger", name: trigger.name })
       setShowRewardSelection(false)
       prepareNextWave()
     },
@@ -544,11 +624,39 @@ export function useGameState(): GameState {
   const selectRewardAction = useCallback(
     (action: Action) => {
       setUnlockedActions((prev) => [...prev, action])
+      setJustEarnedReward({ type: "action", name: action.name })
       setShowRewardSelection(false)
       prepareNextWave()
     },
     [prepareNextWave],
   )
+
+  const nextWave = useCallback(() => {
+    setBattleState("idle")
+    setShowRewardSelection(true)
+
+    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.some((ut) => ut.id === t.id))
+    const availableActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.some((ua) => ua.id === a.id))
+
+    const { triggers, actions } = getRandomRewards(availableTriggers, availableActions)
+    setAvailableRewardTriggers(triggers)
+    setAvailableRewardActions(actions)
+    setRerollsRemaining(3)
+  }, [unlockedTriggers, unlockedActions, getRandomRewards])
+
+  const continueAfterIntro = useCallback(() => {
+    console.log("[v0] Continuing after intro, resetting player")
+    setPlayer((prev) => ({
+      ...prev,
+      position: { x: 1, y: 1 },
+      hp: prev.maxHp,
+    }))
+
+    setProjectiles([])
+    setShowEnemyIntro(false)
+    // It will be cleared when battle starts or when dismissed
+    setBattleState("idle")
+  }, [])
 
   const setCharacter = useCallback(
     (character: CharacterPreset) => {
@@ -575,11 +683,38 @@ export function useGameState(): GameState {
     setPlayerProgress(progress)
     saveProgress(progress)
 
-    // Update player HP if HP bonus changed
     const hpBonus = getTotalStatBonus(progress, "hp")
     const maxHp = baseMaxHp + hpBonus
     setPlayer((prev) => ({ ...prev, maxHp, hp: Math.min(prev.hp, maxHp) }))
   }, [])
+
+  const extractFromBreach = useCallback(() => {
+    const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
+    const currencyEarned = calculateCurrencyReward(currentTotalNodes)
+
+    console.log("[v0] Player extracted at layer", currentLayerIndex, "node", currentNodeIndex)
+    console.log("[v0] Total nodes completed:", currentTotalNodes)
+    console.log("[v0] Currency earned:", currencyEarned)
+
+    const newProgress: PlayerProgress = {
+      ...playerProgress,
+      cipherFragments: playerProgress.cipherFragments + currencyEarned,
+      totalNodesCompleted: playerProgress.totalNodesCompleted + currentTotalNodes,
+      totalRuns: playerProgress.totalRuns + 1,
+      bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
+      bestNodeInBestLayer:
+        currentLayerIndex > playerProgress.bestLayerReached
+          ? currentNodeIndex
+          : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
+    }
+
+    console.log("[v0] New cipher fragments total after extraction:", newProgress.cipherFragments)
+    setPlayerProgress(newProgress)
+    saveProgress(newProgress)
+
+    // Set defeat state to show extraction result
+    setBattleState("defeat")
+  }, [playerProgress, currentLayerIndex, currentNodeIndex])
 
   return {
     battleState,
@@ -591,7 +726,7 @@ export function useGameState(): GameState {
     unlockedTriggers,
     unlockedActions,
     startBattle,
-    nextWave,
+    prepareNextWave,
     resetGame,
     addTriggerActionPair,
     removeTriggerActionPair,
@@ -602,7 +737,9 @@ export function useGameState(): GameState {
     selectRewardTrigger,
     selectRewardAction,
     rerollsRemaining,
-    rerollRewards,
+    continueToNextWave,
+    nextWave,
+    continueAfterIntro,
     setCharacter,
     selectedCharacter,
     fighterCustomization,
@@ -610,12 +747,13 @@ export function useGameState(): GameState {
     enemyCustomization,
     battleHistory,
     showEnemyIntro,
-    continueAfterIntro: continueToNextWave,
     playerProgress,
     updatePlayerProgress,
     networkLayers,
     currentLayerIndex,
     currentNodeIndex,
     isGuardianBattle,
+    extractFromBreach, // Added to return statement
+    justEarnedReward, // Added to return statement
   }
 }

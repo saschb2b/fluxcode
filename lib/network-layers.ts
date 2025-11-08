@@ -119,7 +119,7 @@ export function getNodeRewardDescription(nodeType: NodeType): string {
     case "upgrade":
       return "Upgrade an existing module or gain a temporary buff"
     case "fragment":
-      return "Earn bonus Cipher Fragments (currency)"
+      return "Earn bonus Cipher Fragments" // Updated from "currency" to "Cipher Fragments"
     case "heal":
       return "Restore HP"
     case "special":

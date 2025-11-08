@@ -179,7 +179,8 @@ export class BattleEngine {
 
     switch (action.type) {
       case "shoot":
-        const projectile = this.createProjectile(isPlayer, action.damage || 10)
+        const baseDamage = action.damage || 10
+        const projectile = this.createProjectile(isPlayer, baseDamage)
         this.state.projectiles.push(projectile)
         update.projectiles = [...this.state.projectiles]
         break
@@ -223,12 +224,22 @@ export class BattleEngine {
   }
 
   private createProjectile(isPlayer: boolean, damage: number): Projectile {
+    // Player damage stays the same, but enemy damage scales down early
+    let adjustedDamage = damage
+
+    if (!isPlayer) {
+      // Enemy projectiles: start at 60% damage, scale up to 100% by wave 5
+      // This gives players breathing room to learn
+      const damageScale = Math.min(1.0, 0.6 + (this.battleTime / 60000) * 0.1) // 0.6 to 1.0 over time
+      adjustedDamage = Math.floor(damage * damageScale)
+    }
+
     const pos = isPlayer ? this.state.playerPos : this.state.enemyPos
     return {
       id: `proj-${this.projectileIdCounter++}`,
       position: { ...pos },
       direction: isPlayer ? "right" : "left",
-      damage,
+      damage: adjustedDamage,
     }
   }
 

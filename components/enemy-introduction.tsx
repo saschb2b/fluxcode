@@ -177,13 +177,15 @@ export function EnemyIntroduction({
             </div>
           )}
 
-          <Button
-            size="lg"
-            className="w-full text-base sm:text-lg md:text-xl font-bold py-4 sm:py-5 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95"
-            onClick={onBeginBattle}
-          >
-            FIGHT!
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              className="w-full text-base sm:text-lg md:text-xl font-bold py-4 sm:py-5 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95"
+              onClick={onBeginBattle}
+            >
+              FIGHT!
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

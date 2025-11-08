@@ -162,4 +162,6 @@ export interface GameState {
   currentLayerIndex: number
   currentNodeIndex: number
   isGuardianBattle: boolean
+  extractFromBreach: () => void // Added extract function
+  justEarnedReward: { type: "trigger" | "action"; name: string } | null // Added justEarnedReward to track newly acquired protocols
 }

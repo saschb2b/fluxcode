@@ -18,7 +18,6 @@ interface CustomizableFighterProps {
   maxShields?: number
   armor?: number
   maxArmor?: number
-  // </CHANGE>
 }
 
 function PartMesh({ part, color }: { part: FighterPart; color: string }) {
@@ -47,6 +46,31 @@ function PartMesh({ part, color }: { part: FighterPart; color: string }) {
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
     </mesh>
   )
+}
+
+function getChassisModifier(chassis?: FighterPart): { scale: [number, number, number]; shape: string } {
+  if (!chassis) return { scale: [1, 1, 1], shape: "cube" }
+
+  const chassisId = chassis.id
+
+  // Map chassis types to visual modifications
+  if (chassisId.includes("stealth") || chassisId.includes("ghost") || chassisId.includes("recon")) {
+    return { scale: [0.8, 1.2, 0.4], shape: "cylinder" }
+  }
+  if (chassisId.includes("heavy") || chassisId.includes("fortress")) {
+    return { scale: [1.3, 1.5, 0.8], shape: "cube" }
+  }
+  if (chassisId.includes("assault")) {
+    return { scale: [1.1, 1.3, 0.7], shape: "cube" }
+  }
+  if (chassisId.includes("light") || chassisId.includes("scout")) {
+    return { scale: [0.85, 1, 0.45], shape: "cylinder" }
+  }
+  if (chassisId.includes("support")) {
+    return { scale: [0.95, 1.1, 0.6], shape: "cylinder" }
+  }
+
+  return { scale: [1, 1, 1], shape: "cube" }
 }
 
 export function CustomizableFighter({
@@ -137,11 +161,26 @@ export function CustomizableFighter({
   const shieldPercent = maxShields > 0 ? (shields / maxShields) * 100 : 0
   const armorPercent = maxArmor > 0 ? (armor / maxArmor) * 100 : 0
 
+  const chassisModifier = useMemo(() => getChassisModifier(customization?.chassis), [customization?.chassis])
+
   return (
     <group ref={groupRef}>
       <group ref={meshRef}>
-        {/* Body */}
-        {customization?.body && <PartMesh part={customization.body} color={primaryColor} />}
+        {/* Body - Modified by chassis */}
+        {customization?.body && (
+          <PartMesh
+            part={{
+              ...customization.body,
+              scale: [
+                customization.body.scale[0] * chassisModifier.scale[0],
+                customization.body.scale[1] * chassisModifier.scale[1],
+                customization.body.scale[2] * chassisModifier.scale[2],
+              ] as [number, number, number],
+              shape: chassisModifier.shape as any,
+            }}
+            color={primaryColor}
+          />
+        )}
 
         {/* Head */}
         {customization?.head && <PartMesh part={customization.head} color={primaryColor} />}
@@ -234,7 +273,6 @@ export function CustomizableFighter({
               <span className="text-xs font-mono text-foreground w-8 text-right">{hp}</span>
             </div>
           </div>
-          {/* </CHANGE> */}
         </div>
       </Html>
     </group>

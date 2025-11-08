@@ -208,6 +208,315 @@ Key balance parameters:
 - **Enemy AI** - In `hooks/use-game-state.ts`, modify `startBattle` enemy protocol generation
 - **Wave scaling** - In `hooks/use-game-state.ts`, adjust enemy HP formula in `continueToNextWave`
 
+## 🎓 Enemy Scaling & Dynamic Difficulty Adjustment (DDA)
+
+Battle Protocol implements research-backed difficulty scaling based on Flow Theory and modern DDA best practices.
+
+### Research Foundations
+
+The game's difficulty system is grounded in academic research on player engagement:
+
+1. **Flow Theory (Csikszentmihalyi)** - Players experience optimal engagement when challenge matches skill level
+2. **Difficulty Saw Pattern** - Difficulty should drop slightly when introducing new mechanics, then ramp up
+3. **Engagement-Oriented DDA** - Real-time monitoring and adjustment to prevent player churn
+4. **Performance-Based Scaling** - Difficulty adjusts based on win rate, kill speed, and health retention
+
+### Wave Scaling Formula
+
+Enemy HP scales through distinct phases to maintain flow state:
+
+\`\`\`typescript
+// Tutorial Phase (Waves 1-3): Fixed, predictable difficulty
+Wave 1: 40 HP  (no DDA)
+Wave 2: 50 HP  (no DDA)
+Wave 3: 60 HP  (no DDA)
+
+// Early Game (Waves 4-6): Gentle transition with DDA ramp-up
+Wave 4: 80 HP  (no DDA - "difficulty saw" drop after tutorial)
+Wave 5: 90 HP  (50% DDA - gradual introduction)
+Wave 6+: 100 HP base (full DDA)
+
+// Mid Game (Waves 6-15): Linear scaling
+HP = 40 + wave * 10
+
+// Late Game (Waves 16+): Exponential scaling
+HP = 40 + (15 * 10) + Math.pow(wave - 15, 1.5) * 15
+\`\`\`
+
+### Dynamic Difficulty Adjustment (DDA)
+
+The DDA system monitors three performance metrics:
+
+**1. Win Rate (40% weight)**
+- Tracks last 5 battles
+- Target: 60-80% win rate
+- Adjustments: ±10% per 10% deviation
+
+**2. Kill Speed (30% weight)**
+- Measures time to defeat enemies
+- Target: 20-40 seconds
+- Adjustments: ±8% per 10s deviation
+
+**3. HP Retention (30% weight)**
+- Tracks ending HP percentage
+- Target: 40-70% remaining
+- Adjustments: ±8% per 10% deviation
+
+**Multiplier Bounds**
+- Minimum: 0.6x (struggling players)
+- Maximum: 1.5x (expert players)
+- Clamped to prevent extreme difficulty spikes
+
+**Tutorial Protection**
+- Waves 1-3: No DDA (1.0x multiplier)
+- Wave 4: No DDA (difficulty saw pattern)
+- Wave 5: 50% reduced DDA impact
+- Wave 6+: Full DDA active
+
+### Why This Works
+
+**Early Game (Waves 1-4)**
+- Consistent, predictable difficulty allows learning
+- No punishment for experimentation
+- "Difficulty saw" at wave 4 gives breathing room before DDA kicks in
+
+**Mid Game (Waves 5-10)**
+- DDA activates gradually to match improving player skill
+- Linear scaling provides steady progression
+- Performance feedback keeps players in flow zone
+
+**Late Game (Waves 11+)**
+- Exponential scaling provides long-term challenge
+- DDA prevents insurmountable difficulty spikes
+- Expert players get harder content, struggling players get relief
+
+## 📐 System Architecture (C4 Diagrams)
+
+### Component Diagram: Battle System
+
+\`\`\`
+┌─────────────────────────────────────────────────────────────┐
+│                        Game State Hook                       │
+│                   (hooks/use-game-state.ts)                  │
+│                                                              │
+│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐│
+│  │ Wave Manager   │  │ DDA Engine   │  │ Battle Manager  ││
+│  │                │  │              │  │                 ││
+│  │ • Scaling      │←→│ • Win Rate   │←→│ • Start Battle  ││
+│  │ • Progression  │  │ • Kill Speed │  │ • End Battle    ││
+│  │ • Rewards      │  │ • HP Track   │  │ • Victory       ││
+│  └────────────────┘  └──────────────┘  └─────────────────┘│
+│           ↓                   ↓                   ↓         │
+└───────────┼───────────────────┼───────────────────┼─────────┘
+            │                   │                   │
+            ↓                   ↓                   ↓
+┌───────────────────────────────────────────────────────────────┐
+│                      Battle Engine                            │
+│                   (lib/battle-engine.ts)                      │
+│                                                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐│
+│  │ AI Executor  │  │ Physics      │  │ Collision Detection││
+│  │              │  │              │  │                    ││
+│  │ • Protocol   │  │ • Movement   │  │ • Projectiles     ││
+│  │   Evaluation │  │ • Velocity   │  │ • Hit Detection   ││
+│  │ • Cooldowns  │  │ • Bounds     │  │ • Damage Apply    ││
+│  └──────────────┘  └──────────────┘  └────────────────────┘│
+└───────────────────────────────────────────────────────────────┘
+\`\`\`
+
+### Sequence Diagram: Wave Progression with DDA
+
+\`\`\`
+Player    GameUI    GameState         DDA Engine    BattleEngine
+  │         │           │                 │              │
+  │ Defeat Enemy        │                 │              │
+  │─────────┼──────────→│                 │              │
+  │         │           │ Calculate       │              │
+  │         │           │ Performance     │              │
+  │         │           │────────────────→│              │
+  │         │           │                 │              │
+  │         │           │←Win Rate: 80%───┤              │
+  │         │           │←Kill Time: 25s──┤              │
+  │         │           │←HP Left: 60%────┤              │
+  │         │           │                 │              │
+  │         │           │ Calculate DDA   │              │
+  │         │           │ Multiplier      │              │
+  │         │           │────────────────→│              │
+  │         │           │←Multiplier: 1.3x┤              │
+  │         │           │                 │              │
+  │ Show Victory        │                 │              │
+  │←────────┼───────────┤                 │              │
+  │         │           │                 │              │
+  │ Pick Reward         │                 │              │
+  │─────────┼──────────→│                 │              │
+  │         │           │ Prepare Wave    │              │
+  │         │           │ (base: 60,      │              │
+  │         │           │  DDA: 1.3x)     │              │
+  │         │           │ = 78 HP         │              │
+  │         │           │                 │              │
+  │ Show Enemy Intro    │                 │              │
+  │←────────┼───────────┤                 │              │
+  │         │           │                 │              │
+  │ Begin Battle        │                 │              │
+  │─────────┼──────────→│                 │              │
+  │         │           │ Reset Player    │              │
+  │         │           │ Pos & HP        │              │
+  │         │           │                 │              │
+  │         │           │ Start Battle    │              │
+  │         │           │─────────────────┼─────────────→│
+  │         │           │                 │  Create      │
+  │         │           │                 │  New Engine  │
+  │         │           │                 │              │
+  │ Battle Begins       │                 │              │
+  │←────────┼───────────┴─────────────────┴──────────────┘
+\`\`\`
+
+### Data Flow: DDA Calculation
+
+\`\`\`
+┌─────────────────────────────────────────────────────────────┐
+│                    Performance Metrics                       │
+└─────────────────┬───────────────────────┬───────────────────┘
+                  │                       │
+         ┌────────▼────────┐    ┌────────▼────────┐    ┌──────▼──────┐
+         │   Win Rate      │    │   Kill Speed    │    │  HP Retain  │
+         │                 │    │                 │    │             │
+         │ Last 5 battles  │    │ Time to kill    │    │ End HP %    │
+         │ Target: 60-80%  │    │ Target: 20-40s  │    │ Target: 40% │
+         │ Weight: 40%     │    │ Weight: 30%     │    │ Weight: 30% │
+         └────────┬────────┘    └────────┬────────┘    └──────┬──────┘
+                  │                      │                     │
+                  └──────────┬───────────┴───────────┬─────────┘
+                             ↓                       ↓
+                    ┌────────────────────────────────────┐
+                    │   Difficulty Multiplier Formula    │
+                    │                                    │
+                    │  multiplier = 1.0                  │
+                    │  + (winRate - 0.7) * 0.4           │
+                    │  + (killSpeed deviation) * 0.3     │
+                    │  + (hpRetention deviation) * 0.3   │
+                    │                                    │
+                    │  Clamped: [0.6, 1.5]              │
+                    └───────────────┬────────────────────┘
+                                    ↓
+                    ┌────────────────────────────────────┐
+                    │   Tutorial Protection Applied      │
+                    │                                    │
+                    │  Wave 1-3: multiplier = 1.0        │
+                    │  Wave 4:   multiplier = 1.0        │
+                    │  Wave 5:   multiplier *= 0.5       │
+                    │  Wave 6+:  full multiplier         │
+                    └───────────────┬────────────────────┘
+                                    ↓
+                    ┌────────────────────────────────────┐
+                    │      Final Enemy HP                │
+                    │                                    │
+                    │   baseHP * finalMultiplier         │
+                    └────────────────────────────────────┘
+\`\`\`
+
+### State Machine: Game Flow
+
+\`\`\`
+     ┌──────────┐
+     │  START   │
+     └────┬─────┘
+          │
+          ↓
+  ┌───────────────┐
+  │  CHAR SELECT  │
+  └───────┬───────┘
+          │
+          ↓
+  ┌───────────────┐
+  │  PROGRAMMING  │
+  └───────┬───────┘
+          │
+          ↓
+  ┌───────────────┐      ┌──────────┐
+  │ ENEMY INTRO   │←─────┤ REWARD   │
+  └───────┬───────┘      └────▲─────┘
+          │                   │
+          ↓                   │
+  ┌───────────────┐           │
+  │  IN BATTLE    │           │
+  └───┬───────┬───┘           │
+      │       │               │
+      │       └───Victory─────┘
+      │
+      │
+   Defeat
+      │
+      ↓
+  ┌───────────────┐
+  │  GAME OVER    │
+  │  (Show Stats) │
+  └───────┬───────┘
+          │
+          └─────────→ Back to CHAR SELECT or PROGRAMMING
+\`\`\`
+
+## 🔍 Key Implementation Details
+
+### Battle State Management
+
+Located in `hooks/use-game-state.ts`:
+
+- **Wave Manager**: Handles progression, scaling formulas, and reward generation
+- **DDA Engine**: Tracks performance metrics and calculates difficulty multipliers
+- **Battle Manager**: Controls battle lifecycle (start, end, victory, defeat)
+
+### Performance Tracking
+
+The DDA system maintains a sliding window of performance data:
+
+\`\`\`typescript
+const [performanceHistory, setPerformanceHistory] = useState<PerformanceMetric[]>([])
+
+// After each battle
+const metric = {
+  won: playerAlive,
+  killTime: battleDuration,
+  hpRemaining: playerHP / maxHP,
+  wave: currentWave
+}
+\`\`\`
+
+### Scaling Implementation
+
+\`\`\`typescript
+function calculateEnemyHP(wave: number, ddaMultiplier: number): number {
+  let baseHp: number
+  
+  // Tutorial: Fixed progression
+  if (wave <= 3) {
+    baseHp = 30 + wave * 10  // 40, 50, 60
+  }
+  // Early: Gentle scaling
+  else if (wave <= 6) {
+    baseHp = 40 + wave * 10  // 80, 90, 100
+  }
+  // Mid: Linear scaling
+  else if (wave <= 15) {
+    baseHp = 40 + wave * 10
+  }
+  // Late: Exponential scaling
+  else {
+    baseHp = 40 + (15 * 10) + Math.pow(wave - 15, 1.5) * 15
+  }
+  
+  // Apply tutorial-protected DDA
+  let finalMultiplier = 1.0
+  if (wave >= 6) {
+    finalMultiplier = ddaMultiplier
+  } else if (wave === 5) {
+    finalMultiplier = 1.0 + (ddaMultiplier - 1.0) * 0.5
+  }
+  
+  return Math.round(baseHp * finalMultiplier)
+}
+\`\`\`
+
 ## 🎨 Design System
 
 ### Colors

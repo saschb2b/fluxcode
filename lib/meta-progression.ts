@@ -37,7 +37,7 @@ export interface MetaUpgrade {
 }
 
 export interface PlayerProgress {
-  currency: number
+  cipherFragments: number // Renamed from currency to cipherFragments
   upgrades: Record<string, number> // upgrade id -> level
   unlockedActions: string[]
   unlockedTriggers: string[]
@@ -1255,6 +1255,11 @@ export function loadProgress(): PlayerProgress {
     if (saved) {
       const parsed = JSON.parse(saved)
 
+      if (parsed.currency !== undefined && parsed.cipherFragments === undefined) {
+        parsed.cipherFragments = parsed.currency
+        delete parsed.currency
+      }
+
       // If old format exists (totalWavesCompleted, bestWave), migrate it
       if (parsed.totalWavesCompleted !== undefined && parsed.bestLayerReached === undefined) {
         // Estimate layer/node from old wave count (assuming ~7 nodes per layer)
@@ -1296,7 +1301,7 @@ export function saveProgress(progress: PlayerProgress): void {
 
 export function getDefaultProgress(): PlayerProgress {
   return {
-    currency: 0,
+    cipherFragments: 0, // Renamed from currency
     upgrades: {},
     unlockedActions: [],
     unlockedTriggers: [],
@@ -1308,17 +1313,19 @@ export function getDefaultProgress(): PlayerProgress {
   }
 }
 
-export function calculateCurrencyReward(nodesCompleted: number): number {
-  // Base reward: 10 currency per node
+export function calculateCipherFragmentReward(nodesCompleted: number): number {
+  // Base reward: 10 Cipher Fragments per node
   // Bonus for reaching milestones (every 5 nodes)
   const baseReward = nodesCompleted * 10
   const milestoneBonus = Math.floor(nodesCompleted / 5) * 25
   return baseReward + milestoneBonus
 }
 
+export const calculateCurrencyReward = calculateCipherFragmentReward
+
 export function canAffordUpgrade(progress: PlayerProgress, upgrade: MetaUpgrade): boolean {
   const currentLevel = progress.upgrades[upgrade.id] || 0
-  return progress.currency >= upgrade.cost && currentLevel < upgrade.maxLevel
+  return progress.cipherFragments >= upgrade.cost && currentLevel < upgrade.maxLevel // Changed currency to cipherFragments
 }
 
 export function purchaseUpgrade(progress: PlayerProgress, upgradeId: string): PlayerProgress {
@@ -1330,7 +1337,7 @@ export function purchaseUpgrade(progress: PlayerProgress, upgradeId: string): Pl
   const currentLevel = progress.upgrades[upgradeId] || 0
   const newProgress = { ...progress }
 
-  newProgress.currency -= upgrade.cost
+  newProgress.cipherFragments -= upgrade.cost // Changed currency to cipherFragments
   newProgress.upgrades[upgradeId] = currentLevel + 1
 
   // Handle unlocks
