@@ -1,40 +1,44 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { ProgrammingPanel } from "@/components/programming-panel"
-import { RewardSelection } from "@/components/reward-selection"
-import { Codex } from "@/components/codex"
-import { BattleStatsChart } from "@/components/battle-stats-chart"
-import { EnemyIntroduction } from "@/components/enemy-introduction"
-import { LayerProgressWidget } from "@/components/layer-progress-widget"
-import { NetworkMap } from "@/components/network-map"
-import { RunSummaryStats } from "@/components/run-summary-stats"
-import type { GameState } from "@/types/game"
-import { Coins, TrendingUp, LogOut, Sparkles, Code } from "lucide-react"
-import { calculateCipherFragmentReward } from "@/lib/meta-progression"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ProgrammingPanel } from "@/components/programming-panel";
+import { RewardSelection } from "@/components/reward-selection";
+import { Codex } from "@/components/codex";
+import { BattleStatsChart } from "@/components/battle-stats-chart";
+import { EnemyIntroduction } from "@/components/enemy-introduction";
+import { LayerProgressWidget } from "@/components/layer-progress-widget";
+import { NetworkMap } from "@/components/network-map";
+import { RunSummaryStats } from "@/components/run-summary-stats";
+import type { GameState } from "@/types/game";
+import { Coins, LogOut, Sparkles, Code } from "lucide-react";
+import { calculateCipherFragmentReward } from "@/lib/meta-progression";
 
 interface GameUIProps {
-  gameState: GameState
-  onNewRun: () => void
-  onOpenMetaShop: () => void
+  gameState: GameState;
+  onNewRun: () => void;
+  onOpenMetaShop: () => void;
 }
 
 export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
-  const [isProgrammingOpen, setIsProgrammingOpen] = useState(false)
-  const [isCodexOpen, setIsCodexOpen] = useState(false)
-  const [isNetworkMapOpen, setIsNetworkMapOpen] = useState(false)
+  const [isProgrammingOpen, setIsProgrammingOpen] = useState(false);
+  const [isCodexOpen, setIsCodexOpen] = useState(false);
+  const [isNetworkMapOpen, setIsNetworkMapOpen] = useState(false);
 
-  const totalNodesCompleted = gameState.currentLayerIndex * 7 + gameState.currentNodeIndex
-  const fragmentsEarned = gameState.battleState === "defeat" ? calculateCipherFragmentReward(totalNodesCompleted) : 0
+  const totalNodesCompleted =
+    gameState.currentLayerIndex * 7 + gameState.currentNodeIndex;
+  const fragmentsEarned =
+    gameState.battleState === "defeat"
+      ? calculateCipherFragmentReward(totalNodesCompleted)
+      : 0;
 
   console.log(
     "[v0] GameUI render - battleState:",
     gameState.battleState,
     "justEarnedReward:",
     gameState.justEarnedReward,
-  )
+  );
 
   return (
     <>
@@ -56,10 +60,15 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
               <div className="mb-2 p-3 rounded-lg border-2 border-green-500/50 bg-green-500/10 shadow-lg shadow-green-500/20 animate-pulse max-w-xs w-full">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-bold text-green-400 uppercase tracking-wider">Protocol Acquired</span>
+                  <span className="text-sm font-bold text-green-400 uppercase tracking-wider">
+                    Protocol Acquired
+                  </span>
                 </div>
                 <p className="text-xs text-green-300">
-                  <span className="font-mono font-bold">{gameState.justEarnedReward.name}</span> is now available!
+                  <span className="font-mono font-bold">
+                    {gameState.justEarnedReward.name}
+                  </span>{" "}
+                  is now available!
                 </p>
               </div>
             )}
@@ -87,7 +96,8 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
           </div>
         )}
 
-        {(gameState.battleState === "victory" || gameState.battleState === "defeat") &&
+        {(gameState.battleState === "victory" ||
+          gameState.battleState === "defeat") &&
           !gameState.showRewardSelection && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur pointer-events-auto p-4">
               <Card className="p-6 sm:p-8 bg-card border-4 border-primary max-w-md w-full">
@@ -103,7 +113,9 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                   <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
                     <div className="flex items-center justify-center gap-2 text-yellow-400">
                       <Coins className="w-5 h-5" />
-                      <span className="font-bold text-lg">+{fragmentsEarned} Cipher Fragments</span>
+                      <span className="font-bold text-lg">
+                        +{fragmentsEarned} Cipher Fragments
+                      </span>
                     </div>
                     <p className="text-center text-xs text-yellow-400/80 mt-1">
                       Secured from {totalNodesCompleted} nodes
@@ -127,19 +139,15 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                     />
                   ) : (
                     gameState.battleHistory &&
-                    gameState.battleHistory.length > 0 && <BattleStatsChart history={gameState.battleHistory} />
+                    gameState.battleHistory.length > 0 && (
+                      <BattleStatsChart history={gameState.battleHistory} />
+                    )
                   )}
                 </div>
 
                 <div className="flex flex-col gap-3">
                   {gameState.battleState === "victory" ? (
                     <>
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/80 h-12 text-base font-bold active:scale-95"
-                        onClick={gameState.nextWave}
-                      >
-                        Continue Breach
-                      </Button>
                       {gameState.wave > 1 && (
                         <Button
                           variant="outline"
@@ -147,29 +155,27 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                           onClick={gameState.extractFromBreach}
                         >
                           <LogOut className="w-4 h-4 mr-2" />
-                          Extract ({calculateCipherFragmentReward(totalNodesCompleted)} CF)
+                          Extract (
+                          {calculateCipherFragmentReward(
+                            totalNodesCompleted,
+                          )}{" "}
+                          CF)
                         </Button>
                       )}
-                    </>
-                  ) : (
-                    <>
                       <Button
                         className="w-full bg-primary hover:bg-primary/80 h-12 text-base font-bold active:scale-95"
-                        onClick={onNewRun}
+                        onClick={gameState.nextWave}
                       >
-                        Return to Hub
+                        Continue Breach
                       </Button>
-                      {gameState.playerProgress.totalRuns > 1 && (
-                        <Button
-                          variant="outline"
-                          className="w-full h-12 text-base font-bold border-2 border-purple-500 text-purple-500 hover:bg-purple-500/10 active:scale-95 bg-transparent"
-                          onClick={onOpenMetaShop}
-                        >
-                          <TrendingUp className="w-4 h-4 mr-2" />
-                          Protocol Vault
-                        </Button>
-                      )}
                     </>
+                  ) : (
+                    <Button
+                      className="w-full bg-primary hover:bg-primary/80 h-12 text-base font-bold active:scale-95"
+                      onClick={onNewRun}
+                    >
+                      Return to Hub
+                    </Button>
                   )}
                 </div>
               </Card>
@@ -227,5 +233,5 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
       {/* Codex component */}
       <Codex isOpen={isCodexOpen} onClose={() => setIsCodexOpen(false)} />
     </>
-  )
+  );
 }
