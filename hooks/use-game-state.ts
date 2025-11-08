@@ -11,6 +11,7 @@ import type {
   FighterCustomization,
   BattleHistoryPoint,
   PlayerProgress,
+  DamageType,
 } from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
@@ -48,6 +49,12 @@ export function useGameState(): GameState {
     position: { x: 4, y: 1 } as Position,
     hp: 100,
     maxHp: 100,
+    shields: 0,
+    maxShields: 0,
+    armor: 0,
+    maxArmor: 0,
+    resistances: {} as Partial<Record<DamageType, number>>,
+    statusEffects: [] as string[],
   })
 
   const [projectiles, setProjectiles] = useState<any[]>([])
@@ -312,44 +319,160 @@ export function useGameState(): GameState {
 
     setWave((w) => w + 1)
     const nextWave = wave + 1
-    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 10
     const nextNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
       (currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length
         ? networkLayers[currentLayerIndex].nodes[currentNodeIndex + 1]?.type === "guardian"
         : false)
-    const enemyMaxHp = nextNodeIsGuardian ? baseHp * 2 : baseHp
-    setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
+    const enemyMaxHp = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
+
+    const currentLayerData = networkLayers[currentLayerIndex]
+    let shields = 0
+    let armor = 0
+    let resistances: Partial<Record<DamageType, number>> = {}
+
+    if (currentLayerData) {
+      switch (currentLayerData.id) {
+        case "data-stream":
+          // Layer 1: Basic HP only - no shields, no armor, no resistances (tutorial layer)
+          shields = 0
+          armor = 0
+          resistances = {}
+          break
+        case "firewall":
+          // Layer 2: Introduce ARMOR and basic resistances
+          armor = Math.floor(enemyMaxHp * 0.25)
+          resistances = {
+            kinetic: 0.3,
+            corrosive: -0.2,
+          }
+          break
+        case "archive":
+          // Layer 3: Introduce SHIELDS (enemies have shields but no armor)
+          shields = Math.floor(enemyMaxHp * 0.3)
+          armor = 0
+          resistances = {
+            energy: 0.25,
+            viral: -0.15,
+          }
+          break
+        case "core-approach":
+          // Layer 4: Full complexity - both shields AND armor with full resistances
+          shields = Math.floor(enemyMaxHp * 0.25)
+          armor = Math.floor(enemyMaxHp * 0.2)
+          resistances = {
+            energy: 0.2,
+            kinetic: 0.2,
+            thermal: -0.1,
+          }
+          break
+      }
+
+      // Guardians get 30% extra defenses
+      if (nextNodeIsGuardian) {
+        shields = Math.floor(shields * 1.3)
+        armor = Math.floor(armor * 1.3)
+      }
+    }
+
+    setEnemy({
+      position: { x: 4, y: 1 },
+      hp: enemyMaxHp,
+      maxHp: enemyMaxHp,
+      shields,
+      maxShields: shields,
+      armor,
+      maxArmor: armor,
+      resistances,
+      statusEffects: [],
+    })
     setEnemyCustomization(generateRandomCustomization())
     setShowEnemyIntro(true)
   }, [wave, networkLayers, currentLayerIndex, currentNodeIndex])
 
-  const continueAfterIntro = useCallback(() => {
-    const hpBonus = getTotalStatBonus(playerProgress, "hp")
-    const maxHp = baseMaxHp + hpBonus
-    setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
-    setProjectiles([])
-    setBattleHistory([])
-    setBattleState("idle")
-    setShowEnemyIntro(false)
-  }, [playerProgress])
-
   const continueToNextWave = useCallback(() => {
+    setShowEnemyIntro(false)
+
     setWave((w) => w + 1)
     const hpBonus = getTotalStatBonus(playerProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
-    setPlayer((prev) => ({ ...prev, maxHp, hp: Math.min(prev.hp, maxHp) }))
+
+    setPlayer((prev) => ({
+      ...prev,
+      position: { x: 1, y: 1 },
+      maxHp,
+      hp: maxHp, // Full HP restoration
+    }))
 
     const nextWave = wave + 1
-    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 20
+    const baseHp = nextWave === 1 ? 100 : 100 + (nextWave - 1) * 10
     const currentNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
       networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
-    const enemyMaxHp = currentNodeIsGuardian ? baseHp * 2 : baseHp
+    const enemyMaxHp = currentNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    setEnemy({ position: { x: 4, y: 1 }, hp: enemyMaxHp, maxHp: enemyMaxHp })
+    const currentLayerData = networkLayers[currentLayerIndex]
+    let shields = 0
+    let armor = 0
+    let resistances: Partial<Record<DamageType, number>> = {}
+
+    if (currentLayerData) {
+      switch (currentLayerData.id) {
+        case "data-stream":
+          // Layer 1: No defenses
+          shields = 0
+          armor = 0
+          resistances = {}
+          break
+        case "firewall":
+          // Layer 2: Armor only
+          armor = Math.floor(enemyMaxHp * 0.25)
+          resistances = {
+            kinetic: 0.3,
+            corrosive: -0.2,
+          }
+          break
+        case "archive":
+          // Layer 3: Shields only
+          shields = Math.floor(enemyMaxHp * 0.3)
+          armor = 0
+          resistances = {
+            energy: 0.25,
+            viral: -0.15,
+          }
+          break
+        case "core-approach":
+          // Layer 4: Both shields and armor
+          shields = Math.floor(enemyMaxHp * 0.25)
+          armor = Math.floor(enemyMaxHp * 0.2)
+          resistances = {
+            energy: 0.2,
+            kinetic: 0.2,
+            thermal: -0.1,
+          }
+          break
+      }
+
+      if (currentNodeIsGuardian) {
+        shields = Math.floor(shields * 1.3)
+        armor = Math.floor(armor * 1.3)
+      }
+    }
+
+    setEnemy({
+      position: { x: 4, y: 1 },
+      hp: enemyMaxHp,
+      maxHp: enemyMaxHp,
+      shields,
+      maxShields: shields,
+      armor,
+      maxArmor: armor,
+      resistances,
+      statusEffects: [],
+    })
     setProjectiles([])
     setBattleHistory([])
     setEnemyCustomization(generateRandomCustomization())
@@ -365,7 +488,17 @@ export function useGameState(): GameState {
     const hpBonus = getTotalStatBonus(playerProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
     setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
-    setEnemy({ position: { x: 4, y: 1 }, hp: 100, maxHp: 100 })
+    setEnemy({
+      position: { x: 4, y: 1 },
+      hp: 100,
+      maxHp: 100,
+      shields: 0,
+      maxShields: 0,
+      armor: 0,
+      maxArmor: 0,
+      resistances: {},
+      statusEffects: [],
+    })
     setProjectiles([])
     setTriggerActionPairs([])
     setUnlockedTriggers([])
@@ -477,7 +610,7 @@ export function useGameState(): GameState {
     enemyCustomization,
     battleHistory,
     showEnemyIntro,
-    continueAfterIntro,
+    continueAfterIntro: continueToNextWave,
     playerProgress,
     updatePlayerProgress,
     networkLayers,

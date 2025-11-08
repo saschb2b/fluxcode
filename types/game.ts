@@ -3,10 +3,45 @@ export interface Position {
   y: number // 0-2 (grid rows)
 }
 
+export enum DamageType {
+  KINETIC = "kinetic",
+  ENERGY = "energy",
+  THERMAL = "thermal",
+  VIRAL = "viral",
+  CORROSIVE = "corrosive",
+  EXPLOSIVE = "explosive",
+  ELECTROMAGNETIC = "electromagnetic", // renamed from MAGNETIC for clarity
+  GLACIAL = "glacial",
+}
+
+export interface StatusEffect {
+  type: "arc" | "disable" | "degrade" | "slow" | "burn" | "stagger" | "viral_infection" | "emp" | "stun"
+  duration: number // milliseconds remaining
+  stacks?: number // for stackable effects like slow/degrade
+  value?: number // damage per tick for burn, or percentage for degrade
+  startTime?: number
+  endTime?: number
+  lastTickTime?: number
+}
+
+export interface DefenseLayers {
+  shields: number // blue bar, regenerates
+  maxShields: number
+  shieldRegenRate: number // HP per second
+  shieldRegenDelay: number // ms after taking damage before regen starts
+  lastShieldDamageTime: number
+
+  armor: number // yellow bar, reduces damage
+  maxArmor: number
+  armorReduction: number // percentage of damage reduced (can be degraded)
+}
+
 export interface Fighter {
   position: Position
   hp: number
   maxHp: number
+  defense?: DefenseLayers // Optional for now
+  statusEffects?: StatusEffect[] // Optional for now
 }
 
 export interface Projectile {
@@ -14,6 +49,8 @@ export interface Projectile {
   position: Position
   direction: "left" | "right"
   damage: number
+  damageType?: DamageType // Optional damage type
+  statusChance?: number // chance to apply status effect (0-1)
 }
 
 export interface Trigger {
@@ -28,15 +65,18 @@ export interface Action {
   name: string
   description: string
   cooldown: number
+  damageType?: DamageType // Optional damage type
   execute: (context: BattleContext) => ActionResult
 }
 
 export interface ActionResult {
   type: "shoot" | "move" | "rapid-fire" | "heal"
   damage?: number
+  damageType?: DamageType // Optional damage type
   position?: Position
   count?: number
   amount?: number
+  statusChance?: number // chance to apply the damage type's status effect
 }
 
 export interface TriggerActionPair {
@@ -51,6 +91,16 @@ export interface BattleContext {
   enemyPos: Position
   playerHP: number
   enemyHP: number
+  playerShield?: number
+  playerArmor?: number
+  enemyShield?: number
+  enemyArmor?: number
+  playerDefense?: DefenseLayers // Optional
+  enemyDefense?: DefenseLayers // Optional
+  playerStatusEffects?: StatusEffect[] // Renamed for consistency with triggers
+  enemyStatusEffects?: StatusEffect[] // Renamed for consistency with triggers
+  playerStatus?: StatusEffect[] // Optional - keeping both for backwards compatibility
+  enemyStatus?: StatusEffect[] // Optional - keeping both for backwards compatibility
   justTookDamage: boolean
   isPlayer: boolean
 }

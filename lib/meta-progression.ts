@@ -17,6 +17,19 @@ export interface MetaUpgrade {
       | "lifesteal"
       | "unlock_action"
       | "unlock_trigger"
+      | "kinetic_damage"
+      | "energy_damage"
+      | "thermal_damage"
+      | "viral_damage"
+      | "corrosive_damage"
+      | "explosive_damage"
+      | "electromagnetic_damage"
+      | "glacial_damage"
+      | "status_chance"
+      | "status_duration"
+      | "shield_capacity"
+      | "shield_regen"
+      | "armor_rating"
     value: number
     actionId?: string
     triggerId?: string
@@ -798,6 +811,436 @@ export const META_UPGRADES: MetaUpgrade[] = [
     maxLevel: 3,
     effect: { type: "damage", value: 5, actionId: "homing-shot" },
   },
+
+  // Damage Type-Specific Upgrades
+  // Kinetic Damage Specialization
+  {
+    id: "kinetic_mastery_1",
+    name: "Ballistic Expert I",
+    description: "Increase all Kinetic damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "kinetic_damage", value: 0.15 },
+  },
+  {
+    id: "kinetic_mastery_2",
+    name: "Ballistic Expert II",
+    description: "Increase all Kinetic damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "kinetic_damage", value: 0.25 },
+  },
+
+  // Energy Damage Specialization
+  {
+    id: "energy_mastery_1",
+    name: "Energy Conduit I",
+    description: "Increase all Energy damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "energy_damage", value: 0.15 },
+  },
+  {
+    id: "energy_mastery_2",
+    name: "Energy Conduit II",
+    description: "Increase all Energy damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "energy_damage", value: 0.25 },
+  },
+
+  // Thermal Damage Specialization
+  {
+    id: "thermal_mastery_1",
+    name: "Pyrotechnics I",
+    description: "Increase all Thermal damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "thermal_damage", value: 0.15 },
+  },
+  {
+    id: "thermal_mastery_2",
+    name: "Pyrotechnics II",
+    description: "Increase all Thermal damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "thermal_damage", value: 0.25 },
+  },
+
+  // Viral Damage Specialization
+  {
+    id: "viral_mastery_1",
+    name: "Bio-Weapons Expert I",
+    description: "Increase all Viral damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "viral_damage", value: 0.15 },
+  },
+  {
+    id: "viral_mastery_2",
+    name: "Bio-Weapons Expert II",
+    description: "Increase all Viral damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "viral_damage", value: 0.25 },
+  },
+
+  // Corrosive Damage Specialization
+  {
+    id: "corrosive_mastery_1",
+    name: "Acid Master I",
+    description: "Increase all Corrosive damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "corrosive_damage", value: 0.15 },
+  },
+  {
+    id: "corrosive_mastery_2",
+    name: "Acid Master II",
+    description: "Increase all Corrosive damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "corrosive_damage", value: 0.25 },
+  },
+
+  // Explosive Damage Specialization
+  {
+    id: "explosive_mastery_1",
+    name: "Demolitions Expert I",
+    description: "Increase all Explosive damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "explosive_damage", value: 0.15 },
+  },
+  {
+    id: "explosive_mastery_2",
+    name: "Demolitions Expert II",
+    description: "Increase all Explosive damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "explosive_damage", value: 0.25 },
+  },
+
+  // Electromagnetic Damage Specialization
+  {
+    id: "electromagnetic_mastery_1",
+    name: "EMP Specialist I",
+    description: "Increase all Electromagnetic damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "electromagnetic_damage", value: 0.15 },
+  },
+  {
+    id: "electromagnetic_mastery_2",
+    name: "EMP Specialist II",
+    description: "Increase all Electromagnetic damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "electromagnetic_damage", value: 0.25 },
+  },
+
+  // Glacial Damage Specialization
+  {
+    id: "glacial_mastery_1",
+    name: "Cryo Expert I",
+    description: "Increase all Glacial damage by 15%",
+    category: "stat",
+    cost: 120,
+    maxLevel: 4,
+    effect: { type: "glacial_damage", value: 0.15 },
+  },
+  {
+    id: "glacial_mastery_2",
+    name: "Cryo Expert II",
+    description: "Increase all Glacial damage by 25%",
+    category: "stat",
+    cost: 280,
+    maxLevel: 3,
+    effect: { type: "glacial_damage", value: 0.25 },
+  },
+
+  // Status Effect Upgrades
+  {
+    id: "status_chance_1",
+    name: "Status Amplifier I",
+    description: "Increase status effect chance by 10%",
+    category: "stat",
+    cost: 150,
+    maxLevel: 4,
+    effect: { type: "status_chance", value: 0.1 },
+  },
+  {
+    id: "status_chance_2",
+    name: "Status Amplifier II",
+    description: "Increase status effect chance by 15%",
+    category: "stat",
+    cost: 320,
+    maxLevel: 3,
+    effect: { type: "status_chance", value: 0.15 },
+  },
+  {
+    id: "status_duration_1",
+    name: "Persistent Effects I",
+    description: "Increase status effect duration by 25%",
+    category: "stat",
+    cost: 180,
+    maxLevel: 4,
+    effect: { type: "status_duration", value: 0.25 },
+  },
+  {
+    id: "status_duration_2",
+    name: "Persistent Effects II",
+    description: "Increase status effect duration by 40%",
+    category: "stat",
+    cost: 350,
+    maxLevel: 3,
+    effect: { type: "status_duration", value: 0.4 },
+  },
+
+  // Shield Upgrades
+  {
+    id: "shield_capacity_1",
+    name: "Shield Generator I",
+    description: "Increase starting shields by 30",
+    category: "stat",
+    cost: 140,
+    maxLevel: 5,
+    effect: { type: "shield_capacity", value: 30 },
+  },
+  {
+    id: "shield_capacity_2",
+    name: "Shield Generator II",
+    description: "Increase starting shields by 50",
+    category: "stat",
+    cost: 300,
+    maxLevel: 3,
+    effect: { type: "shield_capacity", value: 50 },
+  },
+  {
+    id: "shield_regen_1",
+    name: "Shield Recharger I",
+    description: "Increase shield regeneration rate by 3 HP/s",
+    category: "stat",
+    cost: 160,
+    maxLevel: 4,
+    effect: { type: "shield_regen", value: 3 },
+  },
+  {
+    id: "shield_regen_2",
+    name: "Shield Recharger II",
+    description: "Increase shield regeneration rate by 5 HP/s",
+    category: "stat",
+    cost: 340,
+    maxLevel: 3,
+    effect: { type: "shield_regen", value: 5 },
+  },
+
+  // Armor Upgrades
+  {
+    id: "armor_rating_1",
+    name: "Armored Plating I",
+    description: "Increase starting armor by 25",
+    category: "stat",
+    cost: 140,
+    maxLevel: 5,
+    effect: { type: "armor_rating", value: 25 },
+  },
+  {
+    id: "armor_rating_2",
+    name: "Armored Plating II",
+    description: "Increase starting armor by 40",
+    category: "stat",
+    cost: 300,
+    maxLevel: 3,
+    effect: { type: "armor_rating", value: 40 },
+  },
+
+  // Unlock new damage type actions
+  {
+    id: "unlock_kinetic_shot",
+    name: "Unlock: Kinetic Shot",
+    description: "Ballistic projectile (12 damage, strong vs armor)",
+    category: "unlock",
+    cost: 120,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "kinetic-shot" },
+  },
+  {
+    id: "unlock_railgun",
+    name: "Unlock: Railgun",
+    description: "Armor-piercing shot (28 damage, very strong vs armor)",
+    category: "unlock",
+    cost: 200,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "railgun" },
+  },
+  {
+    id: "unlock_laser_shot",
+    name: "Unlock: Laser Shot",
+    description: "Energy beam (12 damage, strong vs shields)",
+    category: "unlock",
+    cost: 120,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "laser-shot" },
+  },
+  {
+    id: "unlock_plasma_cannon",
+    name: "Unlock: Plasma Cannon",
+    description: "Superheated plasma (35 damage, melts shields)",
+    category: "unlock",
+    cost: 220,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "plasma-cannon" },
+  },
+  {
+    id: "unlock_flame_shot",
+    name: "Unlock: Flame Shot",
+    description: "Incendiary round (10 damage, can cause burning DOT)",
+    category: "unlock",
+    cost: 130,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "flame-shot" },
+  },
+  {
+    id: "unlock_inferno_blast",
+    name: "Unlock: Inferno Blast",
+    description: "Devastating fire (30 damage, high burn chance)",
+    category: "unlock",
+    cost: 210,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "inferno-blast" },
+  },
+  {
+    id: "unlock_viral_dart",
+    name: "Unlock: Viral Dart",
+    description: "Bio-weapon (8 damage, infects target)",
+    category: "unlock",
+    cost: 140,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "viral-dart" },
+  },
+  {
+    id: "unlock_plague_bomb",
+    name: "Unlock: Plague Bomb",
+    description: "Viral payload (25 damage, spreads infection)",
+    category: "unlock",
+    cost: 230,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "plague-bomb" },
+  },
+  {
+    id: "unlock_acid_shot",
+    name: "Unlock: Acid Shot",
+    description: "Corrosive round (10 damage, strips armor)",
+    category: "unlock",
+    cost: 130,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "acid-shot" },
+  },
+  {
+    id: "unlock_corrosion_wave",
+    name: "Unlock: Corrosion Wave",
+    description: "Acid spray (22 damage, melts armor)",
+    category: "unlock",
+    cost: 190,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "corrosion-wave" },
+  },
+  {
+    id: "unlock_emp_pulse",
+    name: "Unlock: EMP Pulse",
+    description: "Electromagnetic pulse (15 damage, disables shields)",
+    category: "unlock",
+    cost: 170,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "emp-pulse" },
+  },
+  {
+    id: "unlock_magnetic_disruption",
+    name: "Unlock: Magnetic Disruption",
+    description: "Disrupt enemy protocols (10 damage, disables logic)",
+    category: "unlock",
+    cost: 220,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "magnetic-disruption" },
+  },
+  {
+    id: "unlock_frag_grenade",
+    name: "Unlock: Frag Grenade",
+    description: "Explosive grenade (40 damage, balanced vs all)",
+    category: "unlock",
+    cost: 200,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "frag-grenade" },
+  },
+  {
+    id: "unlock_cluster_bomb",
+    name: "Unlock: Cluster Bomb",
+    description: "Multiple explosions (25 damage x3)",
+    category: "unlock",
+    cost: 280,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "cluster-bomb" },
+  },
+  {
+    id: "unlock_cryo_shot",
+    name: "Unlock: Cryo Shot",
+    description: "Freezing projectile (12 damage, slows enemy)",
+    category: "unlock",
+    cost: 140,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "cryo-shot" },
+  },
+  {
+    id: "unlock_cryo_field",
+    name: "Unlock: Cryo Field",
+    description: "Freezing area (5 damage, heavy slow)",
+    category: "unlock",
+    cost: 240,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "cryo-field" },
+  },
+  {
+    id: "unlock_blizzard",
+    name: "Unlock: Blizzard",
+    description: "Freezing storm (18 damage, slows and chills)",
+    category: "unlock",
+    cost: 220,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "blizzard" },
+  },
+  {
+    id: "unlock_armor_piercer",
+    name: "Unlock: Armor Piercer",
+    description: "Specialized armor-melting shot (25 damage)",
+    category: "unlock",
+    cost: 190,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "corrosive-armor-piercer" },
+  },
+  {
+    id: "unlock_electrical_charge",
+    name: "Unlock: Charge Shot (Electrical)",
+    description: "Powerful electrical blast (30 damage, guaranteed arc)",
+    category: "unlock",
+    cost: 210,
+    maxLevel: 1,
+    effect: { type: "unlock_action", value: 1, actionId: "electrical-charge-shot" },
+  },
 ]
 
 const STORAGE_KEY = "battle_game_progress"
@@ -913,7 +1356,28 @@ export function getUpgradeLevel(progress: PlayerProgress, upgradeId: string): nu
 
 export function getTotalStatBonus(
   progress: PlayerProgress,
-  type: "hp" | "damage" | "evasion" | "crit_chance" | "crit_damage" | "cooldown" | "defense" | "lifesteal",
+  type:
+    | "hp"
+    | "damage"
+    | "cooldown"
+    | "evasion"
+    | "crit_chance"
+    | "crit_damage"
+    | "defense"
+    | "lifesteal"
+    | "kinetic_damage"
+    | "energy_damage"
+    | "thermal_damage"
+    | "viral_damage"
+    | "corrosive_damage"
+    | "explosive_damage"
+    | "electromagnetic_damage"
+    | "glacial_damage"
+    | "status_chance"
+    | "status_duration"
+    | "shield_capacity"
+    | "shield_regen"
+    | "armor_rating",
 ): number {
   let total = 0
 

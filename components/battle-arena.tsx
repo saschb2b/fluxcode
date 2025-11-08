@@ -70,6 +70,10 @@ export function BattleArena({ gameState, fighterCustomization, enemyCustomizatio
           hp={gameState.enemy.hp}
           maxHp={gameState.enemy.maxHp}
           customization={enemyCustomization}
+          shields={gameState.enemy.shields}
+          maxShields={gameState.enemy.maxShields}
+          armor={gameState.enemy.armor}
+          maxArmor={gameState.enemy.maxArmor}
         />
 
         {/* Projectiles */}

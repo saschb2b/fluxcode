@@ -36,11 +36,21 @@ export class BattleEngine {
   private battleHistory: BattleHistoryPoint[] = []
   private battleTime = 0
   private lastHistoryRecord = 0
+  private playerCustomization: any
+  private enemyCustomization: any
 
-  constructor(initialState: BattleState, playerPairs: TriggerActionPair[], enemyPairs: TriggerActionPair[]) {
+  constructor(
+    initialState: BattleState,
+    playerPairs: TriggerActionPair[],
+    enemyPairs: TriggerActionPair[],
+    playerCustomization?: any,
+    enemyCustomization?: any,
+  ) {
     this.state = { ...initialState }
     this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
     this.enemyPairs = [...enemyPairs].sort((a, b) => b.priority - a.priority)
+    this.playerCustomization = playerCustomization
+    this.enemyCustomization = enemyCustomization
     this.battleHistory.push({
       time: 0,
       playerHP: initialState.playerHP,

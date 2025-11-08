@@ -10,7 +10,7 @@ import type { FighterCustomization } from "@/types/game"
 import type { NetworkLayer } from "@/lib/network-layers"
 import { generateEnemyName } from "@/lib/enemy-names"
 import { getNodeIcon } from "@/lib/network-layers"
-import { Crown, MapPin } from "lucide-react"
+import { Crown, MapPin, Shield, Crosshair } from "lucide-react"
 
 interface EnemyIntroductionProps {
   wave: number
@@ -21,6 +21,9 @@ interface EnemyIntroductionProps {
   currentLayer?: NetworkLayer
   currentNodeIndex?: number
   isGuardianBattle?: boolean
+  enemyShields?: number
+  enemyArmor?: number
+  enemyResistances?: Partial<Record<string, number>>
 }
 
 export function EnemyIntroduction({
@@ -32,6 +35,9 @@ export function EnemyIntroduction({
   currentLayer,
   currentNodeIndex,
   isGuardianBattle,
+  enemyShields = 0,
+  enemyArmor = 0,
+  enemyResistances = {},
 }: EnemyIntroductionProps) {
   if (!isOpen) return null
 
@@ -123,6 +129,53 @@ export function EnemyIntroduction({
               </Html>
             </Canvas>
           </div>
+
+          {(enemyShields > 0 || enemyArmor > 0 || Object.keys(enemyResistances).length > 0) && (
+            <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-background/30">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Defense Profile
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {enemyShields > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <span className="text-cyan-400 font-mono">{enemyShields}</span>
+                    <span className="text-xs text-muted-foreground">Shields</span>
+                  </div>
+                )}
+
+                {enemyArmor > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Crosshair className="w-4 h-4 text-amber-400" />
+                    <span className="text-amber-400 font-mono">{enemyArmor}</span>
+                    <span className="text-xs text-muted-foreground">Armor</span>
+                  </div>
+                )}
+              </div>
+
+              {Object.keys(enemyResistances).length > 0 && (
+                <div className="pt-2 border-t border-primary/20">
+                  <div className="text-xs text-muted-foreground mb-1">Resistances:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(enemyResistances).map(([type, value]) => (
+                      <div
+                        key={type}
+                        className={`text-xs px-2 py-0.5 rounded-full border ${
+                          value > 0
+                            ? "bg-red-500/10 border-red-500/30 text-red-400"
+                            : "bg-green-500/10 border-green-500/30 text-green-400"
+                        }`}
+                      >
+                        {type.toUpperCase()}{" "}
+                        {value > 0 ? `+${Math.round(value * 100)}%` : `${Math.round(value * 100)}%`}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <Button
             size="lg"

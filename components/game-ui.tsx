@@ -138,6 +138,9 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
           currentLayer={gameState.networkLayers[gameState.currentLayerIndex]}
           currentNodeIndex={gameState.currentNodeIndex}
           isGuardianBattle={gameState.isGuardianBattle}
+          enemyShields={gameState.enemy.maxShields}
+          enemyArmor={gameState.enemy.maxArmor}
+          enemyResistances={gameState.enemy.resistances}
         />
       )}
 

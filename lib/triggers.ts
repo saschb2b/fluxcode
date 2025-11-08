@@ -208,6 +208,154 @@ export const AVAILABLE_TRIGGERS: Trigger[] = [
     },
   },
 
+  // Defense layer detection triggers for Warframe-inspired system
+  // Enemy defense layer triggers
+  {
+    id: "enemy-has-shield",
+    name: "Enemy Has Shield",
+    description: "Triggers when enemy has active shields",
+    check: (context: BattleContext) => {
+      return !!context.enemyShield && context.enemyShield > 0
+    },
+  },
+  {
+    id: "enemy-shield-down",
+    name: "Enemy Shield Down",
+    description: "Triggers when enemy shields are depleted",
+    check: (context: BattleContext) => {
+      return !context.enemyShield || context.enemyShield <= 0
+    },
+  },
+  {
+    id: "enemy-has-armor",
+    name: "Enemy Has Armor",
+    description: "Triggers when enemy has armor",
+    check: (context: BattleContext) => {
+      return !!context.enemyArmor && context.enemyArmor > 0
+    },
+  },
+  {
+    id: "enemy-armor-down",
+    name: "Enemy Armor Down",
+    description: "Triggers when enemy armor is depleted",
+    check: (context: BattleContext) => {
+      return !context.enemyArmor || context.enemyArmor <= 0
+    },
+  },
+  {
+    id: "enemy-exposed",
+    name: "Enemy Exposed",
+    description: "Triggers when enemy has no shields or armor",
+    check: (context: BattleContext) => {
+      const noShield = !context.enemyShield || context.enemyShield <= 0
+      const noArmor = !context.enemyArmor || context.enemyArmor <= 0
+      return noShield && noArmor
+    },
+  },
+
+  // Self defense layer triggers
+  {
+    id: "shield-active",
+    name: "Shield Active",
+    description: "Triggers when you have active shields",
+    check: (context: BattleContext) => {
+      const myShield = context.isPlayer ? context.playerShield : context.enemyShield
+      return !!myShield && myShield > 0
+    },
+  },
+  {
+    id: "shield-depleted",
+    name: "Shield Depleted",
+    description: "Triggers when your shields are down",
+    check: (context: BattleContext) => {
+      const myShield = context.isPlayer ? context.playerShield : context.enemyShield
+      return !myShield || myShield <= 0
+    },
+  },
+  {
+    id: "armor-active",
+    name: "Armor Active",
+    description: "Triggers when you have armor remaining",
+    check: (context: BattleContext) => {
+      const myArmor = context.isPlayer ? context.playerArmor : context.enemyArmor
+      return !!myArmor && myArmor > 0
+    },
+  },
+
+  // Status effect triggers
+  {
+    id: "enemy-burning",
+    name: "Enemy Burning",
+    description: "Triggers when enemy is affected by burn DOT",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatusEffects?.some((e) => e.type === "burn")
+    },
+  },
+  {
+    id: "enemy-corroded",
+    name: "Enemy Corroded",
+    description: "Triggers when enemy armor is corroded",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatusEffects?.some((e) => e.type === "corrode")
+    },
+  },
+  {
+    id: "enemy-infected",
+    name: "Enemy Infected",
+    description: "Triggers when enemy has viral infection",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatusEffects?.some((e) => e.type === "viral_infection")
+    },
+  },
+  {
+    id: "enemy-emp",
+    name: "Enemy EMP'd",
+    description: "Triggers when enemy shields are disabled by EMP",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatusEffects?.some((e) => e.type === "emp")
+    },
+  },
+  {
+    id: "enemy-stunned",
+    name: "Enemy Stunned",
+    description: "Triggers when enemy is stunned",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatusEffects?.some((e) => e.type === "stun")
+    },
+  },
+  {
+    id: "enemy-slowed",
+    name: "Enemy Slowed",
+    description: "Triggers when enemy is slowed by glacial damage",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatus?.some((e) => e.type === "slow")
+    },
+  },
+  {
+    id: "enemy-degraded",
+    name: "Enemy Armor Degraded",
+    description: "Triggers when enemy armor is being corroded",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatus?.some((e) => e.type === "degrade")
+    },
+  },
+  {
+    id: "enemy-logic-disabled",
+    name: "Enemy Logic Disabled",
+    description: "Triggers when enemy protocol is disabled by magnetic",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatus?.some((e) => e.type === "disable")
+    },
+  },
+  {
+    id: "enemy-arcing",
+    name: "Enemy Arcing",
+    description: "Triggers when enemy is being electrocuted",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatus?.some((e) => e.type === "arc")
+    },
+  },
+
   // Universal trigger
   {
     id: "always",

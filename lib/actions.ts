@@ -1,4 +1,5 @@
 import type { Action, BattleContext, Position } from "@/types/game"
+import { DamageType } from "@/types/game"
 
 export const AVAILABLE_ACTIONS: Action[] = [
   // Basic shooting actions
@@ -551,6 +552,300 @@ export const AVAILABLE_ACTIONS: Action[] = [
         stat: "damage",
         multiplier: 1.5,
         duration: 5000,
+      }
+    },
+  },
+
+  // Kinetic damage actions (strong vs armor, weak vs shields)
+  {
+    id: "kinetic-shot",
+    name: "Kinetic Shot",
+    description: "Ballistic projectile (12 damage, strong vs armor)",
+    cooldown: 1200,
+    damageType: DamageType.KINETIC,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 12,
+        damageType: DamageType.KINETIC,
+      }
+    },
+  },
+  {
+    id: "railgun",
+    name: "Railgun",
+    description: "Armor-piercing shot (28 damage, very strong vs armor)",
+    cooldown: 2800,
+    damageType: DamageType.KINETIC,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 28,
+        damageType: DamageType.KINETIC,
+      }
+    },
+  },
+
+  // Energy damage actions (strong vs shields, weak vs armor)
+  {
+    id: "laser-shot",
+    name: "Laser Shot",
+    description: "Energy beam (12 damage, strong vs shields, can EMP)",
+    cooldown: 1200,
+    damageType: DamageType.ENERGY,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 12,
+        damageType: DamageType.ENERGY,
+      }
+    },
+  },
+  {
+    id: "plasma-cannon",
+    name: "Plasma Cannon",
+    description: "Superheated plasma (35 damage, melts shields)",
+    cooldown: 3000,
+    damageType: DamageType.ENERGY,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 35,
+        damageType: DamageType.ENERGY,
+      }
+    },
+  },
+
+  // Thermal damage actions (strong vs health, can burn)
+  {
+    id: "flame-shot",
+    name: "Flame Shot",
+    description: "Incendiary round (10 damage, can cause burning DOT)",
+    cooldown: 1400,
+    damageType: DamageType.THERMAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 10,
+        damageType: DamageType.THERMAL,
+      }
+    },
+  },
+  {
+    id: "inferno-blast",
+    name: "Inferno Blast",
+    description: "Devastating fire (30 damage, high burn chance)",
+    cooldown: 3200,
+    damageType: DamageType.THERMAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 30,
+        damageType: DamageType.THERMAL,
+      }
+    },
+  },
+
+  // Viral damage actions (very strong vs health)
+  {
+    id: "viral-dart",
+    name: "Viral Dart",
+    description: "Bio-weapon (8 damage, infects target for 2x health damage)",
+    cooldown: 1600,
+    damageType: DamageType.VIRAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 8,
+        damageType: DamageType.VIRAL,
+      }
+    },
+  },
+  {
+    id: "plague-bomb",
+    name: "Plague Bomb",
+    description: "Viral payload (25 damage, spreads infection)",
+    cooldown: 3500,
+    damageType: DamageType.VIRAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "bomb" as const,
+        damage: 25,
+        damageType: DamageType.VIRAL,
+        delay: 1000,
+      }
+    },
+  },
+
+  // Corrosive damage actions (very strong vs armor)
+  {
+    id: "acid-shot",
+    name: "Acid Shot",
+    description: "Corrosive round (10 damage, strips armor)",
+    cooldown: 1500,
+    damageType: DamageType.CORROSIVE,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 10,
+        damageType: DamageType.CORROSIVE,
+      }
+    },
+  },
+  {
+    id: "corrosion-wave",
+    name: "Corrosion Wave",
+    description: "Acid spray (22 damage, melts armor)",
+    cooldown: 2600,
+    damageType: DamageType.CORROSIVE,
+    execute: (context: BattleContext) => {
+      return {
+        type: "wave" as const,
+        damage: 22,
+        damageType: DamageType.CORROSIVE,
+      }
+    },
+  },
+
+  // Electromagnetic damage actions (magnetic from spec - renamed for clarity)
+  {
+    id: "emp-pulse",
+    name: "EMP Pulse",
+    description: "Electromagnetic pulse (15 damage, disables shields)",
+    cooldown: 2500,
+    damageType: DamageType.ELECTROMAGNETIC,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 15,
+        damageType: DamageType.ELECTROMAGNETIC,
+        statusChance: 0.8, // High chance to EMP
+      }
+    },
+  },
+  {
+    id: "magnetic-disruption",
+    name: "Magnetic Disruption",
+    description: "Disrupt enemy protocols (10 damage, disables random logic)",
+    cooldown: 3500,
+    damageType: DamageType.ELECTROMAGNETIC,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 10,
+        damageType: DamageType.ELECTROMAGNETIC,
+        statusChance: 0.9, // Very high disable chance
+      }
+    },
+  },
+
+  // Explosive damage actions
+  {
+    id: "frag-grenade",
+    name: "Frag Grenade",
+    description: "Explosive grenade (40 damage, balanced vs all)",
+    cooldown: 3000,
+    damageType: DamageType.EXPLOSIVE,
+    execute: (context: BattleContext) => {
+      return {
+        type: "bomb" as const,
+        damage: 40,
+        damageType: DamageType.EXPLOSIVE,
+        delay: 800,
+      }
+    },
+  },
+  {
+    id: "cluster-bomb",
+    name: "Cluster Bomb",
+    description: "Multiple explosions (25 damage x3)",
+    cooldown: 4000,
+    damageType: DamageType.EXPLOSIVE,
+    execute: (context: BattleContext) => {
+      return {
+        type: "cluster" as const,
+        damage: 25,
+        damageType: DamageType.EXPLOSIVE,
+        count: 3,
+      }
+    },
+  },
+
+  // Glacial damage actions
+  {
+    id: "cryo-shot",
+    name: "Cryo Shot",
+    description: "Freezing projectile (12 damage, slows enemy)",
+    cooldown: 1600,
+    damageType: DamageType.GLACIAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 12,
+        damageType: DamageType.GLACIAL,
+        statusChance: 0.7,
+      }
+    },
+  },
+  {
+    id: "cryo-field",
+    name: "Cryo Field",
+    description: "Freezing area (5 damage, heavy slow, long duration)",
+    cooldown: 4000,
+    damageType: DamageType.GLACIAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "field" as const,
+        damage: 5,
+        damageType: DamageType.GLACIAL,
+        duration: 5000,
+        statusChance: 1.0, // Guaranteed slow
+      }
+    },
+  },
+  {
+    id: "blizzard",
+    name: "Blizzard",
+    description: "Freezing storm (18 damage, slows and chills)",
+    cooldown: 3500,
+    damageType: DamageType.GLACIAL,
+    execute: (context: BattleContext) => {
+      return {
+        type: "wave" as const,
+        damage: 18,
+        damageType: DamageType.GLACIAL,
+        statusChance: 0.8,
+      }
+    },
+  },
+
+  {
+    id: "electrical-charge-shot",
+    name: "Charge Shot (Electrical)",
+    description: "Powerful electrical blast (30 damage, guaranteed arc)",
+    cooldown: 3000,
+    damageType: DamageType.ENERGY,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 30,
+        damageType: DamageType.ENERGY,
+        statusChance: 1.0, // Guaranteed arc effect
+      }
+    },
+  },
+  {
+    id: "corrosive-armor-piercer",
+    name: "Armor Piercer (Corrosive)",
+    description: "Specialized armor-melting shot (25 damage, high degrade)",
+    cooldown: 2800,
+    damageType: DamageType.CORROSIVE,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 25,
+        damageType: DamageType.CORROSIVE,
+        statusChance: 0.9, // Very high degrade chance
       }
     },
   },

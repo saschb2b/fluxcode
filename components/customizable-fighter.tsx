@@ -6,6 +6,7 @@ import type { Mesh, Group } from "three"
 import { Html } from "@react-three/drei"
 import type { Position } from "@/types/game"
 import type { FighterCustomization, FighterPart } from "@/lib/fighter-parts"
+import { Shield, Crosshair } from "lucide-react"
 
 interface CustomizableFighterProps {
   position: Position
@@ -13,6 +14,11 @@ interface CustomizableFighterProps {
   hp: number
   maxHp: number
   customization?: FighterCustomization
+  shields?: number
+  maxShields?: number
+  armor?: number
+  maxArmor?: number
+  // </CHANGE>
 }
 
 function PartMesh({ part, color }: { part: FighterPart; color: string }) {
@@ -43,7 +49,17 @@ function PartMesh({ part, color }: { part: FighterPart; color: string }) {
   )
 }
 
-export function CustomizableFighter({ position, isPlayer, hp, maxHp, customization }: CustomizableFighterProps) {
+export function CustomizableFighter({
+  position,
+  isPlayer,
+  hp,
+  maxHp,
+  customization,
+  shields = 0,
+  maxShields = 0,
+  armor = 0,
+  maxArmor = 0,
+}: CustomizableFighterProps) {
   const meshRef = useRef<Mesh>(null)
   const groupRef = useRef<Group>(null)
   const currentPosRef = useRef<[number, number, number]>([0, 0.6, 0])
@@ -118,6 +134,8 @@ export function CustomizableFighter({ position, isPlayer, hp, maxHp, customizati
   const primaryColor = customization?.primaryColor || defaultColor
   const secondaryColor = customization?.secondaryColor || defaultColor
   const hpPercent = (hp / maxHp) * 100
+  const shieldPercent = maxShields > 0 ? (shields / maxShields) * 100 : 0
+  const armorPercent = maxArmor > 0 ? (armor / maxArmor) * 100 : 0
 
   return (
     <group ref={groupRef}>
@@ -172,18 +190,51 @@ export function CustomizableFighter({ position, isPlayer, hp, maxHp, customizati
           <div className="text-xs font-bold text-foreground px-2 py-0.5 bg-card/80 rounded border border-border">
             {isPlayer ? "PLAYER" : "ENEMY"}
           </div>
-          <div className="w-20 h-2 bg-muted rounded-sm border border-border overflow-hidden">
-            <div
-              className="h-full transition-all duration-300"
-              style={{
-                width: `${hpPercent}%`,
-                backgroundColor: hpPercent > 50 ? "#22c55e" : hpPercent > 25 ? "#eab308" : "#ef4444",
-              }}
-            />
+
+          <div className="flex flex-col gap-0.5 w-24">
+            {maxShields > 0 && (
+              <div className="flex items-center gap-1">
+                <Shield className="w-3 h-3 text-cyan-400" />
+                <div className="flex-1 h-1.5 bg-muted/50 rounded-sm border border-cyan-400/30 overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-300 bg-cyan-400"
+                    style={{ width: `${shieldPercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-cyan-400 w-8 text-right">{shields}</span>
+              </div>
+            )}
+
+            {maxArmor > 0 && (
+              <div className="flex items-center gap-1">
+                <Crosshair className="w-3 h-3 text-amber-400" />
+                <div className="flex-1 h-1.5 bg-muted/50 rounded-sm border border-amber-400/30 overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-300 bg-amber-400"
+                    style={{ width: `${armorPercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-amber-400 w-8 text-right">{armor}</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+              </div>
+              <div className="flex-1 h-2 bg-muted rounded-sm border border-border overflow-hidden">
+                <div
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${hpPercent}%`,
+                    backgroundColor: hpPercent > 50 ? "#22c55e" : hpPercent > 25 ? "#eab308" : "#ef4444",
+                  }}
+                />
+              </div>
+              <span className="text-xs font-mono text-foreground w-8 text-right">{hp}</span>
+            </div>
           </div>
-          <div className="text-xs font-mono text-foreground">
-            {hp}/{maxHp}
-          </div>
+          {/* </CHANGE> */}
         </div>
       </Html>
     </group>
