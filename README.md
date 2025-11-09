@@ -33,7 +33,7 @@ Battle Protocol combines strategic AI programming with real-time tactical combat
 
 ## 🚀 Getting Started
 
-```bash
+\`\`\`bash
 # Install dependencies
 pnpm install
 
@@ -42,7 +42,7 @@ pnpm dev
 
 # Build for production
 pnpm build
-```
+\`\`\`
 
 ## 📚 Documentation
 

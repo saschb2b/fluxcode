@@ -10,7 +10,7 @@ Triggers are conditions that determine when a protocol should activate.
 
 Open `lib/triggers.ts` and add your trigger to the `AVAILABLE_TRIGGERS` array:
 
-```typescript
+\`\`\`typescript
 {
   id: 'my-custom-trigger',
   name: 'My Custom Trigger',
@@ -20,13 +20,13 @@ Open `lib/triggers.ts` and add your trigger to the `AVAILABLE_TRIGGERS` array:
     return context.playerHP < 50
   }
 }
-```
+\`\`\`
 
 ### 2. Battle Context
 
 The `context` parameter provides access to all battle state:
 
-```typescript
+\`\`\`typescript
 interface BattleContext {
   playerPos: Position        // Player position {x, y}
   enemyPos: Position         // Enemy position {x, y}
@@ -38,32 +38,32 @@ interface BattleContext {
   lastDamageTaken: number    // Damage from last hit
   turnCount: number          // Number of turns elapsed
 }
-```
+\`\`\`
 
 ### 3. Example Triggers
 
 **Position-based:**
-```typescript
+\`\`\`typescript
 {
   id: 'in-same-row',
   name: 'In Same Row',
   description: 'Triggers when player and enemy are in the same row',
   check: (context) => context.playerPos.y === context.enemyPos.y
 }
-```
+\`\`\`
 
 **HP-based:**
-```typescript
+\`\`\`typescript
 {
   id: 'low-health',
   name: 'Low Health',
   description: 'Triggers when HP is below 30%',
   check: (context) => context.playerHP / context.maxPlayerHP < 0.3
 }
-```
+\`\`\`
 
 **Distance-based:**
-```typescript
+\`\`\`typescript
 {
   id: 'enemy-close',
   name: 'Enemy Close',
@@ -74,7 +74,7 @@ interface BattleContext {
     return dx + dy <= 2
   }
 }
-```
+\`\`\`
 
 ## Adding New Actions
 
@@ -84,7 +84,7 @@ Actions define what your fighter does when a protocol activates.
 
 Open `lib/actions.ts` and add your action to the `AVAILABLE_ACTIONS` array:
 
-```typescript
+\`\`\`typescript
 {
   id: 'my-custom-action',
   name: 'My Custom Action',
@@ -103,7 +103,7 @@ Open `lib/actions.ts` and add your action to the `AVAILABLE_ACTIONS` array:
     }
   }
 }
-```
+\`\`\`
 
 ### 2. Return Values
 
@@ -118,7 +118,7 @@ Actions can modify:
 ### 3. Example Actions
 
 **Movement:**
-```typescript
+\`\`\`typescript
 {
   id: 'move-forward',
   name: 'Move Forward',
@@ -131,10 +131,10 @@ Actions can modify:
     }
   })
 }
-```
+\`\`\`
 
 **Attack:**
-```typescript
+\`\`\`typescript
 {
   id: 'fire-projectile',
   name: 'Fire Projectile',
@@ -149,10 +149,10 @@ Actions can modify:
     }]
   })
 }
-```
+\`\`\`
 
 **Healing:**
-```typescript
+\`\`\`typescript
 {
   id: 'heal',
   name: 'Heal',
@@ -162,7 +162,7 @@ Actions can modify:
     playerHP: Math.min(context.playerHP + 20, context.maxPlayerHP)
   })
 }
-```
+\`\`\`
 
 ## Adding New Character Classes
 
@@ -172,7 +172,7 @@ Character classes define starting protocols and unlocked abilities.
 
 Open `lib/character-presets.ts` and add your character to the `CHARACTER_PRESETS` array:
 
-```typescript
+\`\`\`typescript
 {
   id: 'my-class',
   name: 'My Class',
@@ -189,7 +189,7 @@ Open `lib/character-presets.ts` and add your character to the `CHARACTER_PRESETS
   startingTriggers: [0, 5, 11, 19], // Indices of unlocked triggers
   startingActions: [0, 1, 6, 10, 15] // Indices of unlocked actions
 }
-```
+\`\`\`
 
 ### 2. Design Considerations
 
@@ -205,7 +205,7 @@ Open `lib/character-presets.ts` and add your character to the `CHARACTER_PRESETS
 
 ### 3. Example Character
 
-```typescript
+\`\`\`typescript
 {
   id: 'tank',
   name: 'Fortress',
@@ -231,7 +231,7 @@ Open `lib/character-presets.ts` and add your character to the `CHARACTER_PRESETS
   startingTriggers: [0, 5, 8, 11],
   startingActions: [0, 1, 6, 10, 15]
 }
-```
+\`\`\`
 
 ## Modifying Battle Logic
 
@@ -241,7 +241,7 @@ Open `lib/character-presets.ts` and add your character to the `CHARACTER_PRESETS
 
 Key methods to understand:
 
-```typescript
+\`\`\`typescript
 class BattleEngine {
   // Main game loop - called every frame
   update(deltaTime: number): void
@@ -258,7 +258,7 @@ class BattleEngine {
   // Checks for projectile hits
   checkCollisions(): void
 }
-```
+\`\`\`
 
 ### Game Balance
 
@@ -309,11 +309,11 @@ Key balance parameters and where to find them:
 
 Add console logs with the `[v0]` prefix:
 
-```typescript
+\`\`\`typescript
 console.log('[v0] Trigger activated:', triggerId)
 console.log('[v0] Action executed:', actionId, 'Cooldown:', cooldown)
 console.log('[v0] Battle state:', battleEngine.getState())
-```
+\`\`\`
 
 ## Best Practices
 

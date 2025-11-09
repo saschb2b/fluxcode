@@ -9,9 +9,12 @@ import { CharacterSelection } from "@/components/character-selection"
 import { FighterCustomization } from "@/components/fighter-customization"
 import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
+import { ProtocolMasteryTracker } from "@/components/protocol-mastery-tracker"
+import { NetworkContractsView } from "@/components/network-contracts-view"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
 import { CHARACTER_PRESETS } from "@/lib/character-presets"
+import { claimContractReward, forceRefreshContracts } from "@/lib/network-contracts"
 import type { CharacterPreset } from "@/lib/character-presets"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 
@@ -22,6 +25,8 @@ export default function Home() {
   const [showCustomization, setShowCustomization] = useState(false)
   const [showMetaShop, setShowMetaShop] = useState(false)
   const [showCodex, setShowCodex] = useState(false)
+  const [showMastery, setShowMastery] = useState(false)
+  const [showContracts, setShowContracts] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -117,6 +122,63 @@ export default function Home() {
     setShowCodex(false)
   }
 
+  const handleOpenMastery = () => {
+    setShowMastery(true)
+  }
+
+  const handleCloseMastery = () => {
+    setShowMastery(false)
+  }
+
+  const handleOpenContracts = () => {
+    setShowContracts(true)
+  }
+
+  const handleCloseContracts = () => {
+    setShowContracts(false)
+  }
+
+  const handleClaimContractReward = (contractId: string, refreshType: "daily" | "weekly") => {
+    console.log("[v0] handleClaimContractReward called - contractId:", contractId, "refreshType:", refreshType)
+
+    if (!gameState.playerProgress.contractProgress) {
+      console.log("[v0] No contract progress found")
+      return
+    }
+
+    console.log("[v0] Current contract progress:", gameState.playerProgress.contractProgress)
+    console.log("[v0] Current cipher fragments:", gameState.playerProgress.cipherFragments)
+
+    const { contractProgress: updatedContractProgress, playerProgress: updatedPlayerProgress } = claimContractReward(
+      contractId,
+      refreshType,
+      gameState.playerProgress.contractProgress,
+      gameState.playerProgress,
+    )
+
+    console.log("[v0] Updated contract progress:", updatedContractProgress)
+    console.log("[v0] Updated player progress:", updatedPlayerProgress)
+    console.log("[v0] New cipher fragments:", updatedPlayerProgress.cipherFragments)
+
+    gameState.updatePlayerProgress({
+      ...updatedPlayerProgress,
+      contractProgress: updatedContractProgress,
+    })
+
+    console.log("[v0] Player progress updated successfully")
+  }
+
+  const handleForceRefreshContracts = () => {
+    if (!gameState.playerProgress.contractProgress) return
+
+    const refreshedContracts = forceRefreshContracts(gameState.playerProgress.contractProgress)
+
+    gameState.updatePlayerProgress({
+      ...gameState.playerProgress,
+      contractProgress: refreshedContracts,
+    })
+  }
+
   return (
     <>
       {gamePhase === "start" && (
@@ -136,6 +198,8 @@ export default function Home() {
             onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
+            onOpenMastery={handleOpenMastery}
+            onOpenContracts={handleOpenContracts}
             bgmAudioRef={audioRef}
           />
         </main>
@@ -180,6 +244,25 @@ export default function Home() {
           progress={gameState.playerProgress}
           onClose={handleCloseMetaShop}
           onPurchase={gameState.updatePlayerProgress}
+        />
+      )}
+
+      {showMastery && (
+        <ProtocolMasteryTracker
+          masteryProgress={gameState.playerProgress.masteryProgress}
+          isOpen={showMastery}
+          onClose={handleCloseMastery}
+        />
+      )}
+
+      {showContracts && gameState.playerProgress.contractProgress && (
+        <NetworkContractsView
+          dailyContracts={gameState.playerProgress.contractProgress.dailyContracts}
+          weeklyContracts={gameState.playerProgress.contractProgress.weeklyContracts}
+          onClose={handleCloseContracts}
+          onClaimReward={handleClaimContractReward}
+          onForceRefresh={handleForceRefreshContracts}
+          completedContractIds={gameState.playerProgress.contractProgress.completedContractIds}
         />
       )}
     </>

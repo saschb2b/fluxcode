@@ -25,6 +25,8 @@ export interface BattleUpdate {
   battleOver?: boolean
   playerWon?: boolean
   battleHistory?: BattleHistoryPoint[]
+  damageDealt?: { type: string; amount: number }
+  pairExecuted?: { triggerId: string; actionId: string }
 }
 
 export class BattleEngine {
@@ -88,6 +90,9 @@ export class BattleEngine {
       update.enemyHP = hitUpdate.enemyHP
       this.state.enemyHP = hitUpdate.enemyHP
     }
+    if (hitUpdate.damageDealt !== undefined) {
+      update.damageDealt = hitUpdate.damageDealt
+    }
 
     // Check for battle end
     if (this.state.playerHP <= 0) {
@@ -118,6 +123,10 @@ export class BattleEngine {
     if (playerAction) {
       const actionUpdate = this.applyAction(playerAction, true)
       Object.assign(update, actionUpdate)
+      update.pairExecuted = {
+        triggerId: playerAction.triggerId,
+        actionId: playerAction.actionId,
+      }
     }
 
     // Execute enemy AI
@@ -125,6 +134,10 @@ export class BattleEngine {
     if (enemyAction) {
       const actionUpdate = this.applyAction(enemyAction, false)
       Object.assign(update, actionUpdate)
+      update.pairExecuted = {
+        triggerId: enemyAction.triggerId,
+        actionId: enemyAction.actionId,
+      }
     }
 
     // Reset damage flag after processing
@@ -167,7 +180,7 @@ export class BattleEngine {
       if (pair.trigger.check(context)) {
         // Trigger matched! Execute action
         this.actionCooldowns.set(cooldownKey, pair.action.cooldown)
-        return pair.action.execute(context)
+        return { ...pair.action.execute(context), triggerId: pair.trigger.id, actionId: pair.action.id }
       }
     }
 
@@ -240,6 +253,7 @@ export class BattleEngine {
       position: { ...pos },
       direction: isPlayer ? "right" : "left",
       damage: adjustedDamage,
+      damageType: "kinetic", // Default damage type
     }
   }
 
@@ -257,8 +271,12 @@ export class BattleEngine {
       .filter((proj) => proj.position.x >= 0 && proj.position.x <= 5)
   }
 
-  private checkProjectileHits(): { playerHP?: number; enemyHP?: number } {
-    const update: { playerHP?: number; enemyHP?: number } = {}
+  private checkProjectileHits(): {
+    playerHP?: number
+    enemyHP?: number
+    damageDealt?: { type: string; amount: number }
+  } {
+    const update: { playerHP?: number; enemyHP?: number; damageDealt?: { type: string; amount: number } } = {}
     const remainingProjectiles: Projectile[] = []
 
     for (const proj of this.state.projectiles) {
@@ -283,6 +301,10 @@ export class BattleEngine {
       ) {
         this.state.enemyHP = Math.max(0, this.state.enemyHP - proj.damage)
         update.enemyHP = this.state.enemyHP
+        update.damageDealt = {
+          type: proj.damageType || "kinetic",
+          amount: proj.damage,
+        }
         hit = true
       }
 

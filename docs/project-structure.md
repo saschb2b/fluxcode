@@ -4,7 +4,7 @@ This document describes the organization of the Battle Protocol codebase.
 
 ## Directory Overview
 
-```
+\`\`\`
 battle-protocol/
 ├── app/                    # Next.js App Router
 ├── components/             # React components
@@ -13,7 +13,7 @@ battle-protocol/
 ├── types/                  # TypeScript type definitions
 ├── public/                 # Static assets
 └── docs/                   # Documentation
-```
+\`\`\`
 
 ## App Directory (`app/`)
 
@@ -155,7 +155,7 @@ Game logic and data definitions.
 Core battle simulation engine:
 
 **Class: BattleEngine**
-```typescript
+\`\`\`typescript
 class BattleEngine {
   // Main game loop
   update(deltaTime: number): void
@@ -174,7 +174,7 @@ class BattleEngine {
   getState(): BattleState
   isGameOver(): boolean
 }
-```
+\`\`\`
 
 ### `triggers.ts`
 
@@ -215,7 +215,7 @@ Utility functions:
 TypeScript type definitions:
 
 **Core Types:**
-```typescript
+\`\`\`typescript
 interface Position { x: number; y: number }
 
 interface Projectile {
@@ -258,7 +258,7 @@ interface BattleContext {
   lastDamageTaken: number
   turnCount: number
 }
-```
+\`\`\`
 
 ## Public Directory (`public/`)
 
@@ -279,7 +279,7 @@ Markdown documentation:
 
 ## Data Flow
 
-```
+\`\`\`
 User Interaction
       ↓
 Components (game-ui.tsx)
@@ -295,32 +295,32 @@ Battle Engine (updates)
 Game State Hook (state updates)
       ↓
 Components (re-render)
-```
+\`\`\`
 
 ## Import Guidelines
 
 **Component Imports:**
-```typescript
+\`\`\`typescript
 import { Button } from '@/components/ui/button'
 import { BattleArena } from '@/components/battle-arena'
-```
+\`\`\`
 
 **Hook Imports:**
-```typescript
+\`\`\`typescript
 import { useGameState } from '@/hooks/use-game-state'
-```
+\`\`\`
 
 **Lib Imports:**
-```typescript
+\`\`\`typescript
 import { AVAILABLE_TRIGGERS } from '@/lib/triggers'
 import { AVAILABLE_ACTIONS } from '@/lib/actions'
 import { BattleEngine } from '@/lib/battle-engine'
-```
+\`\`\`
 
 **Type Imports:**
-```typescript
+\`\`\`typescript
 import type { Position, Trigger, Action } from '@/types/game'
-```
+\`\`\`
 
 ## File Naming Conventions
 

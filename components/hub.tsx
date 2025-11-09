@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button"
 import type React from "react"
 
 import { Card } from "@/components/ui/card"
-import { Play, User, Palette, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap } from "lucide-react"
+import { Play, User, Palette, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap, Brain, FileText } from "lucide-react"
 import type { CharacterPreset } from "@/lib/character-presets"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { PlayerProgress } from "@/lib/meta-progression"
+import { META_UPGRADES, canAffordUpgrade } from "@/lib/meta-progression"
 import { Hub3DScene } from "./hub-3d-scene"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 interface HubProps {
   selectedCharacter: CharacterPreset | null
@@ -19,6 +20,8 @@ interface HubProps {
   onCustomizeFighter: () => void
   onOpenShop: () => void
   onOpenCodex: () => void
+  onOpenMastery: () => void
+  onOpenContracts: () => void
   bgmAudioRef?: React.RefObject<HTMLAudioElement | null>
 }
 
@@ -31,9 +34,30 @@ export function Hub({
   onCustomizeFighter,
   onOpenShop,
   onOpenCodex,
+  onOpenMastery,
+  onOpenContracts,
   bgmAudioRef,
 }: HubProps) {
   const [isBreaching, setIsBreaching] = useState(false)
+
+  const shopBadgeCount = useMemo(() => {
+    return META_UPGRADES.filter((upgrade) => canAffordUpgrade(playerProgress, upgrade)).length
+  }, [playerProgress])
+
+  const contractsBadgeCount = useMemo(() => {
+    if (!playerProgress.contractProgress) return 0
+    const dailyClaimable = playerProgress.contractProgress.dailyContracts.filter(
+      (c) => c.progress >= c.maxProgress && !c.claimed,
+    ).length
+    const weeklyClaimable = playerProgress.contractProgress.weeklyContracts.filter(
+      (c) => c.progress >= c.maxProgress && !c.claimed,
+    ).length
+    return dailyClaimable + weeklyClaimable
+  }, [playerProgress])
+
+  const masteryBadgeCount = useMemo(() => {
+    return playerProgress.completedMasteries?.length || 0
+  }, [playerProgress])
 
   const handleBreach = () => {
     setIsBreaching(true)
@@ -43,7 +67,9 @@ export function Hub({
       bgmAudioRef.current.volume = 0.2
     }
 
-    const audio = new Audio("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/corrupt-data-sound-379468-HQLEeA9R8HMMVTOvLhZb5N5Kvad81G.mp3")
+    const audio = new Audio(
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/corrupt-data-sound-379468-HQLEeA9R8HMMVTOvLhZb5N5Kvad81G.mp3",
+    )
     audio.volume = 0.7
     audio.play().catch((err) => console.error("[v0] Failed to play breach sound:", err))
 
@@ -53,10 +79,18 @@ export function Hub({
       }
     })
 
-    // Animation sequence takes 3 seconds
     setTimeout(() => {
       onStartRun()
     }, 3000)
+  }
+
+  const NotificationBadge = ({ count }: { count: number }) => {
+    if (count === 0) return null
+    return (
+      <div className="absolute -top-1 -right-1 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-black shadow-[0_0_10px_rgba(255,215,0,0.6)]">
+        {count > 9 ? "9+" : count}
+      </div>
+    )
   }
 
   return (
@@ -117,7 +151,7 @@ export function Hub({
 
           {/* No Character Selected - Desktop */}
           {!selectedCharacter && (
-            <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
+            <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,0,0.2)]">
               <div className="text-center">
                 <User className="w-16 h-16 text-muted-foreground mx-auto mb-3" />
                 <p className="text-base text-muted-foreground mb-4">No fighter selected</p>
@@ -251,34 +285,60 @@ export function Hub({
               OPERATIONS
             </h2>
             <div className="flex flex-col gap-3">
-              <Button
-                onClick={onCustomizeFighter}
-                variant="outline"
-                className="justify-start border-magenta-500/60 hover:bg-magenta-500/20 active:scale-95 bg-black/40 h-12"
-              >
-                <Palette className="w-5 h-5 mr-3 text-magenta-400" />
-                <span className="text-sm sm:text-base">Configure Loadout</span>
-              </Button>
-
               {playerProgress.totalRuns > 0 && (
-                <Button
-                  onClick={onOpenShop}
-                  variant="outline"
-                  className="justify-start border-yellow-500/60 hover:bg-yellow-500/20 active:scale-95 bg-black/40 h-12"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-3 text-yellow-400" />
-                  <span className="text-sm sm:text-base">Protocol Vault</span>
-                </Button>
+                <div className="flex flex-col gap-3 pb-3 border-b border-magenta-500/30">
+                  <Button
+                    onClick={onOpenShop}
+                    className="relative justify-start bg-gradient-to-r from-yellow-600/20 to-yellow-700/10 border-2 border-yellow-500/60 hover:bg-yellow-500/30 hover:border-yellow-400 active:scale-95 h-14 text-base shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                  >
+                    <ShoppingCart className="w-6 h-6 mr-3 text-yellow-400" />
+                    <span className="font-bold">Protocol Vault</span>
+                    <NotificationBadge count={shopBadgeCount} />
+                  </Button>
+
+                  <Button
+                    onClick={onOpenContracts}
+                    className="relative justify-start bg-gradient-to-r from-green-600/20 to-green-700/10 border-2 border-green-500/60 hover:bg-green-500/30 hover:border-green-400 active:scale-95 h-14 text-base shadow-[0_0_15px_rgba(0,255,0,0.2)]"
+                  >
+                    <FileText className="w-6 h-6 mr-3 text-green-400" />
+                    <span className="font-bold">Network Contracts</span>
+                    <NotificationBadge count={contractsBadgeCount} />
+                  </Button>
+
+                  <Button
+                    onClick={onOpenMastery}
+                    className="relative justify-start bg-gradient-to-r from-cyan-600/20 to-cyan-700/10 border-2 border-cyan-500/60 hover:bg-cyan-500/30 hover:border-cyan-400 active:scale-95 h-14 text-base shadow-[0_0_15px_rgba(0,255,255,0.2)]"
+                  >
+                    <Brain className="w-6 h-6 mr-3 text-cyan-400" />
+                    <span className="font-bold">Protocol Mastery</span>
+                    {masteryBadgeCount > 0 && (
+                      <div className="ml-auto bg-cyan-400/20 px-2 py-1 rounded border border-cyan-400/50 text-xs text-cyan-400">
+                        {masteryBadgeCount} completed
+                      </div>
+                    )}
+                  </Button>
+                </div>
               )}
 
-              <Button
-                onClick={onOpenCodex}
-                variant="outline"
-                className="justify-start border-cyan-500/60 hover:bg-cyan-500/20 active:scale-95 bg-black/40 h-12"
-              >
-                <BookOpen className="w-5 h-5 mr-3 text-cyan-400" />
-                <span className="text-sm sm:text-base">Data Archive</span>
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={onCustomizeFighter}
+                  variant="ghost"
+                  className="justify-start border border-magenta-500/30 hover:bg-magenta-500/10 hover:border-magenta-500/50 active:scale-95 h-10 text-sm opacity-80"
+                >
+                  <Palette className="w-4 h-4 mr-2 text-magenta-400" />
+                  <span>Configure Loadout</span>
+                </Button>
+
+                <Button
+                  onClick={onOpenCodex}
+                  variant="ghost"
+                  className="justify-start border border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-500/50 active:scale-95 h-10 text-sm opacity-80"
+                >
+                  <BookOpen className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Data Archive</span>
+                </Button>
+              </div>
             </div>
           </Card>
 
@@ -347,43 +407,70 @@ export function Hub({
             </div>
           </Card>
 
-          {/* Actions - Desktop */}
           <Card className="bg-card/90 backdrop-blur-md border-2 border-magenta-500/50 p-6 shadow-[0_0_15px_rgba(255,0,255,0.2)] hover:shadow-[0_0_25px_rgba(255,0,255,0.4)] transition-all">
             <h2 className="text-xl font-bold text-magenta-400 mb-4" style={{ fontFamily: "monospace" }}>
               OPERATIONS
             </h2>
             <div className="flex flex-col gap-3">
-              <Button
-                onClick={onCustomizeFighter}
-                variant="outline"
-                size="lg"
-                className="justify-start border-magenta-500/50 hover:bg-magenta-500/20 active:scale-95 bg-transparent"
-              >
-                <Palette className="w-5 h-5 mr-3 text-magenta-400" />
-                <span className="text-base">Configure Loadout</span>
-              </Button>
-
               {playerProgress.totalRuns > 0 && (
-                <Button
-                  onClick={onOpenShop}
-                  variant="outline"
-                  size="lg"
-                  className="justify-start border-yellow-500/50 hover:bg-yellow-500/20 active:scale-95 bg-transparent"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-3 text-yellow-400" />
-                  <span className="text-base">Protocol Vault</span>
-                </Button>
+                <div className="flex flex-col gap-3 pb-3 border-b border-magenta-500/30">
+                  <Button
+                    onClick={onOpenShop}
+                    size="lg"
+                    className="relative justify-start bg-gradient-to-r from-yellow-600/20 to-yellow-700/10 border-2 border-yellow-500/60 hover:bg-yellow-500/30 hover:border-yellow-400 active:scale-95 h-16 shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                  >
+                    <ShoppingCart className="w-6 h-6 mr-3 text-yellow-400" />
+                    <span className="text-lg font-bold">Protocol Vault</span>
+                    <NotificationBadge count={shopBadgeCount} />
+                  </Button>
+
+                  <Button
+                    onClick={onOpenContracts}
+                    size="lg"
+                    className="relative justify-start bg-gradient-to-r from-green-600/20 to-green-700/10 border-2 border-green-500/60 hover:bg-green-500/30 hover:border-green-400 active:scale-95 h-16 shadow-[0_0_15px_rgba(0,255,0,0.2)]"
+                  >
+                    <FileText className="w-6 h-6 mr-3 text-green-400" />
+                    <span className="text-lg font-bold">Network Contracts</span>
+                    <NotificationBadge count={contractsBadgeCount} />
+                  </Button>
+
+                  <Button
+                    onClick={onOpenMastery}
+                    size="lg"
+                    className="relative justify-start bg-gradient-to-r from-cyan-600/20 to-cyan-700/10 border-2 border-cyan-500/60 hover:bg-cyan-500/30 hover:border-cyan-400 active:scale-95 h-16 shadow-[0_0_15px_rgba(0,255,255,0.2)]"
+                  >
+                    <Brain className="w-6 h-6 mr-3 text-cyan-400" />
+                    <span className="text-lg font-bold">Protocol Mastery</span>
+                    {masteryBadgeCount > 0 && (
+                      <div className="ml-auto bg-cyan-400/20 px-2 py-1 rounded border border-cyan-400/50 text-xs text-cyan-400">
+                        {masteryBadgeCount} complete
+                      </div>
+                    )}
+                  </Button>
+                </div>
               )}
 
-              <Button
-                onClick={onOpenCodex}
-                variant="outline"
-                size="lg"
-                className="justify-start border-cyan-500/50 hover:bg-cyan-500/20 active:scale-95 bg-transparent"
-              >
-                <BookOpen className="w-5 h-5 mr-3 text-cyan-400" />
-                <span className="text-base">Data Archive</span>
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={onCustomizeFighter}
+                  variant="ghost"
+                  size="default"
+                  className="justify-start border border-magenta-500/30 hover:bg-magenta-500/10 hover:border-magenta-500/50 active:scale-95 h-10 opacity-80"
+                >
+                  <Palette className="w-4 h-4 mr-2 text-magenta-400" />
+                  <span>Configure Loadout</span>
+                </Button>
+
+                <Button
+                  onClick={onOpenCodex}
+                  variant="ghost"
+                  size="default"
+                  className="justify-start border border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-500/50 active:scale-95 h-10 opacity-80"
+                >
+                  <BookOpen className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Data Archive</span>
+                </Button>
+              </div>
             </div>
           </Card>
         </div>

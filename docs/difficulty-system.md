@@ -41,9 +41,9 @@ Gentle transition with gradual DDA introduction:
 
 Linear scaling provides steady progression:
 
-```
+\`\`\`
 HP = 40 + (wave * 10)
-```
+\`\`\`
 
 | Wave | Base HP | With DDA (0.6x-1.5x) |
 |------|---------|----------------------|
@@ -55,9 +55,9 @@ HP = 40 + (wave * 10)
 
 Exponential scaling for long-term challenge:
 
-```
+\`\`\`
 HP = 40 + (15 * 10) + Math.pow(wave - 15, 1.5) * 15
-```
+\`\`\`
 
 | Wave | Base HP | With DDA (0.6x-1.5x) |
 |------|---------|----------------------|
@@ -73,13 +73,13 @@ The DDA system monitors three key metrics:
 
 #### 1. Win Rate (40% weight)
 
-```mermaid
+\`\`\`mermaid
 graph LR
     A[Last 5 Battles] --> B{Win Rate}
     B -->|< 60%| C[Easier -10%]
     B -->|60-80%| D[No Change]
     B -->|> 80%| E[Harder +10%]
-```
+\`\`\`
 
 - **Target**: 60-80% win rate
 - **Window**: Last 5 battles
@@ -87,13 +87,13 @@ graph LR
 
 #### 2. Kill Speed (30% weight)
 
-```mermaid
+\`\`\`mermaid
 graph LR
     A[Battle Duration] --> B{Kill Time}
     B -->|< 20s| C[Harder +8%]
     B -->|20-40s| D[No Change]
     B -->|> 40s| E[Easier -8%]
-```
+\`\`\`
 
 - **Target**: 20-40 seconds per battle
 - **Measurement**: Time from battle start to enemy defeat
@@ -101,13 +101,13 @@ graph LR
 
 #### 3. HP Retention (30% weight)
 
-```mermaid
+\`\`\`mermaid
 graph LR
     A[End Battle HP] --> B{HP Remaining}
     B -->|< 40%| C[Easier -8%]
     B -->|40-70%| D[No Change]
     B -->|> 70%| E[Harder +8%]
-```
+\`\`\`
 
 - **Target**: 40-70% HP remaining
 - **Measurement**: Player HP at battle end / max HP
@@ -115,7 +115,7 @@ graph LR
 
 ### Multiplier Calculation
 
-```typescript
+\`\`\`typescript
 function calculateDifficultyMultiplier(
   history: PerformanceMetric[]
 ): number {
@@ -140,26 +140,26 @@ function calculateDifficultyMultiplier(
   // Clamp to reasonable bounds
   return Math.max(0.6, Math.min(1.5, multiplier))
 }
-```
+\`\`\`
 
 ### Tutorial Protection
 
 DDA is disabled or reduced during the learning phase:
 
-```mermaid
+\`\`\`mermaid
 graph TB
     A[Wave Number] --> B{Tutorial Check}
     B -->|1-3| C[DDA = 1.0x<br/>No adjustment]
     B -->|4| D[DDA = 1.0x<br/>Difficulty saw]
     B -->|5| E[DDA * 0.5<br/>Gradual intro]
     B -->|6+| F[Full DDA<br/>0.6x - 1.5x]
-```
+\`\`\`
 
 ## Implementation Details
 
 ### Data Structure
 
-```typescript
+\`\`\`typescript
 interface PerformanceMetric {
   won: boolean          // Did player win?
   killTime: number      // Seconds to defeat enemy
@@ -172,11 +172,11 @@ interface DDAState {
   currentMultiplier: number     // Current difficulty
   lastUpdate: number            // Timestamp of last calc
 }
-```
+\`\`\`
 
 ### Performance Tracking
 
-```typescript
+\`\`\`typescript
 // After each battle
 const metric: PerformanceMetric = {
   won: playerHP > 0,
@@ -194,11 +194,11 @@ setPerformanceHistory(prev =>
 const newMultiplier = calculateDifficultyMultiplier(
   performanceHistory
 )
-```
+\`\`\`
 
 ### Enemy HP Calculation
 
-```typescript
+\`\`\`typescript
 function calculateEnemyHP(
   wave: number,
   ddaMultiplier: number
@@ -219,7 +219,7 @@ function calculateEnemyHP(
   // 3. Apply multiplier and round
   return Math.round(baseHp * finalMultiplier)
 }
-```
+\`\`\`
 
 ## Why This Works
 
@@ -248,7 +248,7 @@ function calculateEnemyHP(
 
 ### DDA Response Curve
 
-```mermaid
+\`\`\`mermaid
 graph LR
     A[Player Performance] --> B{DDA Analysis}
     B -->|Struggling| C[0.6x - 0.9x<br/>Easier Enemies]
@@ -258,11 +258,11 @@ graph LR
     C --> F[Maintain Engagement]
     D --> F
     E --> F
-```
+\`\`\`
 
 ### Wave Progression
 
-```mermaid
+\`\`\`mermaid
 graph TD
     A[Wave 1: 40 HP] --> B[Wave 2: 50 HP]
     B --> C[Wave 3: 60 HP]
@@ -270,7 +270,7 @@ graph TD
     D --> E[Wave 5: 90 HP<br/>50% DDA]
     E --> F[Wave 6-15<br/>Linear + Full DDA]
     F --> G[Wave 16+<br/>Exponential + DDA]
-```
+\`\`\`
 
 ## Testing the System
 
@@ -295,7 +295,7 @@ graph TD
 
 Add these logs to track DDA:
 
-```typescript
+\`\`\`typescript
 console.log('[v0] Performance:', {
   winRate: history.filter(m => m.won).length / history.length,
   avgKillTime: average(history.map(m => m.killTime)),

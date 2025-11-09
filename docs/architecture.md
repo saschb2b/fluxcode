@@ -6,7 +6,7 @@ This document provides a high-level overview of Battle Protocol's system archite
 
 Battle Protocol uses a layered architecture with clear separation between game logic, rendering, and UI:
 
-```mermaid
+\`\`\`mermaid
 graph TB
     subgraph "Presentation Layer"
         UI[Game UI Components]
@@ -53,7 +53,7 @@ graph TB
     AIExecutor --> Triggers
     AIExecutor --> Actions
     BattleManager --> Characters
-```
+\`\`\`
 
 ## Core Systems
 
@@ -91,7 +91,7 @@ Tracks player performance and adjusts difficulty:
 
 ### Battle Start Sequence
 
-```mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant Player
     participant GameUI
@@ -106,11 +106,11 @@ sequenceDiagram
     BattleEngine->>GameState: Return engine instance
     GameState->>GameUI: Update state to "fighting"
     GameUI->>Player: Show battle arena
-```
+\`\`\`
 
 ### Wave Progression Sequence
 
-```mermaid
+\`\`\`mermaid
 sequenceDiagram
     participant Player
     participant GameUI
@@ -129,11 +129,11 @@ sequenceDiagram
     GameState->>GameUI: Show enemy intro
     Player->>GameUI: Begin battle
     GameUI->>GameState: Start new battle
-```
+\`\`\`
 
 ## Component Hierarchy
 
-```
+\`\`\`
 App (page.tsx)
 ├── Start Screen
 ├── Character Selection
@@ -154,13 +154,13 @@ App (page.tsx)
     ├── Victory/Defeat Screen
     ├── Reward Selection
     └── Codex
-```
+\`\`\`
 
 ## State Machine
 
 The game follows a clear state machine pattern:
 
-```mermaid
+\`\`\`mermaid
 stateDiagram-v2
     [*] --> Start
     Start --> CharacterSelection
@@ -175,7 +175,7 @@ stateDiagram-v2
     GameOver --> CharacterSelection: Restart
     Programming --> Codex: View abilities
     Codex --> Programming: Close codex
-```
+\`\`\`
 
 ## Performance Considerations
 
@@ -186,7 +186,7 @@ stateDiagram-v2
 
 ## File Organization
 
-```
+\`\`\`
 battle-protocol/
 ├── app/                    # Next.js app router
 ├── components/             # React components
@@ -202,4 +202,4 @@ battle-protocol/
 │   └── character-presets.ts
 ├── types/                 # TypeScript definitions
 └── docs/                  # Documentation
-```
+\`\`\`

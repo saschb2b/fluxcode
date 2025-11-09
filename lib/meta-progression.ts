@@ -1,3 +1,6 @@
+import type { PlayerMasteryProgress } from "./protocol-mastery"
+import type { ContractProgress } from "./network-contracts"
+
 export interface MetaUpgrade {
   id: string
   name: string
@@ -46,6 +49,8 @@ export interface PlayerProgress {
   bestLayerReached: number // 0-3 (4 layers total)
   bestNodeInBestLayer: number // Track how far in that layer
   selectedCharacterId: string | null
+  masteryProgress?: PlayerMasteryProgress
+  contractProgress?: ContractProgress
 }
 
 export const META_UPGRADES: MetaUpgrade[] = [
@@ -1310,6 +1315,17 @@ export function getDefaultProgress(): PlayerProgress {
     bestLayerReached: 0,
     bestNodeInBestLayer: 0,
     selectedCharacterId: null,
+    masteryProgress: {
+      completedMasteries: [],
+      inProgressMasteries: {},
+      currentRunStats: {
+        triggerUsage: {},
+        actionUsage: {},
+        damageByType: {},
+        pairExecutions: [],
+      },
+    },
+    contractProgress: undefined, // Will be initialized when first accessed
   }
 }
 
