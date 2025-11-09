@@ -39,6 +39,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
   const [isRunning, setIsRunning] = useState(false)
   const [enableMovement, setEnableMovement] = useState(false)
   const [enableShield, setEnableShield] = useState(false)
+  const [enableArmor, setEnableArmor] = useState(false)
   const [metrics, setMetrics] = useState({
     totalDamage: 0,
     dps: 0,
@@ -59,12 +60,10 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
   const damageTrackingRef = useRef({ total: 0, hits: 0, executions: 0 })
 
   const startTest = () => {
-    // Reset metrics
     damageTrackingRef.current = { total: 0, hits: 0, executions: 0 }
     startTimeRef.current = Date.now()
     lastTimeRef.current = Date.now()
 
-    // Build player protocols
     const playerPairs = buildTriggerActionPairs(classData.startingPairs)
 
     const enemyPairs = enableMovement
@@ -83,14 +82,15 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       : []
 
     const shieldAmount = enableShield ? 200 : 0
+    const armorAmount = enableArmor ? 150 : 0
 
     const initialState: BattleState = {
       playerPos: { x: 1, y: 1 },
       playerHP: 100,
       enemyPos: { x: 4, y: 1 },
-      enemyHP: 999999, // Invincible dummy
+      enemyHP: 999999,
       enemyShields: shieldAmount,
-      enemyArmor: 0,
+      enemyArmor: armorAmount,
       projectiles: [],
       justTookDamage: false,
     }
@@ -99,7 +99,15 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
 
     setGameState({
       player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: shieldAmount, maxShields: shieldAmount },
+      enemy: {
+        position: { x: 4, y: 1 },
+        hp: 999999,
+        maxHp: 999999,
+        shields: shieldAmount,
+        maxShields: shieldAmount,
+        armor: armorAmount,
+        maxArmor: armorAmount,
+      },
       projectiles: [],
     })
 
@@ -140,7 +148,6 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
 
       const update = battleEngineRef.current!.tick(deltaTime)
 
-      // Update game state
       const newState = battleEngineRef.current!.getState()
       setGameState({
         player: {
@@ -154,22 +161,12 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           maxHp: 999999,
           shields: newState.enemyShields,
           maxShields: enableShield ? 200 : 0,
+          armor: newState.enemyArmor,
+          maxArmor: enableArmor ? 150 : 0,
         },
         projectiles: newState.projectiles,
       })
 
-      // Track damage dealt
-      if (update.damageDealt) {
-        damageTrackingRef.current.total += update.damageDealt.amount
-        damageTrackingRef.current.hits += 1
-      }
-
-      // Track protocol executions
-      if (update.pairExecuted) {
-        damageTrackingRef.current.executions += 1
-      }
-
-      // Update metrics
       const elapsedSeconds = (now - startTimeRef.current) / 1000
       const dps = elapsedSeconds > 0 ? damageTrackingRef.current.total / elapsedSeconds : 0
 
@@ -191,11 +188,10 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isRunning])
+  }, [isRunning, enableShield, enableArmor])
 
   return (
     <div className="fixed inset-0 z-[110] bg-black flex flex-col">
-      {/* Header with close button */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/50 bg-black/80 backdrop-blur-sm">
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-cyan-400 font-mono">SIMULACRUM</h2>
@@ -211,9 +207,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         </Button>
       </div>
 
-      {/* Stats Panel - Top */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-black/50 border-b border-cyan-500/30">
-        {/* DPS */}
         <Card className="bg-gradient-to-br from-cyan-950/50 to-black/50 border border-cyan-500/50 p-2 md:p-3">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-cyan-400" />
@@ -222,7 +216,6 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           <p className="text-xl md:text-2xl font-bold text-cyan-400 font-mono">{metrics.dps}</p>
         </Card>
 
-        {/* Total Damage */}
         <Card className="bg-gradient-to-br from-green-950/50 to-black/50 border border-green-500/50 p-2 md:p-3">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
@@ -232,7 +225,6 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           <p className="text-xs text-green-300/50">{metrics.hits} hits</p>
         </Card>
 
-        {/* Protocols */}
         <Card className="bg-gradient-to-br from-purple-950/50 to-black/50 border border-purple-500/50 p-2 md:p-3">
           <div className="flex items-center gap-2 mb-1">
             <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
@@ -241,7 +233,6 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           <p className="text-xl md:text-2xl font-bold text-purple-400 font-mono">{metrics.protocolExecutions}</p>
         </Card>
 
-        {/* Duration */}
         <Card className="bg-gradient-to-br from-yellow-950/50 to-black/50 border border-yellow-500/50 p-2 md:p-3">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
@@ -251,7 +242,6 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         </Card>
       </div>
 
-      {/* 3D Arena - Center (fills remaining space) */}
       <div className="flex-1 relative min-h-0">
         <Canvas shadows className="crt-effect">
           <PerspectiveCamera makeDefault position={[0, 8, 12]} fov={50} />
@@ -295,12 +285,13 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
             customization={TRAINING_DUMMY_CUSTOMIZATION}
             shields={gameState.enemy.shields}
             maxShields={gameState.enemy.maxShields}
+            armor={gameState.enemy.armor}
+            maxArmor={gameState.enemy.maxArmor}
           />
 
           <Projectiles projectiles={gameState.projectiles} />
         </Canvas>
 
-        {/* Dummy Status Overlay */}
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-black/80 border border-yellow-500/50 px-2 py-1 md:px-4 md:py-2 rounded">
           <p className="text-yellow-400 text-xs md:text-sm font-mono">⚠ DUMMY - INVINCIBLE</p>
           {enableMovement && (
@@ -315,9 +306,14 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
               Shield Active
             </p>
           )}
+          {enableArmor && (
+            <p className="text-orange-400 text-xs font-mono mt-1 flex items-center gap-1">
+              <div className="w-3 h-3 rounded border-2 border-orange-400 bg-orange-400/20" />
+              Armor Active
+            </p>
+          )}
         </div>
 
-        {/* Testing Class Info Overlay */}
         <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-black/80 border border-cyan-500/50 px-2 py-1 md:px-3 md:py-2 rounded">
           <p className="text-xs text-cyan-300/70 font-mono">CLASS</p>
           <p className="text-sm md:text-base font-bold text-cyan-400 font-mono">{classData.name}</p>
@@ -325,10 +321,8 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         </div>
       </div>
 
-      {/* Controls Panel - Bottom */}
       <div className="p-3 md:p-4 bg-gradient-to-t from-black to-gray-900 border-t border-cyan-500/50">
         <div className="max-w-4xl mx-auto">
-          {/* Movement Toggle */}
           <div className="flex items-center justify-between mb-3 bg-black/50 border border-cyan-500/30 p-3 rounded">
             <div className="flex items-center gap-2">
               <Move className="w-4 h-4 text-cyan-400" />
@@ -354,7 +348,16 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
             <Switch id="shield-toggle" checked={enableShield} onCheckedChange={setEnableShield} disabled={isRunning} />
           </div>
 
-          {/* Action Buttons */}
+          <div className="flex items-center justify-between mb-3 bg-black/50 border border-orange-500/30 p-3 rounded">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border-2 border-orange-400 bg-orange-400/20" />
+              <Label htmlFor="armor-toggle" className="text-sm text-orange-300 font-mono cursor-pointer">
+                Enable Armor (150)
+              </Label>
+            </div>
+            <Switch id="armor-toggle" checked={enableArmor} onCheckedChange={setEnableArmor} disabled={isRunning} />
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             {!isRunning ? (
               <Button
