@@ -19,8 +19,6 @@ import { AVAILABLE_ACTIONS } from "@/lib/actions"
 import { generateRandomCustomization } from "@/lib/fighter-parts"
 import { loadProgress, saveProgress, getTotalStatBonus, calculateCurrencyReward } from "@/lib/meta-progression"
 import { initializeRun, type NetworkLayer } from "@/lib/network-layers"
-import type { PlayerMasteryProgress } from "@/lib/protocol-mastery"
-import { checkMasteryCompletion, calculateMasteryRewards, PROTOCOL_MASTERIES } from "@/lib/protocol-mastery"
 import {
   initializeContracts,
   refreshContracts,
@@ -122,49 +120,7 @@ export function useGameState(): GameState {
     name: string
   } | null>(null)
 
-  const [masteryProgress, setMasteryProgress] = useState<PlayerMasteryProgress>({
-    completedMasteries: playerProgress.completedMasteries || [],
-    inProgressMasteries: {},
-    currentRunStats: {
-      triggerUsage: {},
-      actionUsage: {},
-      damageByType: {},
-      pairExecutions: [],
-    },
-  })
-
   const battleStartTimeRef = useRef<number>(0)
-
-  const trackPairExecution = useCallback((triggerId: string, actionId: string) => {
-    setMasteryProgress((prev) => ({
-      ...prev,
-      currentRunStats: {
-        ...prev.currentRunStats,
-        triggerUsage: {
-          ...prev.currentRunStats.triggerUsage,
-          [triggerId]: (prev.currentRunStats.triggerUsage[triggerId] || 0) + 1,
-        },
-        actionUsage: {
-          ...prev.currentRunStats.actionUsage,
-          [actionId]: (prev.currentRunStats.actionUsage[actionId] || 0) + 1,
-        },
-        pairExecutions: [...prev.currentRunStats.pairExecutions, { triggerId, actionId, timestamp: Date.now() }],
-      },
-    }))
-  }, [])
-
-  const trackDamage = useCallback((damageType: string, amount: number) => {
-    setMasteryProgress((prev) => ({
-      ...prev,
-      currentRunStats: {
-        ...prev.currentRunStats,
-        damageByType: {
-          ...prev.currentRunStats.damageByType,
-          [damageType]: (prev.currentRunStats.damageByType[damageType] || 0) + amount,
-        },
-      },
-    }))
-  }, [])
 
   useEffect(() => {
     if (battleState !== "fighting" || !battleEngineRef.current) {
@@ -188,68 +144,24 @@ export function useGameState(): GameState {
       if (update.enemyHP !== undefined) setEnemy((e) => ({ ...e, hp: update.enemyHP! }))
       if (update.projectiles) setProjectiles(update.projectiles)
 
-      if (update.pairExecuted) {
-        trackPairExecution(update.pairExecuted.triggerId, update.pairExecuted.actionId)
-      }
-      if (update.damageDealt) {
-        trackDamage(update.damageDealt.type, update.damageDealt.amount)
-      }
-
       if (update.battleOver) {
         if (update.battleHistory) {
           setBattleHistory(update.battleHistory)
 
           if (update.playerWon) {
-            const battleDuration = (time - battleStartTimeRef.current) / 1000
             const healthRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerHP || 0
-            const playerHpPercent = (healthRemaining / player.maxHp) * 100
-
-            const newlyCompleted: string[] = []
-            for (const mastery of PROTOCOL_MASTERIES) {
-              if (masteryProgress.completedMasteries.includes(mastery.id)) continue
-
-              const completed = checkMasteryCompletion(mastery, masteryProgress.currentRunStats, {
-                playerHpPercent,
-                battleDuration,
-                isGuardianBattle,
-                activePairCount: triggerActionPairs.length,
-              })
-
-              if (completed) {
-                newlyCompleted.push(mastery.id)
-                console.log("[v0] Mastery completed:", mastery.name)
-              }
-            }
-
-            if (newlyCompleted.length > 0) {
-              setMasteryProgress((prev) => ({
-                ...prev,
-                completedMasteries: [...prev.completedMasteries, ...newlyCompleted],
-              }))
-
-              // Update player progress with new masteries
-              const updatedProgress = {
-                ...playerProgress,
-                completedMasteries: [...(playerProgress.completedMasteries || []), ...newlyCompleted],
-              }
-              setPlayerProgress(updatedProgress)
-              saveProgress(updatedProgress)
-            }
 
             if (playerProgress.contractProgress) {
-              const totalDamageDealt = Object.values(masteryProgress.currentRunStats.damageByType).reduce(
-                (sum, val) => sum + val,
-                0,
-              )
+              const totalDamageDealt = Object.values(update.damageByType || {}).reduce((sum, val) => sum + val, 0)
 
               const runStats = {
-                damageByType: masteryProgress.currentRunStats.damageByType,
-                triggersUsed: Object.keys(masteryProgress.currentRunStats.triggerUsage),
-                actionsUsed: Object.keys(masteryProgress.currentRunStats.actionUsage),
+                damageByType: update.damageByType || {},
+                triggersUsed: update.triggersUsed || [],
+                actionsUsed: update.actionsUsed || [],
                 pairsCount: triggerActionPairs.length,
                 guardianDefeated: isGuardianBattle,
                 damageTaken: player.maxHp - healthRemaining,
-                pairExecutions: masteryProgress.currentRunStats.pairExecutions,
+                pairExecutions: update.pairExecutions || [],
               }
 
               console.log("[v0] Checking contracts with run stats:", runStats)
@@ -286,6 +198,7 @@ export function useGameState(): GameState {
 
             setPerformanceHistory((prev) => {
               const recentWins = [...prev.recentVictories, 1].slice(-5)
+              const battleDuration = (time - battleStartTimeRef.current) / 1000
               const avgTime = prev.avgTimeToWin * 0.7 + battleDuration * 0.3
               const avgHealth = prev.avgHealthRemaining * 0.7 + healthRemaining * 0.3
 
@@ -297,16 +210,11 @@ export function useGameState(): GameState {
             })
           } else {
             const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
-            let currencyEarned = calculateCurrencyReward(currentTotalNodes)
-
-            const masteryRewards = calculateMasteryRewards(masteryProgress.completedMasteries, currencyEarned)
-            currencyEarned = masteryRewards.totalFragments
+            const currencyEarned = calculateCurrencyReward(currentTotalNodes)
 
             console.log("[v0] Player defeated at layer", currentLayerIndex, "node", currentNodeIndex)
             console.log("[v0] Total nodes completed:", currentTotalNodes)
-            console.log("[v0] Base currency earned:", calculateCurrencyReward(currentTotalNodes))
-            console.log("[v0] Mastery bonus:", masteryRewards.bonusFragments)
-            console.log("[v0] Final currency earned:", currencyEarned)
+            console.log("[v0] Currency earned:", currencyEarned)
 
             const newProgress: PlayerProgress = {
               ...playerProgress,
@@ -318,23 +226,11 @@ export function useGameState(): GameState {
                 currentLayerIndex > playerProgress.bestLayerReached
                   ? currentNodeIndex
                   : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
-              completedMasteries: masteryProgress.completedMasteries,
             }
 
             console.log("[v0] New cipher fragments total:", newProgress.cipherFragments)
             setPlayerProgress(newProgress)
             saveProgress(newProgress)
-
-            // Reset mastery run stats
-            setMasteryProgress((prev) => ({
-              ...prev,
-              currentRunStats: {
-                triggerUsage: {},
-                actionUsage: {},
-                damageByType: {},
-                pairExecutions: [],
-              },
-            }))
 
             setPerformanceHistory((prev) => ({
               ...prev,
@@ -364,16 +260,18 @@ export function useGameState(): GameState {
     networkLayers,
     currentLayerIndex,
     currentNodeIndex,
-    masteryProgress,
     isGuardianBattle,
     triggerActionPairs,
     player.maxHp,
-    trackPairExecution,
-    trackDamage,
   ])
 
   const startBattle = useCallback(() => {
     console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
+    console.log("[v0] triggerActionPairs count:", triggerActionPairs.length)
+    console.log(
+      "[v0] triggerActionPairs details:",
+      triggerActionPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+    )
     setJustEarnedReward(null)
 
     const enemyPairs: TriggerActionPair[] = [
@@ -487,22 +385,19 @@ export function useGameState(): GameState {
 
       let multiplier = 1.0
 
-      // Gradually introduce DDA rather than full impact
       if (waveNumber === 4) {
-        multiplier = 1.0 // No DDA on wave 4 (difficulty saw pattern)
+        multiplier = 1.0
       } else if (waveNumber === 5) {
-        // Only 50% of normal DDA adjustment
         if (winRate > 0.8) {
-          multiplier += 0.15 // Half of normal +0.3
+          multiplier += 0.15
         } else if (winRate > 0.6) {
-          multiplier += 0.075 // Half of normal +0.15
+          multiplier += 0.075
         } else if (winRate < 0.3) {
-          multiplier -= 0.1 // Half of normal -0.2
+          multiplier -= 0.1
         } else if (winRate < 0.5) {
-          multiplier -= 0.05 // Half of normal -0.1
+          multiplier -= 0.05
         }
       } else {
-        // Full DDA from wave 6 onwards
         if (winRate > 0.8) {
           multiplier += 0.3
         } else if (winRate > 0.6) {
@@ -752,11 +647,14 @@ export function useGameState(): GameState {
   }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
   const resetGame = useCallback(() => {
+    const latestProgress = loadProgress()
+    setPlayerProgress(latestProgress)
+
     setWave(1)
     setNetworkLayers(initializeRun())
     setCurrentLayerIndex(0)
     setCurrentNodeIndex(0)
-    const hpBonus = getTotalStatBonus(playerProgress, "hp")
+    const hpBonus = getTotalStatBonus(latestProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
     setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
     setEnemy({
@@ -771,30 +669,57 @@ export function useGameState(): GameState {
       statusEffects: [],
     })
     setProjectiles([])
-    setTriggerActionPairs([])
-    setUnlockedTriggers([])
-    setUnlockedActions([])
-    setSelectedCharacter(null)
-    setFighterCustomization(null)
+    if (selectedCharacter) {
+      const customClasses = latestProgress.customFighterClasses || []
+      const customClass = customClasses.find((c) => c.id === selectedCharacter.id)
+
+      if (customClass && customClass.startingPairs.length > 0) {
+        const pairs: TriggerActionPair[] = customClass.startingPairs
+          .map((pair) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+
+            if (!trigger || !action) return null
+
+            return {
+              trigger,
+              action,
+              priority: pair.priority,
+            }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+
+        console.log("[v0] Reloading custom class protocols for new run:", pairs)
+        console.log("[v0] Loaded protocol count:", pairs.length)
+        console.log(
+          "[v0] Loaded protocol details:",
+          pairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+        )
+        setTriggerActionPairs(pairs)
+
+        const triggers = pairs.map((p) => p.trigger)
+        const actions = pairs.map((p) => p.action)
+        setUnlockedTriggers(triggers)
+        setUnlockedActions(actions)
+      } else {
+        // Use default preset protocols
+        setTriggerActionPairs(selectedCharacter.startingPairs)
+        setUnlockedTriggers(selectedCharacter.startingTriggers)
+        setUnlockedActions(selectedCharacter.startingActions)
+      }
+    } else {
+      setTriggerActionPairs([])
+      setUnlockedTriggers([])
+      setUnlockedActions([])
+    }
     setEnemyCustomization(generateRandomCustomization())
     setBattleHistory([])
     setBattleState("idle")
     setShowRewardSelection(false)
     setShowEnemyIntro(false)
     setRerollsRemaining(3)
-    setJustEarnedReward(null) // Clear the just earned reward notification
-    // Reset mastery progress on game reset
-    setMasteryProgress({
-      completedMasteries: [],
-      inProgressMasteries: {},
-      currentRunStats: {
-        triggerUsage: {},
-        actionUsage: {},
-        damageByType: {},
-        pairExecutions: [],
-      },
-    })
-  }, [playerProgress])
+    setJustEarnedReward(null)
+  }, [selectedCharacter])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
     setTriggerActionPairs((prev) => [
@@ -858,16 +783,51 @@ export function useGameState(): GameState {
 
     setProjectiles([])
     setShowEnemyIntro(false)
-    // It will be cleared when battle starts or when dismissed
     setBattleState("idle")
   }, [])
 
   const setCharacter = useCallback(
     (character: CharacterPreset) => {
       setSelectedCharacter(character)
-      setTriggerActionPairs(character.startingPairs)
-      setUnlockedTriggers(character.startingTriggers)
-      setUnlockedActions(character.startingActions)
+
+      const customClasses = playerProgress.customFighterClasses || []
+      const customClass = customClasses.find((c) => c.id === character.id)
+
+      if (customClass && customClass.startingPairs.length > 0) {
+        // Build TriggerActionPairs from the custom class protocols
+        const pairs: TriggerActionPair[] = customClass.startingPairs
+          .map((pair) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+
+            if (!trigger || !action) {
+              console.warn(`[v0] Missing trigger or action for pair: ${pair.triggerId}, ${pair.actionId}`)
+              return null
+            }
+
+            return {
+              trigger,
+              action,
+              priority: pair.priority,
+            }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+
+        console.log("[v0] Loading custom class protocols:", pairs)
+        setTriggerActionPairs(pairs)
+
+        // Extract unique triggers and actions for unlocked lists
+        const triggers = pairs.map((p) => p.trigger)
+        const actions = pairs.map((p) => p.action)
+        setUnlockedTriggers(triggers)
+        setUnlockedActions(actions)
+      } else {
+        // Use default preset protocols
+        console.log("[v0] Loading default preset protocols")
+        setTriggerActionPairs(character.startingPairs)
+        setUnlockedTriggers(character.startingTriggers)
+        setUnlockedActions(character.startingActions)
+      }
 
       const newProgress = {
         ...playerProgress,
@@ -894,16 +854,11 @@ export function useGameState(): GameState {
 
   const extractFromBreach = useCallback(() => {
     const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
-    let currencyEarned = calculateCurrencyReward(currentTotalNodes)
-
-    const masteryRewards = calculateMasteryRewards(masteryProgress.completedMasteries, currencyEarned)
-    currencyEarned = masteryRewards.totalFragments
+    const currencyEarned = calculateCurrencyReward(currentTotalNodes)
 
     console.log("[v0] Player extracted at layer", currentLayerIndex, "node", currentNodeIndex)
     console.log("[v0] Total nodes completed:", currentTotalNodes)
-    console.log("[v0] Base currency earned:", calculateCurrencyReward(currentTotalNodes))
-    console.log("[v0] Mastery bonus:", masteryRewards.bonusFragments)
-    console.log("[v0] Final currency earned:", currencyEarned)
+    console.log("[v0] Currency earned:", currencyEarned)
 
     const newProgress: PlayerProgress = {
       ...playerProgress,
@@ -915,26 +870,14 @@ export function useGameState(): GameState {
         currentLayerIndex > playerProgress.bestLayerReached
           ? currentNodeIndex
           : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
-      completedMasteries: masteryProgress.completedMasteries,
     }
 
     console.log("[v0] New cipher fragments total after extraction:", newProgress.cipherFragments)
     setPlayerProgress(newProgress)
     saveProgress(newProgress)
 
-    // Reset mastery run stats
-    setMasteryProgress((prev) => ({
-      ...prev,
-      currentRunStats: {
-        triggerUsage: {},
-        actionUsage: {},
-        damageByType: {},
-        pairExecutions: [],
-      },
-    }))
-
     setBattleState("defeat")
-  }, [playerProgress, currentLayerIndex, currentNodeIndex, masteryProgress])
+  }, [playerProgress, currentLayerIndex, currentNodeIndex])
 
   return {
     battleState,
@@ -975,8 +918,5 @@ export function useGameState(): GameState {
     isGuardianBattle,
     extractFromBreach,
     justEarnedReward,
-    masteryProgress, // Added to return
-    trackPairExecution, // Added to return
-    trackDamage, // Added to return
   }
 }

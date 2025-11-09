@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import { Suspense } from "react"
 import { StarField, FloatingGeometry, CircuitLayer, DataStreams, AmbientParticles } from "./cyberpunk-background"
-import { Fighter3D } from "./fighter-3d"
+import { CustomizableFighter } from "./customizable-fighter"
 import type { FighterCustomization } from "@/lib/fighter-parts"
 
 interface Hub3DSceneProps {
@@ -31,10 +31,15 @@ export function Hub3DScene({ fighterCustomization, hasCharacter }: Hub3DScenePro
           <DataStreams />
           <AmbientParticles />
 
-          {/* Fighter preview - only show if character is selected */}
           {hasCharacter && (
             <group position={[0, 0, 0]}>
-              <Fighter3D customization={fighterCustomization} isPlayer={true} />
+              <CustomizableFighter
+                position={{ x: 2.5, y: 1 }}
+                isPlayer={true}
+                hp={100}
+                maxHp={100}
+                customization={fighterCustomization}
+              />
 
               {/* Holographic platform under fighter */}
               <mesh position={[0, -1.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>

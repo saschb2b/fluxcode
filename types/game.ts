@@ -127,7 +127,6 @@ export interface BattleHistoryPoint {
 import type { FighterCustomization } from "@/lib/fighter-parts"
 import type { PlayerProgress } from "@/lib/meta-progression"
 import type { NetworkLayer } from "@/lib/network-layers"
-import type { PlayerMasteryProgress } from "@/lib/protocol-mastery"
 
 export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
@@ -167,7 +166,4 @@ export interface GameState {
   isGuardianBattle: boolean
   extractFromBreach: () => void // Added extract function
   justEarnedReward: { type: "trigger" | "action"; name: string } | null // Added justEarnedReward to track newly acquired protocols
-  masteryProgress: PlayerMasteryProgress
-  trackPairExecution: (triggerId: string, actionId: string) => void
-  trackDamage: (damageType: string, amount: number) => void
 }

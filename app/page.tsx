@@ -9,23 +9,23 @@ import { CharacterSelection } from "@/components/character-selection"
 import { FighterCustomization } from "@/components/fighter-customization"
 import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
-import { ProtocolMasteryTracker } from "@/components/protocol-mastery-tracker"
 import { NetworkContractsView } from "@/components/network-contracts-view"
+import { FighterClassManager } from "@/components/fighter-class-manager"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
 import { CHARACTER_PRESETS } from "@/lib/character-presets"
 import { claimContractReward, forceRefreshContracts } from "@/lib/network-contracts"
 import type { CharacterPreset } from "@/lib/character-presets"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
+import type { CustomFighterClass } from "@/lib/meta-progression"
 
 export default function Home() {
   const gameState = useGameState()
-  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "character-select" | "game">("start")
+  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "class-manager" | "character-select" | "game">("start")
   const [fighterCustomization, setFighterCustomization] = useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION)
   const [showCustomization, setShowCustomization] = useState(false)
   const [showMetaShop, setShowMetaShop] = useState(false)
   const [showCodex, setShowCodex] = useState(false)
-  const [showMastery, setShowMastery] = useState(false)
   const [showContracts, setShowContracts] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -61,6 +61,17 @@ export default function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    if (gameState.selectedCharacter && gameState.playerProgress.customFighterClasses) {
+      const customClass = gameState.playerProgress.customFighterClasses.find(
+        (c) => c.id === gameState.selectedCharacter?.id,
+      )
+      if (customClass && customClass.customization) {
+        setFighterCustomization(customClass.customization)
+      }
+    }
+  }, [gameState.selectedCharacter, gameState.playerProgress.customFighterClasses])
+
   const handleStartGame = () => {
     if (audioRef.current && audioRef.current.paused) {
       audioRef.current.play().catch(console.error)
@@ -94,6 +105,7 @@ export default function Home() {
 
   const handleStartRun = () => {
     if (gameState.selectedCharacter) {
+      gameState.resetGame()
       setGamePhase("game")
     }
   }
@@ -122,20 +134,61 @@ export default function Home() {
     setShowCodex(false)
   }
 
-  const handleOpenMastery = () => {
-    setShowMastery(true)
-  }
-
-  const handleCloseMastery = () => {
-    setShowMastery(false)
-  }
-
   const handleOpenContracts = () => {
     setShowContracts(true)
   }
 
   const handleCloseContracts = () => {
     setShowContracts(false)
+  }
+
+  const handleOpenClassManager = () => {
+    setGamePhase("class-manager")
+  }
+
+  const handleSaveCustomClasses = (classes: CustomFighterClass[]) => {
+    gameState.updatePlayerProgress({
+      ...gameState.playerProgress,
+      customFighterClasses: classes,
+    })
+  }
+
+  const handleSelectClass = (classId: string) => {
+    const customClasses = gameState.playerProgress.customFighterClasses || []
+    const allClasses =
+      customClasses.length > 0
+        ? customClasses
+        : CHARACTER_PRESETS.map((preset) => ({
+            id: preset.id,
+            name: preset.name,
+            color: preset.color,
+            startingPairs: preset.startingPairs.map((pair) => ({
+              triggerId: pair.trigger.id,
+              actionId: pair.action.id,
+              priority: pair.priority,
+            })),
+            customization: DEFAULT_CUSTOMIZATION, // Default customization for presets
+          }))
+
+    const selectedClass = allClasses.find((c) => c.id === classId)
+    if (selectedClass) {
+      const preset = CHARACTER_PRESETS.find((p) => p.id === selectedClass.id)
+      if (preset) {
+        const characterPreset: CharacterPreset = {
+          ...preset,
+          name: selectedClass.name,
+          color: selectedClass.color,
+        }
+        gameState.setCharacter(characterPreset)
+
+        if (selectedClass.customization) {
+          setFighterCustomization(selectedClass.customization)
+        } else {
+          setFighterCustomization(DEFAULT_CUSTOMIZATION)
+        }
+      }
+    }
+    setGamePhase("hub")
   }
 
   const handleClaimContractReward = (contractId: string, refreshType: "daily" | "weekly") => {
@@ -195,12 +248,13 @@ export default function Home() {
             playerProgress={gameState.playerProgress}
             onStartRun={handleStartRun}
             onSelectCharacter={handleOpenCharacterSelect}
-            onCustomizeFighter={handleOpenCustomization}
+            onCustomizeFighter={handleOpenCustomization} // Kept for backwards compatibility but unused
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
-            onOpenMastery={handleOpenMastery}
             onOpenContracts={handleOpenContracts}
+            onOpenClassManager={handleOpenClassManager}
             bgmAudioRef={audioRef}
+            isInHub={true}
           />
         </main>
       )}
@@ -208,6 +262,18 @@ export default function Home() {
       {gamePhase === "character-select" && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <CharacterSelection onSelect={handleCharacterSelect} onBack={handleBackToHub} />
+        </main>
+      )}
+
+      {gamePhase === "class-manager" && (
+        <main className="relative w-full h-dvh overflow-hidden bg-background">
+          <FighterClassManager
+            customClasses={gameState.playerProgress.customFighterClasses || []}
+            selectedClassId={gameState.playerProgress.selectedCharacterId}
+            onSaveClasses={handleSaveCustomClasses}
+            onSelectClass={handleSelectClass}
+            onClose={handleBackToHub}
+          />
         </main>
       )}
 
@@ -244,14 +310,6 @@ export default function Home() {
           progress={gameState.playerProgress}
           onClose={handleCloseMetaShop}
           onPurchase={gameState.updatePlayerProgress}
-        />
-      )}
-
-      {showMastery && (
-        <ProtocolMasteryTracker
-          masteryProgress={gameState.playerProgress.masteryProgress}
-          isOpen={showMastery}
-          onClose={handleCloseMastery}
         />
       )}
 
