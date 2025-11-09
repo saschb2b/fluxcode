@@ -133,7 +133,15 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
     })
     setGameState({
       player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: 0, maxShields: 0 },
+      enemy: {
+        position: { x: 4, y: 1 },
+        hp: 999999,
+        maxHp: 999999,
+        shields: enableShield ? 200 : 0,
+        maxShields: enableShield ? 200 : 0,
+        armor: enableArmor ? 150 : 0,
+        maxArmor: enableArmor ? 150 : 0,
+      },
       projectiles: [],
     })
   }
@@ -294,10 +302,10 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
             hp={gameState.enemy.hp}
             maxHp={gameState.enemy.maxHp}
             customization={TRAINING_DUMMY_CUSTOMIZATION}
-            shields={gameState.enemy.shields}
-            maxShields={gameState.enemy.maxShields}
-            armor={gameState.enemy.armor}
-            maxArmor={gameState.enemy.maxArmor}
+            shields={isRunning ? gameState.enemy.shields : enableShield ? 200 : 0}
+            maxShields={enableShield ? 200 : 0}
+            armor={isRunning ? gameState.enemy.armor : enableArmor ? 150 : 0}
+            maxArmor={enableArmor ? 150 : 0}
           />
 
           <Projectiles projectiles={gameState.projectiles} />
