@@ -142,6 +142,8 @@ export function useGameState(): GameState {
       if (update.playerHP !== undefined) setPlayer((p) => ({ ...p, hp: update.playerHP! }))
       if (update.enemyPos) setEnemy((e) => ({ ...e, position: update.enemyPos! }))
       if (update.enemyHP !== undefined) setEnemy((e) => ({ ...e, hp: update.enemyHP! }))
+      if (update.enemyShields !== undefined) setEnemy((e) => ({ ...e, shields: update.enemyShields! }))
+      if (update.enemyArmor !== undefined) setEnemy((e) => ({ ...e, armor: update.enemyArmor! }))
       if (update.projectiles) setProjectiles(update.projectiles)
 
       if (update.battleOver) {
@@ -347,6 +349,8 @@ export function useGameState(): GameState {
         playerHP: player.hp,
         enemyPos: enemy.position,
         enemyHP: enemy.hp,
+        enemyShields: enemy.shields,
+        enemyArmor: enemy.armor,
         projectiles: [],
         justTookDamage: false,
       },

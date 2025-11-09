@@ -5,6 +5,8 @@ export interface BattleState {
   playerHP: number
   enemyPos: Position
   enemyHP: number
+  enemyShields: number
+  enemyArmor: number
   projectiles: Projectile[]
   justTookDamage: boolean
 }
@@ -89,6 +91,14 @@ export class BattleEngine {
     if (hitUpdate.enemyHP !== undefined) {
       update.enemyHP = hitUpdate.enemyHP
       this.state.enemyHP = hitUpdate.enemyHP
+    }
+    if (hitUpdate.enemyShields !== undefined) {
+      update.enemyShields = hitUpdate.enemyShields
+      this.state.enemyShields = hitUpdate.enemyShields
+    }
+    if (hitUpdate.enemyArmor !== undefined) {
+      update.enemyArmor = hitUpdate.enemyArmor
+      this.state.enemyArmor = hitUpdate.enemyArmor
     }
     if (hitUpdate.damageDealt !== undefined) {
       update.damageDealt = hitUpdate.damageDealt
@@ -274,9 +284,17 @@ export class BattleEngine {
   private checkProjectileHits(): {
     playerHP?: number
     enemyHP?: number
+    enemyShields?: number
+    enemyArmor?: number
     damageDealt?: { type: string; amount: number }
   } {
-    const update: { playerHP?: number; enemyHP?: number; damageDealt?: { type: string; amount: number } } = {}
+    const update: {
+      playerHP?: number
+      enemyHP?: number
+      enemyShields?: number
+      enemyArmor?: number
+      damageDealt?: { type: string; amount: number }
+    } = {}
     const remainingProjectiles: Projectile[] = []
 
     for (const proj of this.state.projectiles) {
@@ -299,8 +317,30 @@ export class BattleEngine {
         Math.abs(proj.position.x - this.state.enemyPos.x) < 0.6 &&
         proj.position.y === this.state.enemyPos.y
       ) {
-        this.state.enemyHP = Math.max(0, this.state.enemyHP - proj.damage)
-        update.enemyHP = this.state.enemyHP
+        let remainingDamage = proj.damage
+
+        // Apply to shields first
+        if (this.state.enemyShields > 0) {
+          const shieldDamage = Math.min(this.state.enemyShields, remainingDamage)
+          this.state.enemyShields = Math.max(0, this.state.enemyShields - shieldDamage)
+          remainingDamage -= shieldDamage
+          update.enemyShields = this.state.enemyShields
+        }
+
+        // Apply remaining damage to armor
+        if (remainingDamage > 0 && this.state.enemyArmor > 0) {
+          const armorDamage = Math.min(this.state.enemyArmor, remainingDamage)
+          this.state.enemyArmor = Math.max(0, this.state.enemyArmor - armorDamage)
+          remainingDamage -= armorDamage
+          update.enemyArmor = this.state.enemyArmor
+        }
+
+        // Apply remaining damage to HP
+        if (remainingDamage > 0) {
+          this.state.enemyHP = Math.max(0, this.state.enemyHP - remainingDamage)
+          update.enemyHP = this.state.enemyHP
+        }
+
         update.damageDealt = {
           type: proj.damageType || "kinetic",
           amount: proj.damage,

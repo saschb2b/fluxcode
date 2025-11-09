@@ -38,6 +38,7 @@ interface ClassTestSimulatorProps {
 export function ClassTestSimulator({ classData, customization, onClose }: ClassTestSimulatorProps) {
   const [isRunning, setIsRunning] = useState(false)
   const [enableMovement, setEnableMovement] = useState(false)
+  const [enableShield, setEnableShield] = useState(false)
   const [metrics, setMetrics] = useState({
     totalDamage: 0,
     dps: 0,
@@ -86,6 +87,8 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       playerHP: 100,
       enemyPos: { x: 4, y: 1 },
       enemyHP: 999999, // Invincible dummy
+      enemyShields: enableShield ? 200 : 0,
+      enemyArmor: 0,
       projectiles: [],
       justTookDamage: false,
     }
@@ -300,6 +303,12 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
               Moving
             </p>
           )}
+          {enableShield && (
+            <p className="text-blue-400 text-xs font-mono mt-1 flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full border-2 border-blue-400 bg-blue-400/20" />
+              Shield Active
+            </p>
+          )}
         </div>
 
         {/* Testing Class Info Overlay */}
@@ -327,6 +336,16 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
               onCheckedChange={setEnableMovement}
               disabled={isRunning}
             />
+          </div>
+
+          <div className="flex items-center justify-between mb-3 bg-black/50 border border-blue-500/30 p-3 rounded">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-400/20" />
+              <Label htmlFor="shield-toggle" className="text-sm text-blue-300 font-mono cursor-pointer">
+                Enable Shield (200)
+              </Label>
+            </div>
+            <Switch id="shield-toggle" checked={enableShield} onCheckedChange={setEnableShield} disabled={isRunning} />
           </div>
 
           {/* Action Buttons */}
