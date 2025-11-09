@@ -48,7 +48,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
   })
   const [gameState, setGameState] = useState<GameState>({
     player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-    enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999 },
+    enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: 0, maxShields: 0 },
     projectiles: [],
   })
 
@@ -82,12 +82,14 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         ])
       : []
 
+    const shieldAmount = enableShield ? 200 : 0
+
     const initialState: BattleState = {
       playerPos: { x: 1, y: 1 },
       playerHP: 100,
       enemyPos: { x: 4, y: 1 },
       enemyHP: 999999, // Invincible dummy
-      enemyShields: enableShield ? 200 : 0,
+      enemyShields: shieldAmount,
       enemyArmor: 0,
       projectiles: [],
       justTookDamage: false,
@@ -97,7 +99,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
 
     setGameState({
       player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999 },
+      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: shieldAmount, maxShields: shieldAmount },
       projectiles: [],
     })
 
@@ -123,7 +125,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
     })
     setGameState({
       player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999 },
+      enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: 0, maxShields: 0 },
       projectiles: [],
     })
   }
@@ -150,6 +152,8 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           position: newState.enemyPos,
           hp: newState.enemyHP,
           maxHp: 999999,
+          shields: newState.enemyShields,
+          maxShields: enableShield ? 200 : 0,
         },
         projectiles: newState.projectiles,
       })
@@ -289,6 +293,8 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
             hp={gameState.enemy.hp}
             maxHp={gameState.enemy.maxHp}
             customization={TRAINING_DUMMY_CUSTOMIZATION}
+            shields={gameState.enemy.shields}
+            maxShields={gameState.enemy.maxShields}
           />
 
           <Projectiles projectiles={gameState.projectiles} />
