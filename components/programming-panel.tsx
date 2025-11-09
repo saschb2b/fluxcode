@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -41,6 +41,14 @@ export function ProgrammingPanel({
   )
 
   const [showAddForm, setShowAddForm] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 640)
+    checkDesktop()
+    window.addEventListener("resize", checkDesktop)
+    return () => window.removeEventListener("resize", checkDesktop)
+  }, [])
 
   const handleAddPair = () => {
     if (selectedTrigger && selectedAction) {
@@ -159,10 +167,10 @@ export function ProgrammingPanel({
             <div className="flex flex-col sm:flex-row min-h-0">
               {/* Left Panel - Add Protocol Section */}
               <div className="sm:w-96 border-b sm:border-b-0 sm:border-r border-cyan-500/30 bg-black/40 shrink-0 p-3 sm:p-6">
-                {!showAddForm && (
+                {!showAddForm && !isDesktop && (
                   <Button
                     onClick={() => setShowAddForm(true)}
-                    className="w-full h-14 bg-cyan-500 hover:bg-cyan-400 text-black font-bold sm:hidden"
+                    className="w-full h-14 bg-cyan-500 hover:bg-cyan-400 text-black font-bold"
                   >
                     <Plus className="w-5 h-5 mr-3" />
                     <div className="text-left">
@@ -172,20 +180,22 @@ export function ProgrammingPanel({
                   </Button>
                 )}
 
-                {(showAddForm || window.innerWidth >= 640) && (
+                {(showAddForm || isDesktop) && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl sm:text-2xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
                         ADD PROTOCOL
                       </h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowAddForm(false)}
-                        className="text-xs text-cyan-300 hover:text-cyan-100 sm:hidden"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                      {!isDesktop && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAddForm(false)}
+                          className="text-xs text-cyan-300 hover:text-cyan-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
 
                     <p className="text-xs sm:text-sm text-cyan-300/70">

@@ -28,18 +28,8 @@ export default function Home() {
   const [showMetaShop, setShowMetaShop] = useState(false)
   const [showCodex, setShowCodex] = useState(false)
   const [showContracts, setShowContracts] = useState(false)
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-
-  useEffect(() => {
-    if (gamePhase === "hub" && !gameState.selectedCharacter && gameState.playerProgress.selectedCharacterId) {
-      const persistedCharacter = CHARACTER_PRESETS.find(
-        (char) => char.id === gameState.playerProgress.selectedCharacterId,
-      )
-      if (persistedCharacter) {
-        gameState.setCharacter(persistedCharacter)
-      }
-    }
-  }, [gamePhase, gameState])
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -72,6 +62,28 @@ export default function Home() {
       }
     }
   }, [gameState.selectedCharacter, gameState.playerProgress.customFighterClasses])
+
+  useEffect(() => {
+    if (gamePhase === "hub") {
+      if (gameState.playerProgress.selectedCharacterId) {
+        const persistedCharacter = CHARACTER_PRESETS.find(
+          (char) => char.id === gameState.playerProgress.selectedCharacterId,
+        )
+        if (persistedCharacter && !gameState.selectedCharacter) {
+          gameState.setCharacter(persistedCharacter)
+        }
+      }
+
+      // Use a small timeout to ensure character is loaded before showing UI
+      const timer = setTimeout(() => {
+        setIsInitialLoadComplete(true)
+      }, 50)
+
+      return () => clearTimeout(timer)
+    } else {
+      setIsInitialLoadComplete(false)
+    }
+  }, [gamePhase, gameState])
 
   const handleStartGame = () => {
     if (audioRef.current && audioRef.current.paused) {
@@ -241,7 +253,7 @@ export default function Home() {
         </main>
       )}
 
-      {gamePhase === "hub" && (
+      {gamePhase === "hub" && isInitialLoadComplete && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           {!gameState.selectedCharacter && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
 
@@ -249,6 +261,7 @@ export default function Home() {
             selectedCharacter={gameState.selectedCharacter}
             fighterCustomization={fighterCustomization}
             playerProgress={gameState.playerProgress}
+            playerMaxHp={gameState.player.maxHp}
             onStartRun={handleStartRun}
             onSelectCharacter={handleOpenCharacterSelect}
             onCustomizeFighter={handleOpenCustomization}
