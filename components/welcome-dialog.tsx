@@ -10,13 +10,13 @@ interface WelcomeDialogProps {
 
 export function WelcomeDialog({ onOpenClassManager }: WelcomeDialogProps) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-gradient-to-br from-black/95 via-cyan-950/30 to-black/95 border-2 border-cyan-500/50 shadow-[0_0_40px_rgba(0,255,255,0.4)] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <Card className="w-full max-w-2xl bg-gradient-to-br from-black/95 via-cyan-950/30 to-black/95 border-2 border-cyan-500/50 shadow-[0_0_40px_rgba(0,255,255,0.4)] overflow-hidden my-4 sm:my-0">
         {/* Animated corner brackets */}
-        <div className="absolute top-4 left-4 w-12 h-12 border-l-4 border-t-4 border-cyan-400 animate-pulse" />
-        <div className="absolute top-4 right-4 w-12 h-12 border-r-4 border-t-4 border-green-400 animate-pulse" />
-        <div className="absolute bottom-4 left-4 w-12 h-12 border-l-4 border-b-4 border-green-400 animate-pulse" />
-        <div className="absolute bottom-4 right-4 w-12 h-12 border-r-4 border-b-4 border-magenta-400 animate-pulse" />
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 w-8 h-8 sm:w-12 sm:h-12 border-l-4 border-t-4 border-cyan-400 animate-pulse" />
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 w-8 h-8 sm:w-12 sm:h-12 border-r-4 border-t-4 border-green-400 animate-pulse" />
+        <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 w-8 h-8 sm:w-12 sm:h-12 border-l-4 border-b-4 border-green-400 animate-pulse" />
+        <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-8 h-8 sm:w-12 sm:h-12 border-r-4 border-b-4 border-magenta-400 animate-pulse" />
 
         {/* Grid background */}
         <div
@@ -27,68 +27,78 @@ export function WelcomeDialog({ onOpenClassManager }: WelcomeDialogProps) {
           }}
         />
 
-        <div className="relative p-8 space-y-6">
+        <div className="relative p-4 sm:p-8 space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }} />
-              <div className="w-2 h-2 bg-magenta-400 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }} />
+          <div className="text-center space-y-1 sm:space-y-2">
+            <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyan-400 rounded-full animate-pulse" />
+              <div
+                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"
+                style={{ animationDelay: "0.2s" }}
+              />
+              <div
+                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-magenta-400 rounded-full animate-pulse"
+                style={{ animationDelay: "0.4s" }}
+              />
             </div>
             <h1
-              className="text-4xl sm:text-5xl font-bold text-cyan-400 tracking-wider"
+              className="text-2xl sm:text-4xl md:text-5xl font-bold text-cyan-400 tracking-wider"
               style={{ fontFamily: "monospace" }}
             >
               &gt; BREACH PROTOCOL
             </h1>
-            <div className="text-green-400 text-sm" style={{ fontFamily: "monospace" }}>
+            <div className="text-green-400 text-xs sm:text-sm" style={{ fontFamily: "monospace" }}>
               NEURAL LINK ESTABLISHED
             </div>
           </div>
 
           {/* Main content */}
-          <div className="space-y-4 text-cyan-100/90">
-            <p className="text-center text-lg leading-relaxed">
+          <div className="space-y-3 sm:space-y-4 text-cyan-100/90">
+            <p className="text-center text-sm sm:text-lg leading-relaxed">
               Welcome, Breacher. The network awaits infiltration. But first, you must{" "}
               <span className="text-cyan-400 font-bold">initialize your combat protocols</span>.
             </p>
 
-            <div className="bg-black/40 border border-cyan-500/30 rounded-lg p-4 space-y-3">
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+            <div className="bg-black/40 border border-cyan-500/30 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 flex-shrink-0 mt-0.5 sm:mt-1" />
                 <div>
-                  <div className="font-bold text-cyan-400 mb-1">SELECT YOUR FIGHTER CLASS</div>
-                  <div className="text-sm text-cyan-100/70">
+                  <div className="font-bold text-cyan-400 mb-0.5 sm:mb-1 text-sm sm:text-base">
+                    SELECT YOUR FIGHTER CLASS
+                  </div>
+                  <div className="text-xs sm:text-sm text-cyan-100/70 leading-tight sm:leading-normal">
                     Choose from specialized combat classes, each with unique starting protocols and tactical advantages.
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Zap className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-1" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0 mt-0.5 sm:mt-1" />
                 <div>
-                  <div className="font-bold text-yellow-400 mb-1">CONFIGURE BATTLE PROTOCOLS</div>
-                  <div className="text-sm text-cyan-100/70">
+                  <div className="font-bold text-yellow-400 mb-0.5 sm:mb-1 text-sm sm:text-base">
+                    CONFIGURE BATTLE PROTOCOLS
+                  </div>
+                  <div className="text-xs sm:text-sm text-cyan-100/70 leading-tight sm:leading-normal">
                     Customize your AI behavior with IF-THEN protocols. Test in the Simulacrum before deployment.
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Target className="w-5 h-5 text-green-400 flex-shrink-0 mt-1" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0 mt-0.5 sm:mt-1" />
                 <div>
-                  <div className="font-bold text-green-400 mb-1">BREACH THE NETWORK</div>
-                  <div className="text-sm text-cyan-100/70">
+                  <div className="font-bold text-green-400 mb-0.5 sm:mb-1 text-sm sm:text-base">BREACH THE NETWORK</div>
+                  <div className="text-xs sm:text-sm text-cyan-100/70 leading-tight sm:leading-normal">
                     Fight through hostile nodes, earn Cipher Fragments, and unlock permanent upgrades.
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-magenta-400 flex-shrink-0 mt-1" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-magenta-400 flex-shrink-0 mt-0.5 sm:mt-1" />
                 <div>
-                  <div className="font-bold text-magenta-400 mb-1">ADAPT AND EVOLVE</div>
-                  <div className="text-sm text-cyan-100/70">
+                  <div className="font-bold text-magenta-400 mb-0.5 sm:mb-1 text-sm sm:text-base">ADAPT AND EVOLVE</div>
+                  <div className="text-xs sm:text-sm text-cyan-100/70 leading-tight sm:leading-normal">
                     Gain rewards between battles, adjust your strategy, and push deeper into the breach.
                   </div>
                 </div>
@@ -97,23 +107,23 @@ export function WelcomeDialog({ onOpenClassManager }: WelcomeDialogProps) {
           </div>
 
           {/* Call to action */}
-          <div className="space-y-3">
-            <div className="text-center text-sm text-cyan-400/70" style={{ fontFamily: "monospace" }}>
+          <div className="space-y-2 sm:space-y-3">
+            <div className="text-center text-xs sm:text-sm text-cyan-400/70" style={{ fontFamily: "monospace" }}>
               &gt; SYSTEM READY. AWAITING CLASS INITIALIZATION...
             </div>
             <Button
               onClick={onOpenClassManager}
               size="lg"
-              className="w-full h-16 text-xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black border-2 border-cyan-300 shadow-[0_0_25px_rgba(0,255,255,0.5)] hover:shadow-[0_0_35px_rgba(0,255,255,0.8)] active:scale-[0.98] transition-all"
+              className="w-full h-12 sm:h-16 text-base sm:text-xl font-bold bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black border-2 border-cyan-300 shadow-[0_0_25px_rgba(0,255,255,0.5)] hover:shadow-[0_0_35px_rgba(0,255,255,0.8)] active:scale-[0.98] transition-all"
               style={{ fontFamily: "monospace" }}
             >
-              <User className="w-6 h-6 mr-3" />
+              <User className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
               INITIALIZE FIGHTER CLASS
             </Button>
           </div>
 
           {/* Footer note */}
-          <div className="text-center text-xs text-cyan-400/50 pt-2 border-t border-cyan-500/20">
+          <div className="text-center text-[10px] sm:text-xs text-cyan-400/50 pt-1 sm:pt-2 border-t border-cyan-500/20">
             TIP: You can customize and test your protocols in the Simulacrum before starting a breach
           </div>
         </div>
