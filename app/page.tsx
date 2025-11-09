@@ -11,6 +11,7 @@ import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
 import { NetworkContractsView } from "@/components/network-contracts-view"
 import { FighterClassManager } from "@/components/fighter-class-manager"
+import { WelcomeDialog } from "@/components/welcome-dialog"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
 import { CHARACTER_PRESETS } from "@/lib/character-presets"
@@ -242,13 +243,15 @@ export default function Home() {
 
       {gamePhase === "hub" && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
+          {!gameState.selectedCharacter && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
+
           <Hub
             selectedCharacter={gameState.selectedCharacter}
             fighterCustomization={fighterCustomization}
             playerProgress={gameState.playerProgress}
             onStartRun={handleStartRun}
             onSelectCharacter={handleOpenCharacterSelect}
-            onCustomizeFighter={handleOpenCustomization} // Kept for backwards compatibility but unused
+            onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
