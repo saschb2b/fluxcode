@@ -49,7 +49,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
   })
   const [gameState, setGameState] = useState<GameState>({
     player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
-    enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999, shields: 0, maxShields: 0 },
+    enemy: { position: { x: 4, y: 1 }, hp: 999999, maxHp: 999999 },
     projectiles: [],
   })
 
@@ -147,6 +147,17 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       lastTimeRef.current = now
 
       const update = battleEngineRef.current!.tick(deltaTime)
+
+      // Track damage dealt
+      if (update.damageDealt) {
+        damageTrackingRef.current.total += update.damageDealt.amount
+        damageTrackingRef.current.hits += 1
+      }
+
+      // Track protocol executions
+      if (update.pairExecuted) {
+        damageTrackingRef.current.executions += 1
+      }
 
       const newState = battleEngineRef.current!.getState()
       setGameState({
