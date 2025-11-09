@@ -33,12 +33,12 @@ export const CHARACTER_PRESETS: CharacterPreset[] = [
         priority: 2,
       },
       {
-        trigger: AVAILABLE_TRIGGERS[23], // Always
+        trigger: AVAILABLE_TRIGGERS[40], // Always
         action: AVAILABLE_ACTIONS[0], // Shoot
         priority: 1,
       },
     ],
-    startingTriggers: [AVAILABLE_TRIGGERS[4], AVAILABLE_TRIGGERS[19], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[23]],
+    startingTriggers: [AVAILABLE_TRIGGERS[4], AVAILABLE_TRIGGERS[19], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[40]],
     startingActions: [AVAILABLE_ACTIONS[0], AVAILABLE_ACTIONS[1], AVAILABLE_ACTIONS[6], AVAILABLE_ACTIONS[8]],
   },
   {
@@ -62,12 +62,12 @@ export const CHARACTER_PRESETS: CharacterPreset[] = [
         priority: 2,
       },
       {
-        trigger: AVAILABLE_TRIGGERS[23], // Always
+        trigger: AVAILABLE_TRIGGERS[40], // Always
         action: AVAILABLE_ACTIONS[0], // Shoot
         priority: 1,
       },
     ],
-    startingTriggers: [AVAILABLE_TRIGGERS[5], AVAILABLE_TRIGGERS[11], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[23]],
+    startingTriggers: [AVAILABLE_TRIGGERS[5], AVAILABLE_TRIGGERS[11], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[40]],
     startingActions: [AVAILABLE_ACTIONS[0], AVAILABLE_ACTIONS[7], AVAILABLE_ACTIONS[8], AVAILABLE_ACTIONS[14]],
   },
   {
@@ -91,12 +91,12 @@ export const CHARACTER_PRESETS: CharacterPreset[] = [
         priority: 2,
       },
       {
-        trigger: AVAILABLE_TRIGGERS[23], // Always
+        trigger: AVAILABLE_TRIGGERS[40], // Always
         action: AVAILABLE_ACTIONS[0], // Shoot
         priority: 1,
       },
     ],
-    startingTriggers: [AVAILABLE_TRIGGERS[1], AVAILABLE_TRIGGERS[2], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[23]],
+    startingTriggers: [AVAILABLE_TRIGGERS[1], AVAILABLE_TRIGGERS[2], AVAILABLE_TRIGGERS[20], AVAILABLE_TRIGGERS[40]],
     startingActions: [AVAILABLE_ACTIONS[0], AVAILABLE_ACTIONS[2], AVAILABLE_ACTIONS[7], AVAILABLE_ACTIONS[8]],
   },
 ]
