@@ -37,7 +37,7 @@ export default function Home() {
         "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/game-8-bit-328398-9kEG5aaHJG70UWkJIYtqB6V9bDC5Bu.mp3",
       )
       audioRef.current.loop = true
-      audioRef.current.volume = 0.5
+      audioRef.current.volume = 0.35
 
       audioRef.current.play().catch((error) => {
         console.log("[v0] Audio autoplay blocked, will play on user interaction:", error)

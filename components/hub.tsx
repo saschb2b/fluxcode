@@ -58,14 +58,14 @@ export function Hub({
 
   const handleBreach = () => {
     setIsBreaching(true)
-    const originalVolume = bgmAudioRef?.current?.volume ?? 0.5
+    const originalVolume = bgmAudioRef?.current?.volume ?? 0.35
     if (bgmAudioRef?.current) {
-      bgmAudioRef.current.volume = 0.2
+      bgmAudioRef.current.volume = 0.15
     }
     const audio = new Audio(
       "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/corrupt-data-sound-379468-HQLEeA9R8HMMVTOvLhZb5N5Kvad81G.mp3",
     )
-    audio.volume = 0.7
+    audio.volume = 0.9
     audio.play().catch((err) => console.error("[v0] Failed to play breach sound:", err))
     audio.addEventListener("ended", () => {
       if (bgmAudioRef?.current) {
@@ -452,7 +452,7 @@ export function Hub({
             INITIATE BREACH
           </Button>
         </div>
-      </div>
+      )}
     </div>
-  )
+  )\
 }
