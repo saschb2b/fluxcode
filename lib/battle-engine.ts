@@ -1,4 +1,5 @@
 import type { Position, Projectile, TriggerActionPair, BattleContext, ActionResult, DamageType } from "@/types/game"
+import { zzfx } from "zzfx"
 
 interface BurnStack {
   damage: number
@@ -270,6 +271,7 @@ export class BattleEngine {
         const projectile = this.createProjectile(isPlayer, baseDamage, action.damageType, action.statusChance)
         this.state.projectiles.push(projectile)
         update.projectiles = [...this.state.projectiles]
+        this.playShootSound(action.damageType)
         break
 
       case "rapid-fire":
@@ -278,6 +280,7 @@ export class BattleEngine {
           setTimeout(() => {
             const proj = this.createProjectile(isPlayer, action.damage || 5)
             this.state.projectiles.push(proj)
+            this.playShootSound(action.damageType)
           }, i * 200)
         }
         break
@@ -502,6 +505,45 @@ export class BattleEngine {
 
     const amplificationMap = [1.0, 1.2, 1.35, 1.5, 1.75, 2.0]
     return amplificationMap[Math.min(stackCount, 5)]
+  }
+
+  private playShootSound(damageType?: DamageType): void {
+    try {
+      switch (damageType) {
+        case "energy":
+          // High-pitched laser beam sound
+          zzfx(...[, , 925, 0.01, 0.01, 0.09, 1, 1.65, , , , , , , , 0.1, , 0.5, 0.01])
+          break
+        case "thermal":
+          // Flame thrower whoosh
+          zzfx(...[, , 315, 0.01, 0.02, 0.04, 4, 0.76, , , , , , 1.2, , 0.1, , 0.8, 0.02])
+          break
+        case "viral":
+          // Bio-weapon organic pulse
+          zzfx(...[, , 182, 0.01, 0.01, 0.05, 4, 1.88, -7, , , , , 1.1, , 0.1, , 0.65, 0.01])
+          break
+        case "corrosive":
+          // Acid hiss
+          zzfx(...[, , 218, 0.01, 0.01, 0.08, 4, 1.22, , , , , , 1.4, , 0.1, , 0.55, 0.01])
+          break
+        case "explosive":
+          // Heavy thump
+          zzfx(...[, , 568, 0.04, 0.01, 0.12, 4, 0.54, , , , , , , , 0.2, , 0.72, 0.02])
+          break
+        case "glacial":
+          // Crystalline ice shot
+          zzfx(...[, , 769, 0.01, 0.01, 0.06, 1, 2.18, , , , , , , , 0.1, , 0.62, 0.01])
+          break
+        case "kinetic":
+        default:
+          // Standard ballistic shot - sharp mechanical click
+          zzfx(...[, , 1e3, 0.01, , 0.03, 1, 1.94, , , , , , , , 0.1, , 0.5, 0.01])
+          break
+      }
+    } catch (error) {
+      // Silently fail if zzfx has issues
+      console.error("Failed to play shoot sound:", error)
+    }
   }
 
   getState(): BattleState {
