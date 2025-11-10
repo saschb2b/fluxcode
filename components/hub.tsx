@@ -1,28 +1,38 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import type React from "react"
-import { Card } from "@/components/ui/card"
-import { Play, User, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap, FileText } from "lucide-react"
-import type { CharacterPreset } from "@/lib/character-presets"
-import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
-import type { PlayerProgress } from "@/lib/meta-progression"
-import { META_UPGRADES, canAffordUpgrade } from "@/lib/meta-progression"
-import { Hub3DScene } from "./hub-3d-scene"
-import { useState, useMemo } from "react"
+"use client";
+import { Button } from "@/components/ui/button";
+import type React from "react";
+import { Card } from "@/components/ui/card";
+import {
+  Play,
+  User,
+  ShoppingCart,
+  BookOpen,
+  Coins,
+  Trophy,
+  Target,
+  Zap,
+  FileText,
+} from "lucide-react";
+import type { CharacterPreset } from "@/lib/character-presets";
+import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts";
+import type { PlayerProgress } from "@/lib/meta-progression";
+import { META_UPGRADES, canAffordUpgrade } from "@/lib/meta-progression";
+import { Hub3DScene } from "./hub-3d-scene";
+import { useState, useMemo } from "react";
 
 interface HubProps {
-  selectedCharacter: CharacterPreset | null
-  fighterCustomization: FighterCustomizationType
-  playerProgress: PlayerProgress
-  onStartRun: () => void
-  onSelectCharacter: () => void
-  onCustomizeFighter: () => void
-  onOpenShop: () => void
-  onOpenCodex: () => void
-  onOpenContracts: () => void
-  onOpenClassManager: () => void
-  bgmAudioRef?: React.RefObject<HTMLAudioElement | null>
-  isInHub?: boolean
+  selectedCharacter: CharacterPreset | null;
+  fighterCustomization: FighterCustomizationType;
+  playerProgress: PlayerProgress;
+  onStartRun: () => void;
+  onSelectCharacter: () => void;
+  onCustomizeFighter: () => void;
+  onOpenShop: () => void;
+  onOpenCodex: () => void;
+  onOpenContracts: () => void;
+  onOpenClassManager: () => void;
+  bgmAudioRef?: React.RefObject<HTMLAudioElement | null>;
+  isInHub?: boolean;
 }
 
 export function Hub({
@@ -39,52 +49,58 @@ export function Hub({
   bgmAudioRef,
   isInHub = true,
 }: HubProps) {
-  const [isBreaching, setIsBreaching] = useState(false)
+  const [isBreaching, setIsBreaching] = useState(false);
 
   const shopBadgeCount = useMemo(() => {
-    return META_UPGRADES.filter((upgrade) => canAffordUpgrade(playerProgress, upgrade)).length
-  }, [playerProgress])
+    return META_UPGRADES.filter((upgrade) =>
+      canAffordUpgrade(playerProgress, upgrade),
+    ).length;
+  }, [playerProgress]);
 
   const contractsBadgeCount = useMemo(() => {
-    if (!playerProgress.contractProgress) return 0
-    const dailyClaimable = playerProgress.contractProgress.dailyContracts.filter(
-      (c) => c.progress >= c.maxProgress && !c.claimed,
-    ).length
-    const weeklyClaimable = playerProgress.contractProgress.weeklyContracts.filter(
-      (c) => c.progress >= c.maxProgress && !c.claimed,
-    ).length
-    return dailyClaimable + weeklyClaimable
-  }, [playerProgress])
+    if (!playerProgress.contractProgress) return 0;
+    const dailyClaimable =
+      playerProgress.contractProgress.dailyContracts.filter(
+        (c) => c.progress >= c.maxProgress && !c.claimed,
+      ).length;
+    const weeklyClaimable =
+      playerProgress.contractProgress.weeklyContracts.filter(
+        (c) => c.progress >= c.maxProgress && !c.claimed,
+      ).length;
+    return dailyClaimable + weeklyClaimable;
+  }, [playerProgress]);
 
   const handleBreach = () => {
-    setIsBreaching(true)
-    const originalVolume = bgmAudioRef?.current?.volume ?? 0.35
+    setIsBreaching(true);
+    const originalVolume = bgmAudioRef?.current?.volume ?? 0.35;
     if (bgmAudioRef?.current) {
-      bgmAudioRef.current.volume = 0.15
+      bgmAudioRef.current.volume = 0.15;
     }
     const audio = new Audio(
       "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/corrupt-data-sound-379468-HQLEeA9R8HMMVTOvLhZb5N5Kvad81G.mp3",
-    )
-    audio.volume = 0.9
-    audio.play().catch((err) => console.error("[v0] Failed to play breach sound:", err))
+    );
+    audio.volume = 0.9;
+    audio
+      .play()
+      .catch((err) => console.error("[v0] Failed to play breach sound:", err));
     audio.addEventListener("ended", () => {
       if (bgmAudioRef?.current) {
-        bgmAudioRef.current.volume = originalVolume
+        bgmAudioRef.current.volume = originalVolume;
       }
-    })
+    });
     setTimeout(() => {
-      onStartRun()
-    }, 3000)
-  }
+      onStartRun();
+    }, 3000);
+  };
 
   const NotificationBadge = ({ count }: { count: number }) => {
-    if (count === 0) return null
+    if (count === 0) return null;
     return (
       <div className="absolute -top-1 -right-1 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-black shadow-[0_0_10px_rgba(255,215,0,0.6)]">
         {count > 9 ? "9+" : count}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="absolute inset-0 bg-gradient-to-b from-[#0a0015] via-[#1a0030] to-[#0a0015] overflow-y-auto h-dvh">
@@ -99,11 +115,17 @@ export function Hub({
           backgroundSize: "50px 50px",
         }}
       />
-      <Hub3DScene fighterCustomization={fighterCustomization} hasCharacter={!!selectedCharacter} />
+      <Hub3DScene
+        fighterCustomization={fighterCustomization}
+        hasCharacter={!!selectedCharacter}
+      />
       <div className="relative z-10 min-h-full flex flex-col lg:grid lg:grid-cols-[1fr_2fr_1fr] lg:gap-6 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-6">
         <div className="hidden lg:flex flex-col gap-6">
           <div className="backdrop-blur-sm bg-black/30 px-6 py-4 rounded-lg border border-cyan-500/30">
-            <h1 className="text-5xl font-bold text-cyan-400 tracking-wider" style={{ fontFamily: "monospace" }}>
+            <h1
+              className="text-5xl font-bold text-cyan-400 tracking-wider"
+              style={{ fontFamily: "monospace" }}
+            >
               HUB
             </h1>
           </div>
@@ -111,8 +133,13 @@ export function Hub({
             <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,255,0.2)] hover:shadow-[0_0_25px_rgba(0,255,255,0.4)] transition-all">
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Fighter Class</div>
-                  <div className="text-3xl font-bold mb-4" style={{ color: selectedCharacter.color }}>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Fighter Class
+                  </div>
+                  <div
+                    className="text-3xl font-bold mb-4"
+                    style={{ color: selectedCharacter.color }}
+                  >
                     {selectedCharacter.name}
                   </div>
                 </div>
@@ -132,7 +159,9 @@ export function Hub({
             <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,0,0.2)]">
               <div className="text-center">
                 <User className="w-16 h-16 text-muted-foreground mx-auto mb-3" />
-                <p className="text-base text-muted-foreground mb-4">No fighter selected</p>
+                <p className="text-base text-muted-foreground mb-4">
+                  No fighter selected
+                </p>
                 <Button
                   onClick={onOpenClassManager}
                   size="lg"
@@ -146,7 +175,10 @@ export function Hub({
           )}
           {playerProgress.totalRuns > 0 && (
             <Card className="bg-gradient-to-br from-green-950/60 to-black/80 backdrop-blur-md border-2 border-green-500/60 p-4 shadow-[0_0_20px_rgba(0,255,0,0.4)]">
-              <h2 className="text-lg font-bold text-green-400 mb-4" style={{ fontFamily: "monospace" }}>
+              <h2
+                className="text-lg font-bold text-green-400 mb-4"
+                style={{ fontFamily: "monospace" }}
+              >
                 CAREER STATS
               </h2>
               <div className="grid grid-cols-1 gap-3">
@@ -155,7 +187,10 @@ export function Hub({
                     <Zap className="w-4 h-4" />
                     <span>Total Runs</span>
                   </div>
-                  <div className="text-2xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
+                  <div
+                    className="text-2xl font-bold text-cyan-400"
+                    style={{ fontFamily: "monospace" }}
+                  >
                     {playerProgress.totalRuns}
                   </div>
                 </div>
@@ -164,7 +199,10 @@ export function Hub({
                     <Target className="w-4 h-4" />
                     <span>Nodes Completed</span>
                   </div>
-                  <div className="text-2xl font-bold text-green-400" style={{ fontFamily: "monospace" }}>
+                  <div
+                    className="text-2xl font-bold text-green-400"
+                    style={{ fontFamily: "monospace" }}
+                  >
                     {playerProgress.totalNodesCompleted}
                   </div>
                 </div>
@@ -173,8 +211,12 @@ export function Hub({
                     <Trophy className="w-4 h-4" />
                     <span>Best Layer</span>
                   </div>
-                  <div className="text-xl font-bold text-yellow-400" style={{ fontFamily: "monospace" }}>
-                    L{playerProgress.bestLayerReached + 1}-{playerProgress.bestNodeInBestLayer + 1}
+                  <div
+                    className="text-xl font-bold text-yellow-400"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    L{playerProgress.bestLayerReached + 1}-
+                    {playerProgress.bestNodeInBestLayer + 1}
                   </div>
                 </div>
               </div>
@@ -201,7 +243,10 @@ export function Hub({
                   >
                     CF
                   </span>
-                  <span className="text-xl font-bold text-yellow-400 leading-none" style={{ fontFamily: "monospace" }}>
+                  <span
+                    className="text-xl font-bold text-yellow-400 leading-none"
+                    style={{ fontFamily: "monospace" }}
+                  >
                     {playerProgress.cipherFragments}
                   </span>
                 </div>
@@ -222,15 +267,22 @@ export function Hub({
         <div className="hidden lg:flex flex-col gap-6">
           <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 px-6 py-4 shadow-[0_0_15px_rgba(0,255,255,0.3)]">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">Cipher Fragments</div>
+              <div className="text-sm text-muted-foreground">
+                Cipher Fragments
+              </div>
               <div className="flex items-center gap-3">
                 <Coins className="w-6 h-6 text-yellow-400" />
-                <div className="text-3xl font-bold text-yellow-400">{playerProgress.cipherFragments}</div>
+                <div className="text-3xl font-bold text-yellow-400">
+                  {playerProgress.cipherFragments}
+                </div>
               </div>
             </div>
           </Card>
           <Card className="bg-card/90 backdrop-blur-md border-2 border-magenta-500/50 p-6 shadow-[0_0_15px_rgba(255,0,255,0.2)] hover:shadow-[0_0_25px_rgba(255,0,255,0.4)] transition-all">
-            <h2 className="text-xl font-bold text-magenta-400 mb-4" style={{ fontFamily: "monospace" }}>
+            <h2
+              className="text-xl font-bold text-magenta-400 mb-4"
+              style={{ fontFamily: "monospace" }}
+            >
               OPERATIONS
             </h2>
             <div className="flex flex-col gap-3">
@@ -290,7 +342,8 @@ export function Hub({
                     key={i}
                     className="w-8 h-8 border border-cyan-400/30"
                     style={{
-                      clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                      clipPath:
+                        "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
                       animationDelay: `${i * 50}ms`,
                     }}
                   />
@@ -309,11 +362,17 @@ export function Hub({
               </div>
             </div>
             <div className="relative z-10 text-center space-y-6 px-8">
-              <div className="text-6xl font-bold text-cyan-400 animate-pulse" style={{ fontFamily: "monospace" }}>
+              <div
+                className="text-6xl font-bold text-cyan-400 animate-pulse"
+                style={{ fontFamily: "monospace" }}
+              >
                 BREACH
               </div>
               <div className="space-y-2">
-                <div className="text-green-400 text-sm animate-typing" style={{ fontFamily: "monospace" }}>
+                <div
+                  className="text-green-400 text-sm animate-typing"
+                  style={{ fontFamily: "monospace" }}
+                >
                   &gt; CONNECTING TO NETWORK...
                 </div>
                 <div
@@ -366,7 +425,9 @@ export function Hub({
                   className="relative flex-col h-16 gap-1 hover:bg-yellow-500/20 active:scale-95"
                 >
                   <ShoppingCart className="w-5 h-5 text-yellow-400" />
-                  <span className="text-[10px] text-yellow-400 font-bold">VAULT</span>
+                  <span className="text-[10px] text-yellow-400 font-bold">
+                    VAULT
+                  </span>
                   <NotificationBadge count={shopBadgeCount} />
                 </Button>
                 <Button
@@ -375,7 +436,9 @@ export function Hub({
                   className="relative flex-col h-16 gap-1 hover:bg-green-500/20 active:scale-95"
                 >
                   <FileText className="w-5 h-5 text-green-400" />
-                  <span className="text-[10px] text-green-400 font-bold">CONTRACTS</span>
+                  <span className="text-[10px] text-green-400 font-bold">
+                    CONTRACTS
+                  </span>
                   <NotificationBadge count={contractsBadgeCount} />
                 </Button>
               </>
@@ -386,7 +449,9 @@ export function Hub({
               className="flex-col h-16 gap-1 hover:bg-cyan-500/20 active:scale-95 opacity-70"
             >
               <BookOpen className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] text-cyan-400 font-bold">ARCHIVE</span>
+              <span className="text-[10px] text-cyan-400 font-bold">
+                ARCHIVE
+              </span>
             </Button>
           </div>
         </div>
@@ -395,7 +460,10 @@ export function Hub({
         <div className="p-3 space-y-2">
           {playerProgress.totalRuns > 0 && (
             <Card className="bg-gradient-to-br from-green-950/60 to-black/80 backdrop-blur-md border-2 border-green-500/60 p-2.5 shadow-[0_0_20px_rgba(0,255,0,0.4)] pointer-events-auto">
-              <h2 className="text-xs font-bold text-green-400 mb-2 px-1" style={{ fontFamily: "monospace" }}>
+              <h2
+                className="text-xs font-bold text-green-400 mb-2 px-1"
+                style={{ fontFamily: "monospace" }}
+              >
                 CAREER STATS
               </h2>
               <div className="grid grid-cols-3 gap-1.5">
@@ -404,7 +472,10 @@ export function Hub({
                     <Zap className="w-2.5 h-2.5" />
                     <span>RUNS</span>
                   </div>
-                  <div className="text-lg font-bold text-cyan-400 text-center" style={{ fontFamily: "monospace" }}>
+                  <div
+                    className="text-lg font-bold text-cyan-400 text-center"
+                    style={{ fontFamily: "monospace" }}
+                  >
                     {playerProgress.totalRuns}
                   </div>
                 </div>
@@ -413,7 +484,10 @@ export function Hub({
                     <Target className="w-2.5 h-2.5" />
                     <span>NODES</span>
                   </div>
-                  <div className="text-lg font-bold text-green-400 text-center" style={{ fontFamily: "monospace" }}>
+                  <div
+                    className="text-lg font-bold text-green-400 text-center"
+                    style={{ fontFamily: "monospace" }}
+                  >
                     {playerProgress.totalNodesCompleted}
                   </div>
                 </div>
@@ -422,8 +496,12 @@ export function Hub({
                     <Trophy className="w-2.5 h-2.5" />
                     <span>BEST</span>
                   </div>
-                  <div className="text-sm font-bold text-yellow-400 text-center" style={{ fontFamily: "monospace" }}>
-                    L{playerProgress.bestLayerReached + 1}-{playerProgress.bestNodeInBestLayer + 1}
+                  <div
+                    className="text-sm font-bold text-yellow-400 text-center"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    L{playerProgress.bestLayerReached + 1}-
+                    {playerProgress.bestNodeInBestLayer + 1}
                   </div>
                 </div>
               </div>
@@ -431,12 +509,18 @@ export function Hub({
           )}
           {selectedCharacter && (
             <div className="text-center mb-1 pointer-events-auto">
-              <div className="text-xs text-cyan-400/60 mb-0.5" style={{ fontFamily: "monospace" }}>
+              <div
+                className="text-xs text-cyan-400/60 mb-0.5"
+                style={{ fontFamily: "monospace" }}
+              >
                 ACTIVE FIGHTER
               </div>
               <div
                 className="text-lg font-bold tracking-wider"
-                style={{ color: selectedCharacter.color, fontFamily: "monospace" }}
+                style={{
+                  color: selectedCharacter.color,
+                  fontFamily: "monospace",
+                }}
               >
                 {selectedCharacter.name.toUpperCase()}
               </div>
@@ -452,4 +536,7 @@ export function Hub({
             INITIATE BREACH
           </Button>
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
