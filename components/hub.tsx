@@ -453,6 +453,3 @@ export function Hub({
           </Button>
         </div>
       )}
-    </div>
-  )\
-}
