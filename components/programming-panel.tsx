@@ -15,6 +15,7 @@ interface ProgrammingPanelProps {
   onAddPair: (trigger: Trigger, action: Action) => void
   onRemovePair: (index: number) => void
   onUpdatePriority: (index: number, priority: number) => void
+  onTogglePair?: (index: number, enabled: boolean) => void
   isOpen: boolean
   onClose: () => void
 }
@@ -26,12 +27,15 @@ export function ProgrammingPanel({
   onAddPair,
   onRemovePair,
   onUpdatePriority,
+  onTogglePair,
   isOpen,
   onClose,
 }: ProgrammingPanelProps) {
+  const safeTriggers = unlockedTriggers || []
+  const safeActions = unlockedActions || []
+
   const [selectedTrigger, setSelectedTrigger] = useState<Trigger | null>(null)
   const [selectedAction, setSelectedAction] = useState<Action | null>(null)
-  const [enabledStates, setEnabledStates] = useState<Record<number, boolean>>({})
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editTrigger, setEditTrigger] = useState<Trigger | null>(null)
@@ -122,10 +126,10 @@ export function ProgrammingPanel({
   }
 
   const toggleEnabled = (index: number) => {
-    setEnabledStates((prev) => ({
-      ...prev,
-      [index]: !(prev[index] ?? true),
-    }))
+    if (onTogglePair) {
+      const currentEnabled = pairs[index].enabled ?? true
+      onTogglePair(index, !currentEnabled)
+    }
   }
 
   if (!isOpen) return null
@@ -227,12 +231,12 @@ export function ProgrammingPanel({
                     {formStep === "select-trigger" && (
                       <div className="space-y-2">
                         <div className="text-xs text-cyan-300/70">
-                          Select a condition ({unlockedTriggers.length} available):
+                          Select a condition ({safeTriggers.length} available):
                         </div>
                         <div className="h-[200px] sm:h-[300px]">
                           <ScrollArea className="h-full">
                             <div className="space-y-2 pr-2">
-                              {unlockedTriggers.map((trigger) => (
+                              {safeTriggers.map((trigger) => (
                                 <Button
                                   key={trigger.id}
                                   onClick={() => {
@@ -269,12 +273,12 @@ export function ProgrammingPanel({
                           <div className="text-sm text-cyan-200 font-medium">{selectedTrigger.name}</div>
                         </Card>
                         <div className="text-xs text-cyan-300/70">
-                          Select an action ({unlockedActions.length} available):
+                          Select an action ({safeActions.length} available):
                         </div>
                         <div className="h-[200px] sm:h-[250px]">
                           <ScrollArea className="h-full">
                             <div className="space-y-2 pr-2">
-                              {unlockedActions.map((action) => (
+                              {safeActions.map((action) => (
                                 <Button
                                   key={action.id}
                                   onClick={() => {
@@ -374,7 +378,7 @@ export function ProgrammingPanel({
                     </p>
                   </div>
                   <div className="text-xs text-cyan-300/50 hidden sm:block">
-                    {unlockedTriggers.length} conditions • {unlockedActions.length} actions
+                    {safeTriggers.length} conditions • {safeActions.length} actions
                   </div>
                 </div>
 
@@ -387,14 +391,14 @@ export function ProgrammingPanel({
                     ) : (
                       <div className="space-y-3">
                         {sortedPairsWithIndices.map(({ pair, originalIndex }, displayIndex) => {
-                          const isEnabled = enabledStates[originalIndex] ?? true
+                          const isEnabled = pair.enabled ?? true
                           const isExpanded = expandedIndex === originalIndex
                           const isEditing = editingIndex === originalIndex
 
                           return (
                             <Card
                               key={originalIndex}
-                              className={`p-4 border-2 border-cyan-500/30 bg-black/40 hover:border-cyan-500/50 transition-all ${!isEnabled ? "opacity-40" : ""}`}
+                              className={`p-4 border-2 border-cyan-500/50 bg-black/40 hover:border-cyan-500/50 transition-all ${!isEnabled ? "opacity-40" : ""}`}
                             >
                               <div className="flex items-center gap-4">
                                 <button
@@ -510,7 +514,7 @@ export function ProgrammingPanel({
                                           <div className="text-xs text-cyan-300/70">Condition:</div>
                                           <ScrollArea className="h-32 rounded border border-cyan-500/30 bg-black/50">
                                             <div className="p-2 space-y-1">
-                                              {unlockedTriggers.map((trigger) => (
+                                              {safeTriggers.map((trigger) => (
                                                 <button
                                                   key={trigger.id}
                                                   onClick={() => setEditTrigger(trigger)}
@@ -531,7 +535,7 @@ export function ProgrammingPanel({
                                           <div className="text-xs text-cyan-300/70">Action:</div>
                                           <ScrollArea className="h-32 rounded border border-cyan-500/30 bg-black/50">
                                             <div className="p-2 space-y-1">
-                                              {unlockedActions.map((action) => (
+                                              {safeActions.map((action) => (
                                                 <button
                                                   key={action.id}
                                                   onClick={() => setEditAction(action)}

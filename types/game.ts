@@ -85,6 +85,7 @@ export interface TriggerActionPair {
   action: Action
   priority: number
   lastExecuted?: number
+  enabled?: boolean // Added enabled property to track if protocol is active
 }
 
 export interface BattleContext {
@@ -142,6 +143,7 @@ export interface GameState {
   addTriggerActionPair: (trigger: Trigger, action: Action) => void
   removeTriggerActionPair: (index: number) => void
   updatePairPriority: (index: number, priority: number) => void
+  togglePair: (index: number, enabled: boolean) => void // Added togglePair function to enable/disable protocols
   showRewardSelection: boolean
   availableRewardTriggers: Trigger[]
   availableRewardActions: Action[]

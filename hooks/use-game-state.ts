@@ -268,78 +268,58 @@ export function useGameState(): GameState {
   ])
 
   const startBattle = useCallback(() => {
-    console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
-    console.log("[v0] triggerActionPairs count:", triggerActionPairs.length)
+    const enabledPairs = triggerActionPairs.filter((pair) => pair.enabled !== false)
+
+    console.log("[v0] Starting battle with player pairs:", enabledPairs)
+    console.log("[v0] triggerActionPairs count:", enabledPairs.length)
     console.log(
       "[v0] triggerActionPairs details:",
-      triggerActionPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+      enabledPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
     )
     setJustEarnedReward(null)
 
-    const enemyPairs: TriggerActionPair[] = [
-      {
-        trigger: AVAILABLE_TRIGGERS[11],
-        action: AVAILABLE_ACTIONS[10],
-        priority: 6,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[19],
-        action: AVAILABLE_ACTIONS[0],
-        priority: 5,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[20],
-        action: wave >= 3 ? AVAILABLE_ACTIONS[13] : AVAILABLE_ACTIONS[8],
-        priority: 4,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[1],
-        action: AVAILABLE_ACTIONS[3],
-        priority: 3,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[0],
-        action: AVAILABLE_ACTIONS[6],
-        priority: 2,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[23],
-        action: AVAILABLE_ACTIONS[0],
-        priority: 1,
-      },
+    const baseEnemyProtocols = [
+      { triggerId: "just-took-damage", actionId: "strafe-left", priority: 6 },
+      { triggerId: "same-row", actionId: "shoot", priority: 5 },
+      { triggerId: "different-row", actionId: wave >= 3 ? "jump" : "move-up", priority: 4 },
+      { triggerId: "enemy-close", actionId: "shotgun-blast", priority: 3 },
+      { triggerId: "enemy-at-min-distance", actionId: "move-forward", priority: 2 },
+      { triggerId: "in-range", actionId: "shoot", priority: 1 },
     ]
 
     if (wave >= 2) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[5],
-        action: AVAILABLE_ACTIONS[14],
-        priority: 7,
-      })
+      baseEnemyProtocols.push({ triggerId: "low-hp", actionId: "heal", priority: 7 })
     }
 
     if (wave >= 3) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[4],
-        action: AVAILABLE_ACTIONS[1],
-        priority: 8,
-      })
+      baseEnemyProtocols.push({ triggerId: "high-hp", actionId: "power-shot", priority: 8 })
     }
 
     if (wave >= 4) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[2],
-        action: AVAILABLE_ACTIONS[11],
-        priority: 9,
-      })
+      baseEnemyProtocols.push({ triggerId: "enemy-far", actionId: "dash-forward", priority: 9 })
     }
 
     if (wave >= 5) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[6],
-        action: AVAILABLE_ACTIONS[2],
-        priority: 10,
-      })
+      baseEnemyProtocols.push({ triggerId: "shields-up", actionId: "charge-shot", priority: 10 })
     }
+
+    const enemyPairs = baseEnemyProtocols
+      .map((config) => {
+        const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === config.triggerId)
+        const action = AVAILABLE_ACTIONS.find((a) => a.id === config.actionId)
+
+        if (!trigger || !action) {
+          console.warn(`[v0] Enemy protocol missing: ${config.triggerId} -> ${config.actionId}`)
+          return null
+        }
+
+        return {
+          trigger,
+          action,
+          priority: config.priority,
+        }
+      })
+      .filter((pair): pair is TriggerActionPair => pair !== null)
 
     console.log("[v0] Enemy pairs:", enemyPairs)
 
@@ -354,7 +334,7 @@ export function useGameState(): GameState {
         projectiles: [],
         justTookDamage: false,
       },
-      triggerActionPairs,
+      enabledPairs,
       enemyPairs,
       fighterCustomization,
       enemyCustomization,
@@ -689,6 +669,7 @@ export function useGameState(): GameState {
               trigger,
               action,
               priority: pair.priority,
+              enabled: true,
             }
           })
           .filter((p): p is TriggerActionPair => p !== null)
@@ -701,15 +682,29 @@ export function useGameState(): GameState {
         )
         setTriggerActionPairs(pairs)
 
-        const triggers = pairs.map((p) => p.trigger)
-        const actions = pairs.map((p) => p.action)
-        setUnlockedTriggers(triggers)
-        setUnlockedActions(actions)
+        const uniqueTriggers = Array.from(new Set(pairs.map((p) => p.trigger.id)))
+          .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+          .filter((t): t is Trigger => t !== null)
+
+        const uniqueActions = Array.from(new Set(pairs.map((p) => p.action.id)))
+          .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+          .filter((a): a is Action => a !== null)
+
+        setUnlockedTriggers(uniqueTriggers)
+        setUnlockedActions(uniqueActions)
       } else {
-        // Use default preset protocols
-        setTriggerActionPairs(selectedCharacter.startingPairs)
-        setUnlockedTriggers(selectedCharacter.startingTriggers)
-        setUnlockedActions(selectedCharacter.startingActions)
+        setTriggerActionPairs(selectedCharacter.startingPairs.map((pair) => ({ ...pair, enabled: true })))
+
+        const uniqueTriggers = Array.from(new Set(selectedCharacter.startingPairs.map((p) => p.trigger.id)))
+          .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+          .filter((t): t is Trigger => t !== null)
+
+        const uniqueActions = Array.from(new Set(selectedCharacter.startingPairs.map((p) => p.action.id)))
+          .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+          .filter((a): a is Action => a !== null)
+
+        setUnlockedTriggers(uniqueTriggers)
+        setUnlockedActions(uniqueActions)
       }
     } else {
       setTriggerActionPairs([])
@@ -726,27 +721,66 @@ export function useGameState(): GameState {
   }, [selectedCharacter])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
-    setTriggerActionPairs((prev) => [
-      ...prev,
-      {
-        trigger,
-        action,
-        priority: prev.length + 1,
-      },
-    ])
+    console.log("[v0] addTriggerActionPair called:", trigger.id, "->", action.id)
+    setTriggerActionPairs((prev) => {
+      const updated = [
+        ...prev,
+        {
+          trigger,
+          action,
+          priority: prev.length + 1,
+          enabled: true,
+        },
+      ]
+      console.log(
+        "[v0] Updated triggerActionPairs:",
+        updated.map((p) => `${p.trigger.id}->${p.action.id}`),
+      )
+      return updated
+    })
   }, [])
 
   const removeTriggerActionPair = useCallback((index: number) => {
-    setTriggerActionPairs((prev) => prev.filter((_, i) => i !== index))
+    console.log("[v0] removeTriggerActionPair called for index:", index)
+    setTriggerActionPairs((prev) => {
+      const updated = prev.filter((_, i) => i !== index)
+      console.log(
+        "[v0] After removal, triggerActionPairs:",
+        updated.map((p) => `${p.trigger.id}->${p.action.id}`),
+      )
+      return updated
+    })
   }, [])
 
   const updatePairPriority = useCallback((index: number, priority: number) => {
     setTriggerActionPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
   }, [])
 
+  const togglePair = useCallback((index: number, enabled: boolean) => {
+    console.log("[v0] togglePair called for index:", index, "enabled:", enabled)
+    setTriggerActionPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
   const selectRewardTrigger = useCallback(
     (trigger: Trigger) => {
-      setUnlockedTriggers((prev) => [...prev, trigger])
+      setUnlockedTriggers((prev) => {
+        console.log("[v0] selectRewardTrigger - prev value:", prev)
+        console.log(
+          "[v0] selectRewardTrigger - prev IDs:",
+          prev?.map((t) => t.id),
+        )
+        const existing = prev || []
+        // Avoid duplicates
+        if (existing.some((t) => t.id === trigger.id)) {
+          return existing
+        }
+        const updated = [...existing, trigger]
+        console.log(
+          "[v0] Updated unlocked triggers after reward:",
+          updated.map((t) => t.id),
+        )
+        return updated
+      })
       setJustEarnedReward({ type: "trigger", name: trigger.name })
       setShowRewardSelection(false)
       prepareNextWave()
@@ -756,7 +790,24 @@ export function useGameState(): GameState {
 
   const selectRewardAction = useCallback(
     (action: Action) => {
-      setUnlockedActions((prev) => [...prev, action])
+      setUnlockedActions((prev) => {
+        console.log("[v0] selectRewardAction - prev value:", prev)
+        console.log(
+          "[v0] selectRewardAction - prev IDs:",
+          prev?.map((a) => a.id),
+        )
+        const existing = prev || []
+        // Avoid duplicates
+        if (existing.some((a) => a.id === action.id)) {
+          return existing
+        }
+        const updated = [...existing, action]
+        console.log(
+          "[v0] Updated unlocked actions after reward:",
+          updated.map((a) => a.id),
+        )
+        return updated
+      })
       setJustEarnedReward({ type: "action", name: action.name })
       setShowRewardSelection(false)
       prepareNextWave()
@@ -768,14 +819,28 @@ export function useGameState(): GameState {
     setBattleState("idle")
     setShowRewardSelection(true)
 
-    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.some((ut) => ut.id === t.id))
-    const availableActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.some((ua) => ua.id === a.id))
+    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !(unlockedTriggers || []).some((ut) => ut.id === t.id))
+    const availableActions = AVAILABLE_ACTIONS.filter((a) => !(unlockedActions || []).some((ua) => ua.id === a.id))
 
     const { triggers, actions } = getRandomRewards(availableTriggers, availableActions)
     setAvailableRewardTriggers(triggers)
     setAvailableRewardActions(actions)
     setRerollsRemaining(3)
   }, [unlockedTriggers, unlockedActions, getRandomRewards])
+
+  const rerollRewards = useCallback(() => {
+    if (rerollsRemaining <= 0) return
+
+    console.log("[v0] Rerolling rewards, rerolls remaining:", rerollsRemaining - 1)
+
+    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !(unlockedTriggers || []).some((ut) => ut.id === t.id))
+    const availableActions = AVAILABLE_ACTIONS.filter((a) => !(unlockedActions || []).some((ua) => ua.id === a.id))
+
+    const { triggers, actions } = getRandomRewards(availableTriggers, availableActions)
+    setAvailableRewardTriggers(triggers)
+    setAvailableRewardActions(actions)
+    setRerollsRemaining((prev) => prev - 1)
+  }, [rerollsRemaining, unlockedTriggers, unlockedActions, getRandomRewards])
 
   const continueAfterIntro = useCallback(() => {
     console.log("[v0] Continuing after intro, resetting player")
@@ -813,6 +878,7 @@ export function useGameState(): GameState {
               trigger,
               action,
               priority: pair.priority,
+              enabled: true,
             }
           })
           .filter((p): p is TriggerActionPair => p !== null)
@@ -820,17 +886,47 @@ export function useGameState(): GameState {
         console.log("[v0] Loading custom class protocols:", pairs)
         setTriggerActionPairs(pairs)
 
-        // Extract unique triggers and actions for unlocked lists
-        const triggers = pairs.map((p) => p.trigger)
-        const actions = pairs.map((p) => p.action)
-        setUnlockedTriggers(triggers)
-        setUnlockedActions(actions)
+        const uniqueTriggers = Array.from(new Set(pairs.map((p) => p.trigger.id)))
+          .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+          .filter((t): t is Trigger => t !== null)
+
+        const uniqueActions = Array.from(new Set(pairs.map((p) => p.action.id)))
+          .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+          .filter((a): a is Action => a !== null)
+
+        console.log(
+          "[v0] Setting unlocked triggers:",
+          uniqueTriggers.map((t) => t.id),
+        )
+        console.log(
+          "[v0] Setting unlocked actions:",
+          uniqueActions.map((a) => a.id),
+        )
+        setUnlockedTriggers(uniqueTriggers)
+        setUnlockedActions(uniqueActions)
       } else {
         // Use default preset protocols
         console.log("[v0] Loading default preset protocols")
-        setTriggerActionPairs(character.startingPairs)
-        setUnlockedTriggers(character.startingTriggers)
-        setUnlockedActions(character.startingActions)
+        setTriggerActionPairs(character.startingPairs.map((pair) => ({ ...pair, enabled: true })))
+
+        const uniqueTriggers = Array.from(new Set(character.startingPairs.map((p) => p.trigger.id)))
+          .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+          .filter((t): t is Trigger => t !== null)
+
+        const uniqueActions = Array.from(new Set(character.startingPairs.map((p) => p.action.id)))
+          .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+          .filter((a): a is Action => a !== null)
+
+        console.log(
+          "[v0] Setting unlocked triggers from preset:",
+          uniqueTriggers.map((t) => t.id),
+        )
+        console.log(
+          "[v0] Setting unlocked actions from preset:",
+          uniqueActions.map((a) => a.id),
+        )
+        setUnlockedTriggers(uniqueTriggers)
+        setUnlockedActions(uniqueActions)
       }
 
       const newProgress = {
@@ -898,12 +994,14 @@ export function useGameState(): GameState {
     addTriggerActionPair,
     removeTriggerActionPair,
     updatePairPriority,
+    togglePair,
     showRewardSelection,
     availableRewardTriggers,
     availableRewardActions,
     selectRewardTrigger,
     selectRewardAction,
     rerollsRemaining,
+    rerollRewards,
     continueToNextWave,
     nextWave,
     continueAfterIntro,
