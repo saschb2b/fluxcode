@@ -10,7 +10,6 @@ export enum DamageType {
   VIRAL = "viral",
   CORROSIVE = "corrosive",
   EXPLOSIVE = "explosive",
-  ELECTROMAGNETIC = "electromagnetic", // renamed from MAGNETIC for clarity
   GLACIAL = "glacial",
 }
 

@@ -18,6 +18,9 @@ interface CustomizableFighterProps {
   maxShields?: number
   armor?: number
   maxArmor?: number
+  burnStacks?: number
+  viralStacks?: number
+  empStacks?: number
 }
 
 function PartMesh({ part, color }: { part: FighterPart; color: string }) {
@@ -83,6 +86,9 @@ export function CustomizableFighter({
   maxShields = 0,
   armor = 0,
   maxArmor = 0,
+  burnStacks = 0,
+  viralStacks = 0,
+  empStacks = 0,
 }: CustomizableFighterProps) {
   const meshRef = useRef<Mesh>(null)
   const groupRef = useRef<Group>(null)
@@ -161,12 +167,25 @@ export function CustomizableFighter({
   const shieldPercent = maxShields > 0 ? (shields / maxShields) * 100 : 0
   const armorPercent = maxArmor > 0 ? (armor / maxArmor) * 100 : 0
 
+  const armorReduction = armor > 0 ? (armor / (armor + 300)) * 100 : 0
+
   const chassisModifier = useMemo(() => getChassisModifier(customization?.chassis), [customization?.chassis])
 
   return (
     <group ref={groupRef}>
       <group ref={meshRef}>
-        {/* Body - Modified by chassis */}
+        {burnStacks > 0 && (
+          <pointLight position={[0, 0, 0]} intensity={burnStacks * 0.5} distance={2} color="#ff4500" decay={2} />
+        )}
+
+        {viralStacks > 0 && (
+          <pointLight position={[0, 0, 0]} intensity={viralStacks * 0.4} distance={2.5} color="#00ff00" decay={2} />
+        )}
+
+        {empStacks > 0 && (
+          <pointLight position={[0, 0, 0]} intensity={empStacks * 0.6} distance={3} color="#00ffff" decay={2} />
+        )}
+
         {customization?.body && (
           <PartMesh
             part={{
@@ -178,14 +197,24 @@ export function CustomizableFighter({
               ] as [number, number, number],
               shape: chassisModifier.shape as any,
             }}
-            color={primaryColor}
+            color={
+              empStacks > 0
+                ? `#00${Math.floor(255 - empStacks * 30)
+                    .toString(16)
+                    .padStart(2, "0")}ff`
+                : viralStacks > 0
+                  ? `#${Math.floor(255 - viralStacks * 30)
+                      .toString(16)
+                      .padStart(2, "0")}ff${Math.floor(255 - viralStacks * 30)
+                      .toString(16)
+                      .padStart(2, "0")}`
+                  : primaryColor
+            }
           />
         )}
 
-        {/* Head */}
         {customization?.head && <PartMesh part={customization.head} color={primaryColor} />}
 
-        {/* Left Arm */}
         {customization?.leftArm && (
           <PartMesh
             part={{
@@ -196,7 +225,6 @@ export function CustomizableFighter({
           />
         )}
 
-        {/* Right Arm */}
         {customization?.rightArm && (
           <PartMesh
             part={{
@@ -207,12 +235,10 @@ export function CustomizableFighter({
           />
         )}
 
-        {/* Accessory */}
         {customization?.accessory && customization.accessory.id !== "none" && (
           <PartMesh part={customization.accessory} color={secondaryColor} />
         )}
 
-        {/* Eyes */}
         <mesh position={[0.1, 0.85, 0.21]}>
           <boxGeometry args={[0.08, 0.08, 0.02]} />
           <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={2} />
@@ -223,14 +249,13 @@ export function CustomizableFighter({
         </mesh>
       </group>
 
-      {/* HP Bar */}
       <Html position={[0, 1.5, 0]} center zIndexRange={[0, 0]}>
         <div className="flex flex-col items-center gap-1 pointer-events-none">
           <div className="text-xs font-bold text-foreground px-2 py-0.5 bg-card/80 rounded border border-border">
             {isPlayer ? "PLAYER" : "ENEMY"}
           </div>
 
-          <div className="flex flex-col gap-0.5 w-24">
+          <div className="flex flex-col gap-0.5 w-32">
             {maxShields > 0 && (
               <div className="flex items-center gap-1">
                 <Shield className="w-3 h-3 text-cyan-400" />
@@ -240,7 +265,7 @@ export function CustomizableFighter({
                     style={{ width: `${shieldPercent}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-mono text-cyan-400 w-8 text-right">{shields}</span>
+                <span className="text-[10px] font-mono text-cyan-400 w-8 text-right">{shields.toFixed(2)}</span>
               </div>
             )}
 
@@ -253,7 +278,9 @@ export function CustomizableFighter({
                     style={{ width: `${armorPercent}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-mono text-amber-400 w-8 text-right">{armor}</span>
+                <span className="text-[10px] font-mono text-amber-400 w-16 text-right">
+                  {armor.toFixed(2)} (-{armorReduction.toFixed(2)}%)
+                </span>
               </div>
             )}
 
@@ -270,7 +297,7 @@ export function CustomizableFighter({
                   }}
                 />
               </div>
-              <span className="text-xs font-mono text-foreground w-8 text-right">{hp}</span>
+              <span className="text-xs font-mono text-foreground w-8 text-right">{hp.toFixed(2)}</span>
             </div>
           </div>
         </div>

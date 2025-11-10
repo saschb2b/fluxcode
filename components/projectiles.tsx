@@ -1,9 +1,10 @@
 "use client"
 
 import { useRef } from "react"
-import { useFrame } from "@react-three/fiber"
-import type { Mesh } from "three"
+import type { Group } from "three"
 import type { Projectile } from "@/types/game"
+import { ElementalProjectileVisual } from "./elemental-projectile-visual"
+import { DamageType } from "@/types/game"
 
 interface ProjectilesProps {
   projectiles: Projectile[]
@@ -20,7 +21,7 @@ export function Projectiles({ projectiles }: ProjectilesProps) {
 }
 
 function ProjectileEntity({ projectile }: { projectile: Projectile }) {
-  const meshRef = useRef<Mesh>(null)
+  const groupRef = useRef<Group>(null)
 
   const worldPos = [(projectile.position.x - 2.5) * 1.1, 0.6, (projectile.position.y - 1) * 1.1] as [
     number,
@@ -28,16 +29,11 @@ function ProjectileEntity({ projectile }: { projectile: Projectile }) {
     number,
   ]
 
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.z += 0.2
-    }
-  })
+  const damageType = projectile.damageType || DamageType.KINETIC
 
   return (
-    <mesh ref={meshRef} position={worldPos}>
-      <boxGeometry args={[0.2, 0.2, 0.2]} />
-      <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={2} />
-    </mesh>
+    <group ref={groupRef} position={worldPos}>
+      <ElementalProjectileVisual damageType={damageType} scale={0.2} />
+    </group>
   )
 }

@@ -1,4 +1,18 @@
-import type { Position, Projectile, TriggerActionPair, BattleContext, ActionResult } from "@/types/game"
+import type { Position, Projectile, TriggerActionPair, BattleContext, ActionResult, DamageType } from "@/types/game"
+
+interface BurnStack {
+  damage: number
+  endTime: number
+}
+
+interface ViralStack {
+  endTime: number
+}
+
+interface EMPStack {
+  endTime: number
+  shieldDrainPercent: number
+}
 
 export interface BattleState {
   playerPos: Position
@@ -9,6 +23,10 @@ export interface BattleState {
   enemyArmor: number
   projectiles: Projectile[]
   justTookDamage: boolean
+  enemyBurnStacks: BurnStack[]
+  enemyViralStacks: ViralStack[]
+  enemyEMPStacks: EMPStack[]
+  shieldRegenDisabled: boolean
 }
 
 export interface BattleHistoryPoint {
@@ -22,6 +40,8 @@ export interface BattleUpdate {
   playerHP?: number
   enemyPos?: Position
   enemyHP?: number
+  enemyShields?: number
+  enemyArmor?: number
   projectiles?: Projectile[]
   justTookDamage?: boolean
   battleOver?: boolean
@@ -29,6 +49,9 @@ export interface BattleUpdate {
   battleHistory?: BattleHistoryPoint[]
   damageDealt?: { type: string; amount: number }
   pairExecuted?: { triggerId: string; actionId: string }
+  burnStacks?: number
+  viralStacks?: number
+  empStacks?: number
 }
 
 export class BattleEngine {
@@ -42,6 +65,7 @@ export class BattleEngine {
   private lastHistoryRecord = 0
   private playerCustomization: any
   private enemyCustomization: any
+  private lastBurnTick = 0
 
   constructor(
     initialState: BattleState,
@@ -50,7 +74,13 @@ export class BattleEngine {
     playerCustomization?: any,
     enemyCustomization?: any,
   ) {
-    this.state = { ...initialState }
+    this.state = {
+      ...initialState,
+      enemyBurnStacks: initialState.enemyBurnStacks || [],
+      enemyViralStacks: initialState.enemyViralStacks || [],
+      enemyEMPStacks: initialState.enemyEMPStacks || [],
+      shieldRegenDisabled: initialState.shieldRegenDisabled || false,
+    }
     this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
     this.enemyPairs = [...enemyPairs].sort((a, b) => b.priority - a.priority)
     this.playerCustomization = playerCustomization
@@ -69,18 +99,36 @@ export class BattleEngine {
     this.battleTime += deltaTime
     if (this.battleTime - this.lastHistoryRecord >= 500) {
       this.battleHistory.push({
-        time: Math.floor(this.battleTime / 1000), // Convert to seconds
+        time: Math.floor(this.battleTime / 1000),
         playerHP: this.state.playerHP,
         enemyHP: this.state.enemyHP,
       })
       this.lastHistoryRecord = this.battleTime
     }
 
+    if (this.battleTime - this.lastBurnTick >= 500) {
+      this.lastBurnTick = this.battleTime
+      const burnDamage = this.processBurnDamage()
+      if (burnDamage > 0) {
+        update.enemyHP = this.state.enemyHP
+        update.burnStacks = this.state.enemyBurnStacks.length
+      }
+    }
+
+    this.state.enemyBurnStacks = this.state.enemyBurnStacks.filter((stack) => stack.endTime > this.battleTime)
+    this.state.enemyViralStacks = this.state.enemyViralStacks.filter((stack) => stack.endTime > this.battleTime)
+    this.state.enemyEMPStacks = this.state.enemyEMPStacks.filter((stack) => stack.endTime > this.battleTime)
+
+    this.state.shieldRegenDisabled = this.state.enemyEMPStacks.length > 0
+
+    update.burnStacks = this.state.enemyBurnStacks.length
+    update.viralStacks = this.state.enemyViralStacks.length
+    update.empStacks = this.state.enemyEMPStacks.length
+
     const newProjectiles = this.updateProjectiles(deltaTime)
     update.projectiles = newProjectiles
     this.state.projectiles = newProjectiles
 
-    // Check for hits
     const hitUpdate = this.checkProjectileHits()
     if (hitUpdate.playerHP !== undefined) {
       update.playerHP = hitUpdate.playerHP
@@ -103,8 +151,16 @@ export class BattleEngine {
     if (hitUpdate.damageDealt !== undefined) {
       update.damageDealt = hitUpdate.damageDealt
     }
+    if (hitUpdate.burnStacks !== undefined) {
+      update.burnStacks = hitUpdate.burnStacks
+    }
+    if (hitUpdate.viralStacks !== undefined) {
+      update.viralStacks = hitUpdate.viralStacks
+    }
+    if (hitUpdate.empStacks !== undefined) {
+      update.empStacks = hitUpdate.empStacks
+    }
 
-    // Check for battle end
     if (this.state.playerHP <= 0) {
       this.battleHistory.push({
         time: Math.floor(this.battleTime / 1000),
@@ -128,7 +184,6 @@ export class BattleEngine {
       return update
     }
 
-    // Execute player AI
     const playerAction = this.executeAI(this.playerPairs, true, deltaTime)
     if (playerAction) {
       const actionUpdate = this.applyAction(playerAction, true)
@@ -139,7 +194,6 @@ export class BattleEngine {
       }
     }
 
-    // Execute enemy AI
     const enemyAction = this.executeAI(this.enemyPairs, false, deltaTime)
     if (enemyAction) {
       const actionUpdate = this.applyAction(enemyAction, false)
@@ -150,13 +204,26 @@ export class BattleEngine {
       }
     }
 
-    // Reset damage flag after processing
     if (this.state.justTookDamage) {
       this.state.justTookDamage = false
       update.justTookDamage = false
     }
 
     return update
+  }
+
+  private processBurnDamage(): number {
+    if (this.state.enemyBurnStacks.length === 0) return 0
+
+    let totalDamage = 0
+    this.state.enemyBurnStacks.forEach((stack) => {
+      totalDamage += stack.damage
+    })
+
+    // Burn damage bypasses shields and armor, goes directly to HP
+    this.state.enemyHP = Math.max(0, this.state.enemyHP - totalDamage)
+
+    return totalDamage
   }
 
   private executeAI(pairs: TriggerActionPair[], isPlayer: boolean, deltaTime: number): ActionResult | null {
@@ -169,7 +236,6 @@ export class BattleEngine {
       isPlayer,
     }
 
-    // Update cooldowns
     this.actionCooldowns.forEach((time, key) => {
       const newTime = time - deltaTime
       if (newTime <= 0) {
@@ -179,16 +245,14 @@ export class BattleEngine {
       }
     })
 
-    // Find first matching trigger-action pair that's not on cooldown
     for (const pair of pairs) {
       const cooldownKey = `${isPlayer ? "player" : "enemy"}-${pair.action.id}`
 
       if (this.actionCooldowns.has(cooldownKey)) {
-        continue // Action is on cooldown
+        continue
       }
 
       if (pair.trigger.check(context)) {
-        // Trigger matched! Execute action
         this.actionCooldowns.set(cooldownKey, pair.action.cooldown)
         return { ...pair.action.execute(context), triggerId: pair.trigger.id, actionId: pair.action.id }
       }
@@ -203,7 +267,7 @@ export class BattleEngine {
     switch (action.type) {
       case "shoot":
         const baseDamage = action.damage || 10
-        const projectile = this.createProjectile(isPlayer, baseDamage)
+        const projectile = this.createProjectile(isPlayer, baseDamage, action.damageType, action.statusChance)
         this.state.projectiles.push(projectile)
         update.projectiles = [...this.state.projectiles]
         break
@@ -246,14 +310,16 @@ export class BattleEngine {
     return update
   }
 
-  private createProjectile(isPlayer: boolean, damage: number): Projectile {
-    // Player damage stays the same, but enemy damage scales down early
+  private createProjectile(
+    isPlayer: boolean,
+    damage: number,
+    damageType?: DamageType,
+    statusChance?: number,
+  ): Projectile {
     let adjustedDamage = damage
 
     if (!isPlayer) {
-      // Enemy projectiles: start at 60% damage, scale up to 100% by wave 5
-      // This gives players breathing room to learn
-      const damageScale = Math.min(1.0, 0.6 + (this.battleTime / 60000) * 0.1) // 0.6 to 1.0 over time
+      const damageScale = Math.min(1.0, 0.6 + (this.battleTime / 60000) * 0.1)
       adjustedDamage = Math.floor(damage * damageScale)
     }
 
@@ -263,12 +329,13 @@ export class BattleEngine {
       position: { ...pos },
       direction: isPlayer ? "right" : "left",
       damage: adjustedDamage,
-      damageType: "kinetic", // Default damage type
+      damageType: damageType || "kinetic",
+      statusChance: statusChance || 0,
     }
   }
 
   private updateProjectiles(deltaTime: number): Projectile[] {
-    const speed = 0.08 * (deltaTime / 16) // Much faster projectiles
+    const speed = 0.08 * (deltaTime / 16)
 
     return this.state.projectiles
       .map((proj) => {
@@ -287,6 +354,9 @@ export class BattleEngine {
     enemyShields?: number
     enemyArmor?: number
     damageDealt?: { type: string; amount: number }
+    burnStacks?: number
+    viralStacks?: number
+    empStacks?: number
   } {
     const update: {
       playerHP?: number
@@ -294,13 +364,15 @@ export class BattleEngine {
       enemyShields?: number
       enemyArmor?: number
       damageDealt?: { type: string; amount: number }
+      burnStacks?: number
+      viralStacks?: number
+      empStacks?: number
     } = {}
     const remainingProjectiles: Projectile[] = []
 
     for (const proj of this.state.projectiles) {
       let hit = false
 
-      // Check player hit
       if (
         proj.direction === "left" &&
         Math.abs(proj.position.x - this.state.playerPos.x) < 0.6 &&
@@ -311,39 +383,106 @@ export class BattleEngine {
         hit = true
       }
 
-      // Check enemy hit
       if (
         proj.direction === "right" &&
         Math.abs(proj.position.x - this.state.enemyPos.x) < 0.6 &&
         proj.position.y === this.state.enemyPos.y
       ) {
-        let remainingDamage = proj.damage
+        if (proj.damageType === "corrosive" && proj.statusChance && Math.random() < proj.statusChance) {
+          const armorStrip = Math.max(1, Math.floor(this.state.enemyArmor * 0.1))
+          if (this.state.enemyArmor > 0) {
+            this.state.enemyArmor = Math.max(0, this.state.enemyArmor - armorStrip)
+            update.enemyArmor = this.state.enemyArmor
+          }
+        }
 
-        // Apply to shields first
+        if (proj.damageType === "thermal" && proj.statusChance && Math.random() < proj.statusChance) {
+          const MAX_BURN_STACKS = 5
+          const BURN_DURATION = 4000
+          const BURN_DAMAGE_PER_TICK = 2
+
+          if (this.state.enemyBurnStacks.length < MAX_BURN_STACKS) {
+            this.state.enemyBurnStacks.push({
+              damage: BURN_DAMAGE_PER_TICK,
+              endTime: this.battleTime + BURN_DURATION,
+            })
+            update.burnStacks = this.state.enemyBurnStacks.length
+          }
+        }
+
+        if (proj.damageType === "viral" && proj.statusChance && Math.random() < proj.statusChance) {
+          const MAX_VIRAL_STACKS = 5
+          const VIRAL_DURATION = 10000
+
+          if (this.state.enemyViralStacks.length < MAX_VIRAL_STACKS) {
+            this.state.enemyViralStacks.push({
+              endTime: this.battleTime + VIRAL_DURATION,
+            })
+            update.viralStacks = this.state.enemyViralStacks.length
+          }
+        }
+
+        if (proj.damageType === "energy" && proj.statusChance && Math.random() < proj.statusChance) {
+          const MAX_EMP_STACKS = 5
+          const EMP_DURATION = 5000 // 5 seconds
+          const SHIELD_DRAIN_PERCENT = 0.08 // 8% of current shields per proc
+
+          if (this.state.enemyEMPStacks.length < MAX_EMP_STACKS) {
+            // Instant shield drain
+            if (this.state.enemyShields > 0) {
+              const shieldDrain = Math.floor(this.state.enemyShields * SHIELD_DRAIN_PERCENT)
+              this.state.enemyShields = Math.max(0, this.state.enemyShields - shieldDrain)
+              update.enemyShields = this.state.enemyShields
+            }
+
+            this.state.enemyEMPStacks.push({
+              endTime: this.battleTime + EMP_DURATION,
+              shieldDrainPercent: SHIELD_DRAIN_PERCENT,
+            })
+            update.empStacks = this.state.enemyEMPStacks.length
+          }
+        }
+
+        let damage = proj.damage
+
+        if (proj.damageType === "energy") {
+          if (this.state.enemyShields > 0) {
+            // Energy damage gets +100% bonus against shields
+            damage = damage * 2.0
+          } else if (this.state.enemyArmor > 0) {
+            // Energy damage gets -50% penalty against armor
+            damage = damage * 0.5
+          }
+        }
+
+        if (this.state.enemyArmor > 0) {
+          const armorReduction = this.state.enemyArmor / (this.state.enemyArmor + 300)
+          damage = damage * (1 - armorReduction)
+        }
+
+        let totalDamageDealt = 0
+        let remainingDamage = damage
+
         if (this.state.enemyShields > 0) {
           const shieldDamage = Math.min(this.state.enemyShields, remainingDamage)
           this.state.enemyShields = Math.max(0, this.state.enemyShields - shieldDamage)
+          totalDamageDealt += shieldDamage
           remainingDamage -= shieldDamage
           update.enemyShields = this.state.enemyShields
         }
 
-        // Apply remaining damage to armor
-        if (remainingDamage > 0 && this.state.enemyArmor > 0) {
-          const armorDamage = Math.min(this.state.enemyArmor, remainingDamage)
-          this.state.enemyArmor = Math.max(0, this.state.enemyArmor - armorDamage)
-          remainingDamage -= armorDamage
-          update.enemyArmor = this.state.enemyArmor
-        }
-
-        // Apply remaining damage to HP
         if (remainingDamage > 0) {
-          this.state.enemyHP = Math.max(0, this.state.enemyHP - remainingDamage)
+          const viralMultiplier = this.getViralDamageMultiplier()
+          const amplifiedDamage = remainingDamage * viralMultiplier
+
+          this.state.enemyHP = Math.max(0, this.state.enemyHP - amplifiedDamage)
+          totalDamageDealt += amplifiedDamage
           update.enemyHP = this.state.enemyHP
         }
 
         update.damageDealt = {
           type: proj.damageType || "kinetic",
-          amount: proj.damage,
+          amount: Math.round(totalDamageDealt * 10) / 10,
         }
         hit = true
       }
@@ -355,6 +494,14 @@ export class BattleEngine {
 
     this.state.projectiles = remainingProjectiles
     return update
+  }
+
+  private getViralDamageMultiplier(): number {
+    const stackCount = this.state.enemyViralStacks.length
+    if (stackCount === 0) return 1.0
+
+    const amplificationMap = [1.0, 1.2, 1.35, 1.5, 1.75, 2.0]
+    return amplificationMap[Math.min(stackCount, 5)]
   }
 
   getState(): BattleState {

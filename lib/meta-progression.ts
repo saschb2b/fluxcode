@@ -26,7 +26,6 @@ export interface MetaUpgrade {
       | "viral_damage"
       | "corrosive_damage"
       | "explosive_damage"
-      | "electromagnetic_damage"
       | "glacial_damage"
       | "status_chance"
       | "status_duration"
@@ -950,26 +949,6 @@ export const META_UPGRADES: MetaUpgrade[] = [
     effect: { type: "explosive_damage", value: 0.25 },
   },
 
-  // Electromagnetic Damage Specialization
-  {
-    id: "electromagnetic_mastery_1",
-    name: "EMP Specialist I",
-    description: "Increase all Electromagnetic damage by 15%",
-    category: "stat",
-    cost: 120,
-    maxLevel: 4,
-    effect: { type: "electromagnetic_damage", value: 0.15 },
-  },
-  {
-    id: "electromagnetic_mastery_2",
-    name: "EMP Specialist II",
-    description: "Increase all Electromagnetic damage by 25%",
-    category: "stat",
-    cost: 280,
-    maxLevel: 3,
-    effect: { type: "electromagnetic_damage", value: 0.25 },
-  },
-
   // Glacial Damage Specialization
   {
     id: "glacial_mastery_1",
@@ -1397,7 +1376,6 @@ export function getTotalStatBonus(
     | "viral_damage"
     | "corrosive_damage"
     | "explosive_damage"
-    | "electromagnetic_damage"
     | "glacial_damage"
     | "status_chance"
     | "status_duration"

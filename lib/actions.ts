@@ -593,11 +593,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Energy beam (12 damage, strong vs shields, can EMP)",
     cooldown: 1200,
     damageType: DamageType.ENERGY,
+    statusChance: 0.5,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 12,
         damageType: DamageType.ENERGY,
+        statusChance: 0.5,
       }
     },
   },
@@ -607,11 +609,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Superheated plasma (35 damage, melts shields)",
     cooldown: 3000,
     damageType: DamageType.ENERGY,
+    statusChance: 0.7,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 35,
         damageType: DamageType.ENERGY,
+        statusChance: 0.7,
       }
     },
   },
@@ -623,11 +627,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Incendiary round (10 damage, can cause burning DOT)",
     cooldown: 1400,
     damageType: DamageType.THERMAL,
+    statusChance: 0.5,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 10,
         damageType: DamageType.THERMAL,
+        statusChance: 0.5,
       }
     },
   },
@@ -637,11 +643,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Devastating fire (30 damage, high burn chance)",
     cooldown: 3200,
     damageType: DamageType.THERMAL,
+    statusChance: 0.8,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 30,
         damageType: DamageType.THERMAL,
+        statusChance: 0.8,
       }
     },
   },
@@ -650,14 +658,16 @@ export const AVAILABLE_ACTIONS: Action[] = [
   {
     id: "viral-dart",
     name: "Viral Dart",
-    description: "Bio-weapon (8 damage, infects target for 2x health damage)",
+    description: "Bio-weapon (8 damage, infects target for amplified damage)",
     cooldown: 1600,
     damageType: DamageType.VIRAL,
+    statusChance: 0.6,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 8,
         damageType: DamageType.VIRAL,
+        statusChance: 0.6,
       }
     },
   },
@@ -667,11 +677,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Viral payload (25 damage, spreads infection)",
     cooldown: 3500,
     damageType: DamageType.VIRAL,
+    statusChance: 0.8,
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
         damage: 25,
         damageType: DamageType.VIRAL,
+        statusChance: 0.8,
         delay: 1000,
       }
     },
@@ -684,11 +696,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Corrosive round (10 damage, strips armor)",
     cooldown: 1500,
     damageType: DamageType.CORROSIVE,
+    statusChance: 0.5,
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
         damage: 10,
         damageType: DamageType.CORROSIVE,
+        statusChance: 0.5,
       }
     },
   },
@@ -698,43 +712,13 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Acid spray (22 damage, melts armor)",
     cooldown: 2600,
     damageType: DamageType.CORROSIVE,
+    statusChance: 0.6,
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
         damage: 22,
         damageType: DamageType.CORROSIVE,
-      }
-    },
-  },
-
-  // Electromagnetic damage actions (magnetic from spec - renamed for clarity)
-  {
-    id: "emp-pulse",
-    name: "EMP Pulse",
-    description: "Electromagnetic pulse (15 damage, disables shields)",
-    cooldown: 2500,
-    damageType: DamageType.ELECTROMAGNETIC,
-    execute: (context: BattleContext) => {
-      return {
-        type: "shoot" as const,
-        damage: 15,
-        damageType: DamageType.ELECTROMAGNETIC,
-        statusChance: 0.8, // High chance to EMP
-      }
-    },
-  },
-  {
-    id: "magnetic-disruption",
-    name: "Magnetic Disruption",
-    description: "Disrupt enemy protocols (10 damage, disables random logic)",
-    cooldown: 3500,
-    damageType: DamageType.ELECTROMAGNETIC,
-    execute: (context: BattleContext) => {
-      return {
-        type: "shoot" as const,
-        damage: 10,
-        damageType: DamageType.ELECTROMAGNETIC,
-        statusChance: 0.9, // Very high disable chance
+        statusChance: 0.6,
       }
     },
   },
@@ -819,21 +803,6 @@ export const AVAILABLE_ACTIONS: Action[] = [
     },
   },
 
-  {
-    id: "electrical-charge-shot",
-    name: "Charge Shot (Electrical)",
-    description: "Powerful electrical blast (30 damage, guaranteed arc)",
-    cooldown: 3000,
-    damageType: DamageType.ENERGY,
-    execute: (context: BattleContext) => {
-      return {
-        type: "shoot" as const,
-        damage: 30,
-        damageType: DamageType.ENERGY,
-        statusChance: 1.0, // Guaranteed arc effect
-      }
-    },
-  },
   {
     id: "corrosive-armor-piercer",
     name: "Armor Piercer (Corrosive)",
