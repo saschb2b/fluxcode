@@ -1,23 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Canvas } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react"
-import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
-import { AVAILABLE_ACTIONS } from "@/lib/actions"
-import { DamageType } from "@/types/game"
-import type { Trigger, Action } from "@/types/game"
-import { ElementalProjectileVisual } from "@/components/elemental-projectile-visual"
+import { useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react";
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
+import { AVAILABLE_ACTIONS } from "@/lib/actions";
+import { DamageType } from "@/types/game";
+import type { Trigger, Action } from "@/types/game";
+import { ElementalProjectileVisual } from "@/components/elemental-projectile-visual";
 
 interface CodexProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const ELEMENTAL_DATA = [
@@ -26,7 +25,8 @@ const ELEMENTAL_DATA = [
     name: "Kinetic",
     color: "#94a3b8",
     description: "Ballistic projectiles and physical impact",
-    effect: "Standard damage type. Strong vs armor plating, weak vs energy shields.",
+    effect:
+      "Standard damage type. Strong vs armor plating, weak vs energy shields.",
     statusEffect: "None",
     narrative:
       "Conventional ballistic weapons. Effective at penetrating physical armor but dispersed by energy shields.",
@@ -37,7 +37,8 @@ const ELEMENTAL_DATA = [
     name: "Energy",
     color: "#22d3ee",
     description: "Plasma beams and directed energy weaponry",
-    effect: "+100% damage vs shields, -50% damage vs armor. Best shield-breaker in the arsenal.",
+    effect:
+      "+100% damage vs shields, -50% damage vs armor. Best shield-breaker in the arsenal.",
     statusEffect:
       "EMP - Drains 8% of current shields instantly and disables shield regeneration for 5s (stacks up to 5x)",
     narrative:
@@ -49,7 +50,8 @@ const ELEMENTAL_DATA = [
     name: "Thermal",
     color: "#f97316",
     description: "Incendiary and heat-based attacks",
-    effect: "Applies burn stacks that deal 2 damage per 0.5s directly to HP, bypassing all defenses.",
+    effect:
+      "Applies burn stacks that deal 2 damage per 0.5s directly to HP, bypassing all defenses.",
     statusEffect:
       "Burn - Each stack inflicts persistent heat damage to core systems every 0.5s for 4 seconds (stacks up to 5x independently)",
     narrative:
@@ -74,7 +76,8 @@ const ELEMENTAL_DATA = [
     name: "Corrosive",
     color: "#84cc16",
     description: "Armor degradation protocols",
-    effect: "Each proc permanently strips 10% of current armor (minimum 1 point). Stacks until armor reaches 0.",
+    effect:
+      "Each proc permanently strips 10% of current armor (minimum 1 point). Stacks until armor reaches 0.",
     statusEffect:
       "Degrade - Permanently dismantles armor plating. Each application strips more until defenses are completely eliminated (no stack limit)",
     narrative:
@@ -88,7 +91,8 @@ const ELEMENTAL_DATA = [
     description: "High-energy detonations",
     effect: "Balanced damage vs all defense layers.",
     statusEffect: "Stagger - Briefly disrupts enemy positioning and timing",
-    narrative: "Omnidirectional kinetic force. Effective against all system types through sheer destructive power.",
+    narrative:
+      "Omnidirectional kinetic force. Effective against all system types through sheer destructive power.",
     threat: "STANDARD",
   },
   {
@@ -104,23 +108,25 @@ const ELEMENTAL_DATA = [
       "Controlled injections of quantum-cooled Cryo-Flux agents. Doesn't directly disable protocols but critically destabilizes an enemy's internal clock cycles and processing environment, causing intermittent system hangs, cooldown delays, and movement restrictions. Synergizes with all elements by extending exposure windows.",
     threat: "HIGH",
   },
-]
+];
 
 // ... existing 3D visualization components remain the same ...
 function TriggerVisualization({ trigger }: { trigger: Trigger }) {
   const isDistance =
     trigger.id.includes("enemy") &&
-    (trigger.id.includes("range") || trigger.id.includes("close") || trigger.id.includes("far"))
-  const isHP = trigger.id.includes("hp")
+    (trigger.id.includes("range") ||
+      trigger.id.includes("close") ||
+      trigger.id.includes("far"));
+  const isHP = trigger.id.includes("hp");
   const isPosition =
     trigger.id.includes("row") ||
     trigger.id.includes("front") ||
     trigger.id.includes("back") ||
     trigger.id.includes("top") ||
     trigger.id.includes("middle") ||
-    trigger.id.includes("bottom")
-  const isDamage = trigger.id.includes("damage")
-  const isAlways = trigger.id === "always"
+    trigger.id.includes("bottom");
+  const isDamage = trigger.id.includes("damage");
+  const isAlways = trigger.id === "always";
 
   return (
     <group>
@@ -140,11 +146,19 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh position={[0, 0.3, 0]}>
             <boxGeometry args={[1.5, 0.3, 0.1]} />
-            <meshStandardMaterial color="#ff0066" emissive="#ff0066" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#ff0066"
+              emissive="#ff0066"
+              emissiveIntensity={0.5}
+            />
           </mesh>
           <mesh position={[0, -0.3, 0]}>
             <boxGeometry args={[1.5, 0.3, 0.1]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={0.5}
+            />
           </mesh>
         </group>
       )}
@@ -152,7 +166,11 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh position={[0, 0.5, 0]}>
             <boxGeometry args={[0.4, 0.4, 0.1]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[0.4, 0.4, 0.1]} />
@@ -168,11 +186,20 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh>
             <octahedronGeometry args={[0.6, 0]} />
-            <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff3333"
+              emissive="#ff3333"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh rotation={[0, Math.PI / 4, 0]}>
             <octahedronGeometry args={[0.8, 0]} />
-            <meshBasicMaterial color="#ff3333" transparent opacity={0.3} wireframe />
+            <meshBasicMaterial
+              color="#ff3333"
+              transparent
+              opacity={0.3}
+              wireframe
+            />
           </mesh>
         </group>
       )}
@@ -180,23 +207,33 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group rotation={[0, 0, Math.PI / 2]}>
           <mesh position={[-0.3, 0, 0]}>
             <torusGeometry args={[0.3, 0.1, 16, 32]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive="#ffffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0.3, 0, 0]}>
             <torusGeometry args={[0.3, 0.1, 16, 32]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive="#ffffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
       <ambientLight intensity={0.5} />
       <pointLight position={[2, 2, 2]} intensity={1} />
     </group>
-  )
+  );
 }
 
 function ActionVisualization({ action }: { action: Action }) {
   if (action.damageType) {
-    return <ElementalProjectileVisual damageType={action.damageType} scale={1.2} />
+    return (
+      <ElementalProjectileVisual damageType={action.damageType} scale={1.2} />
+    );
   }
 
   const mockContext = {
@@ -211,41 +248,51 @@ function ActionVisualization({ action }: { action: Action }) {
     enemyShield: 0,
     enemyMaxShield: 0,
     lastDamageTaken: 0,
-  }
+  };
 
-  const actionType = action.execute(mockContext)?.type
+  const actionType = action.execute(mockContext)?.type;
 
-  const isWave = actionType === "wave"
-  const isField = actionType === "field"
-  const isSpread = actionType === "spread"
-  const isRapidFire = actionType === "rapid-fire"
-  const isPiercing = actionType === "piercing-shot"
-  const isDrain = actionType === "drain"
-  const isHoming = actionType === "homing"
-  const isBomb = actionType === "bomb" || actionType === "cluster"
-  const isDashAttack = actionType === "dash-attack"
-  const isRetreatShot = actionType === "retreat-shot"
-  const isTripleShot = actionType === "triple-shot"
-  const isMelee = actionType === "melee" || actionType === "wide-melee"
+  const isWave = actionType === "wave";
+  const isField = actionType === "field";
+  const isSpread = actionType === "spread";
+  const isRapidFire = actionType === "rapid-fire";
+  const isPiercing = actionType === "piercing-shot";
+  const isDrain = actionType === "drain";
+  const isHoming = actionType === "homing";
+  const isBomb = actionType === "bomb" || actionType === "cluster";
+  const isDashAttack = actionType === "dash-attack";
+  const isRetreatShot = actionType === "retreat-shot";
+  const isTripleShot = actionType === "triple-shot";
+  const isMelee = actionType === "melee" || actionType === "wide-melee";
 
   const isShoot =
     actionType === "shoot" ||
     action.id.includes("shot") ||
     action.id.includes("shoot") ||
     action.id.includes("fire") ||
-    action.id.includes("cannon")
-  const isMove = actionType === "move" || action.id.includes("dodge") || action.id.includes("teleport")
-  const isHeal = actionType === "heal" || actionType === "heal-over-time"
+    action.id.includes("cannon");
+  const isMove =
+    actionType === "move" ||
+    action.id.includes("dodge") ||
+    action.id.includes("teleport");
+  const isHeal = actionType === "heal" || actionType === "heal-over-time";
   const isDefensive =
-    actionType === "barrier" || actionType === "counter" || actionType === "shield" || actionType === "invincible"
-  const isBuff = actionType === "buff"
+    actionType === "barrier" ||
+    actionType === "counter" ||
+    actionType === "shield" ||
+    actionType === "invincible";
+  const isBuff = actionType === "buff";
 
   return (
     <group>
       {isWave && (
         <group>
           {[0, 1, 2].map((i) => (
-            <mesh key={i} position={[i * 0.4 - 0.4, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh
+              key={i}
+              position={[i * 0.4 - 0.4, 0, 0]}
+              rotation={[0, 0, Math.PI / 2]}
+            >
               <torusGeometry args={[0.3 + i * 0.1, 0.1, 16, 32]} />
               <meshStandardMaterial
                 color="#00ffff"
@@ -273,7 +320,11 @@ function ActionVisualization({ action }: { action: Action }) {
           </mesh>
           <mesh>
             <torusGeometry args={[0.8, 0.05, 16, 32]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -318,7 +369,11 @@ function ActionVisualization({ action }: { action: Action }) {
           {[0, 1, 2, 3].map((i) => (
             <mesh key={i} position={[0.5 + i * 0.15, 0, 0]}>
               <sphereGeometry args={[0.08, 8, 8]} />
-              <meshStandardMaterial color="#ff9900" emissive="#ff9900" emissiveIntensity={1} />
+              <meshStandardMaterial
+                color="#ff9900"
+                emissive="#ff9900"
+                emissiveIntensity={1}
+              />
             </mesh>
           ))}
         </group>
@@ -328,11 +383,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <torusKnotGeometry args={[0.4, 0.12, 64, 8]} />
-            <meshStandardMaterial color="#a855f7" emissive="#a855f7" emissiveIntensity={0.7} />
+            <meshStandardMaterial
+              color="#a855f7"
+              emissive="#a855f7"
+              emissiveIntensity={0.7}
+            />
           </mesh>
           <mesh>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -341,12 +404,24 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <octahedronGeometry args={[0.3, 0]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={1}
+            />
           </mesh>
           {[0, 1, 2, 3].map((i) => (
-            <mesh key={i} rotation={[0, 0, (Math.PI * 2 * i) / 4]} position={[0.5, 0, 0]}>
+            <mesh
+              key={i}
+              rotation={[0, 0, (Math.PI * 2 * i) / 4]}
+              position={[0.5, 0, 0]}
+            >
               <coneGeometry args={[0.08, 0.2, 3]} />
-              <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={0.7} />
+              <meshStandardMaterial
+                color="#ff00ff"
+                emissive="#ff00ff"
+                emissiveIntensity={0.7}
+              />
             </mesh>
           ))}
         </group>
@@ -356,15 +431,27 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh position={[0.5, 0.3, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0.5, 0, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0.5, -0.3, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -373,11 +460,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, -Math.PI / 2]}>
           <mesh position={[0, 0.5, 0]}>
             <coneGeometry args={[0.08, 0.4, 6]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh>
             <cylinderGeometry args={[0.06, 0.06, 1.5, 8]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
@@ -386,11 +481,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh position={[0.5, 0, 0]}>
             <sphereGeometry args={[0.2, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0, 0, 0]}>
             <coneGeometry args={[0.15, 0.6, 8]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={0.5}
+            />
           </mesh>
         </group>
       )}
@@ -398,11 +501,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, -Math.PI / 2]}>
           <mesh position={[0.3, 0, 0]}>
             <coneGeometry args={[0.3, 0.5, 3]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[-0.2, 0, 0]}>
             <boxGeometry args={[0.6, 0.2, 0.2]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
@@ -410,11 +521,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <boxGeometry args={[0.8, 0.2, 0.2]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh>
             <boxGeometry args={[0.2, 0.8, 0.2]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -422,7 +541,11 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, Math.PI / 4]}>
           <mesh position={[0, 0.4, 0]}>
             <boxGeometry args={[0.15, 1, 0.05]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, -0.3, 0]}>
             <boxGeometry args={[0.25, 0.3, 0.1]} />
@@ -434,11 +557,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <sphereGeometry args={[0.4, 16, 16]} />
-            <meshStandardMaterial color="#ff6600" emissive="#ff6600" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ff6600"
+              emissive="#ff6600"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, 0.5, 0]}>
             <cylinderGeometry args={[0.05, 0.05, 0.3, 8]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -446,11 +577,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <cylinderGeometry args={[0.6, 0.4, 0.1, 6]} />
-            <meshStandardMaterial color="#0088ff" emissive="#0088ff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#0088ff"
+              emissive="#0088ff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh>
             <torusGeometry args={[0.5, 0.08, 8, 6]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -459,7 +598,11 @@ function ActionVisualization({ action }: { action: Action }) {
           {[0, 1, 2, 3, 4].map((i) => (
             <mesh key={i} rotation={[0, 0, (Math.PI * 2 * i) / 5]}>
               <coneGeometry args={[0.15, 0.6, 3]} />
-              <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+              <meshStandardMaterial
+                color="#ff00ff"
+                emissive="#ff00ff"
+                emissiveIntensity={1}
+              />
             </mesh>
           ))}
         </group>
@@ -467,15 +610,23 @@ function ActionVisualization({ action }: { action: Action }) {
       <ambientLight intensity={0.5} />
       <pointLight position={[2, 2, 2]} intensity={1} />
     </group>
-  )
+  );
 }
 
-function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL_DATA)[0] }) {
+function DamageTypeVisualization({
+  damageType,
+}: {
+  damageType: (typeof ELEMENTAL_DATA)[0];
+}) {
   return (
     <group>
       <mesh>
         <sphereGeometry args={[0.4, 32, 32]} />
-        <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.8} />
+        <meshStandardMaterial
+          color={damageType.color}
+          emissive={damageType.color}
+          emissiveIntensity={0.8}
+        />
       </mesh>
 
       {damageType.type === DamageType.KINETIC && (
@@ -495,11 +646,19 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
         <>
           <mesh position={[0, 0.8, 0]}>
             <octahedronGeometry args={[0.2, 0]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={1} />
+            <meshStandardMaterial
+              color={damageType.color}
+              emissive={damageType.color}
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh rotation={[0, Math.PI / 2, 0]}>
             <torusGeometry args={[0.6, 0.05, 16, 32]} />
-            <meshBasicMaterial color={damageType.color} transparent opacity={0.6} />
+            <meshBasicMaterial
+              color={damageType.color}
+              transparent
+              opacity={0.6}
+            />
           </mesh>
         </>
       )}
@@ -525,11 +684,19 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
         <>
           <mesh rotation={[Math.PI / 4, 0, 0]}>
             <torusGeometry args={[0.5, 0.08, 8, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.6} />
+            <meshStandardMaterial
+              color={damageType.color}
+              emissive={damageType.color}
+              emissiveIntensity={0.6}
+            />
           </mesh>
           <mesh rotation={[0, 0, Math.PI / 4]}>
             <torusGeometry args={[0.6, 0.06, 8, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.4} />
+            <meshStandardMaterial
+              color={damageType.color}
+              emissive={damageType.color}
+              emissiveIntensity={0.4}
+            />
           </mesh>
         </>
       )}
@@ -538,11 +705,20 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
         <>
           <mesh>
             <icosahedronGeometry args={[0.7, 0]} />
-            <meshBasicMaterial color={damageType.color} transparent opacity={0.3} wireframe />
+            <meshBasicMaterial
+              color={damageType.color}
+              transparent
+              opacity={0.3}
+              wireframe
+            />
           </mesh>
           <mesh>
             <dodecahedronGeometry args={[0.5, 0]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.6} />
+            <meshStandardMaterial
+              color={damageType.color}
+              emissive={damageType.color}
+              emissiveIntensity={0.6}
+            />
           </mesh>
         </>
       )}
@@ -550,9 +726,17 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
       {damageType.type === DamageType.GLACIAL && (
         <>
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <mesh key={i} rotation={[0, (Math.PI * 2 * i) / 8, Math.PI / 4]} position={[0.55, 0, 0]}>
+            <mesh
+              key={i}
+              rotation={[0, (Math.PI * 2 * i) / 8, Math.PI / 4]}
+              position={[0.55, 0, 0]}
+            >
               <coneGeometry args={[0.08, 0.25, 6]} />
-              <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.5} />
+              <meshStandardMaterial
+                color={damageType.color}
+                emissive={damageType.color}
+                emissiveIntensity={0.5}
+              />
             </mesh>
           ))}
         </>
@@ -562,7 +746,11 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
         <group>
           <mesh position={[0, 0, 0]}>
             <torusKnotGeometry args={[0.4, 0.1, 64, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.7} />
+            <meshStandardMaterial
+              color={damageType.color}
+              emissive={damageType.color}
+              emissiveIntensity={0.7}
+            />
           </mesh>
         </group>
       )}
@@ -570,55 +758,59 @@ function DamageTypeVisualization({ damageType }: { damageType: (typeof ELEMENTAL
       <ambientLight intensity={0.5} />
       <pointLight position={[2, 2, 2]} intensity={1} />
     </group>
-  )
+  );
 }
 
 function RotatingVisualization({ children }: { children: React.ReactNode }) {
-  return <group rotation={[0, Date.now() * 0.001, 0]}>{children}</group>
+  return <group rotation={[0, Date.now() * 0.001, 0]}>{children}</group>;
 }
 
 export function Codex({ isOpen, onClose }: CodexProps) {
-  const [activeTab, setActiveTab] = useState<"triggers" | "actions" | "damage-types">("triggers")
-  const [selectedItem, setSelectedItem] = useState<Trigger | Action | (typeof ELEMENTAL_DATA)[0] | null>(null)
-  const [showMobileDetail, setShowMobileDetail] = useState(false)
+  const [activeTab, setActiveTab] = useState<
+    "triggers" | "actions" | "damage-types"
+  >("triggers");
+  const [selectedItem, setSelectedItem] = useState<
+    Trigger | Action | (typeof ELEMENTAL_DATA)[0] | null
+  >(null);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const items =
     activeTab === "triggers"
       ? [...AVAILABLE_TRIGGERS].sort((a, b) => a.name.localeCompare(b.name))
       : activeTab === "actions"
         ? [...AVAILABLE_ACTIONS].sort((a, b) => a.name.localeCompare(b.name))
-        : [...ELEMENTAL_DATA].sort((a, b) => a.name.localeCompare(b.name))
+        : [...ELEMENTAL_DATA].sort((a, b) => a.name.localeCompare(b.name));
 
-  const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false })
+  const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
 
   const getClearanceColor = () => {
     switch (activeTab) {
       case "triggers":
-        return "text-secondary"
+        return "text-secondary";
       case "actions":
-        return "text-accent"
+        return "text-accent";
       case "damage-types":
-        return "text-primary"
+        return "text-primary";
       default:
-        return "text-foreground"
+        return "text-foreground";
     }
-  }
+  };
 
   const getElementalData = (damageType: DamageType) => {
-    return ELEMENTAL_DATA.find((el) => el.type === damageType)
-  }
+    return ELEMENTAL_DATA.find((el) => el.type === damageType);
+  };
 
   const handleItemSelect = (item: typeof selectedItem) => {
-    setSelectedItem(item)
-    setShowMobileDetail(true)
-  }
+    setSelectedItem(item);
+    setShowMobileDetail(true);
+  };
 
   const handleMobileBack = () => {
-    setShowMobileDetail(false)
-    setSelectedItem(null)
-  }
+    setShowMobileDetail(false);
+    setSelectedItem(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4">
@@ -640,11 +832,17 @@ export function Codex({ isOpen, onClose }: CodexProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">BREACH TERMINAL</h2>
-                <span className="text-[10px] sm:text-xs text-muted-foreground font-mono hidden sm:inline">v2.4.7</span>
+                <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">
+                  BREACH TERMINAL
+                </h2>
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-mono hidden sm:inline">
+                  v2.4.7
+                </span>
                 <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs">
                   <Shield className="w-3 h-3 text-secondary" />
-                  <span className="text-secondary font-mono">CLEARANCE: ALPHA</span>
+                  <span className="text-secondary font-mono">
+                    CLEARANCE: ALPHA
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 mt-0.5 sm:mt-1 text-[9px] sm:text-xs text-muted-foreground font-mono">
@@ -672,9 +870,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "triggers" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("triggers")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("triggers");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "triggers"
@@ -688,9 +886,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "actions" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("actions")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("actions");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "actions"
@@ -704,9 +902,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "damage-types" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("damage-types")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("damage-types");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "damage-types"
@@ -720,75 +918,81 @@ export function Codex({ isOpen, onClose }: CodexProps) {
         </div>
 
         <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
-          <ScrollArea
-            className={`w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-border/50 bg-background/30 ${showMobileDetail ? "hidden md:block" : "block"}`}
+          <div
+            className={`w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-border/50 bg-background/30 ${showMobileDetail ? "hidden md:block" : "block"} overflow-y-auto`}
           >
-            <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5">
-              {items.map((item) => {
-                const isDamageType = "color" in item
-                const key = isDamageType ? (item as (typeof ELEMENTAL_DATA)[0]).type : (item as Trigger | Action).id
+            {items.map((item) => {
+              const isDamageType = "color" in item;
+              const key = isDamageType
+                ? (item as (typeof ELEMENTAL_DATA)[0]).type
+                : (item as Trigger | Action).id;
 
-                const actionItem = !isDamageType ? (item as Action) : null
-                const elementalData = actionItem?.damageType ? getElementalData(actionItem.damageType) : null
+              const actionItem = !isDamageType ? (item as Action) : null;
+              const elementalData = actionItem?.damageType
+                ? getElementalData(actionItem.damageType)
+                : null;
 
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleItemSelect(item)}
-                    className={`w-full text-left p-2 sm:p-3 rounded border-2 transition-all active:scale-[0.98] font-mono ${
-                      selectedItem === item
-                        ? `${getClearanceColor()} bg-current/10 border-current`
-                        : "border-border/30 hover:border-current/50 text-foreground/90 hover:bg-card/50"
-                    }`}
-                  >
-                    {isDamageType ? (
-                      <>
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2">
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleItemSelect(item)}
+                  className={`w-full text-left p-2 sm:p-3 rounded border-2 transition-all active:scale-[0.98] font-mono ${
+                    selectedItem === item
+                      ? `${getClearanceColor()} bg-current/10 border-current`
+                      : "border-border/30 hover:border-current/50 text-foreground/90 hover:bg-card/50"
+                  }`}
+                >
+                  {isDamageType ? (
+                    <>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full animate-pulse"
+                            style={{
+                              backgroundColor: (
+                                item as (typeof ELEMENTAL_DATA)[0]
+                              ).color,
+                            }}
+                          />
+                          <div className="font-bold text-xs sm:text-sm tracking-wide uppercase">
+                            {(item as (typeof ELEMENTAL_DATA)[0]).name}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
+                        {(item as (typeof ELEMENTAL_DATA)[0]).description}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {elementalData && (
                             <div
-                              className="w-2 h-2 rounded-full animate-pulse"
-                              style={{ backgroundColor: (item as (typeof ELEMENTAL_DATA)[0]).color }}
+                              className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
+                              style={{ backgroundColor: elementalData.color }}
+                              title={elementalData.name}
                             />
-                            <div className="font-bold text-xs sm:text-sm tracking-wide uppercase">
-                              {(item as (typeof ELEMENTAL_DATA)[0]).name}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
-                          {(item as (typeof ELEMENTAL_DATA)[0]).description}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {elementalData && (
-                              <div
-                                className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
-                                style={{ backgroundColor: elementalData.color }}
-                                title={elementalData.name}
-                              />
-                            )}
-                            <div className="font-bold text-xs sm:text-sm tracking-wide uppercase line-clamp-1">
-                              {(item as Trigger | Action).name}
-                            </div>
-                          </div>
-                          {"cooldown" in item && (
-                            <span className="text-[9px] sm:text-xs text-muted-foreground whitespace-nowrap">
-                              {(item as Action).cooldown}ms
-                            </span>
                           )}
+                          <div className="font-bold text-xs sm:text-sm tracking-wide uppercase line-clamp-1">
+                            {(item as Trigger | Action).name}
+                          </div>
                         </div>
-                        <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
-                          {(item as Trigger | Action).description}
-                        </div>
-                      </>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </ScrollArea>
+                        {"cooldown" in item && (
+                          <span className="text-[9px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                            {(item as Action).cooldown}ms
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
+                        {(item as Trigger | Action).description}
+                      </div>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
           <div
             className={`flex-1 flex flex-col min-h-0 bg-background/20 ${!showMobileDetail ? "hidden md:flex" : "flex"}`}
@@ -806,11 +1010,17 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                   <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
                     <RotatingVisualization>
                       {activeTab === "triggers" ? (
-                        <TriggerVisualization trigger={selectedItem as Trigger} />
+                        <TriggerVisualization
+                          trigger={selectedItem as Trigger}
+                        />
                       ) : activeTab === "actions" ? (
                         <ActionVisualization action={selectedItem as Action} />
                       ) : (
-                        <DamageTypeVisualization damageType={selectedItem as (typeof ELEMENTAL_DATA)[0]} />
+                        <DamageTypeVisualization
+                          damageType={
+                            selectedItem as (typeof ELEMENTAL_DATA)[0]
+                          }
+                        />
                       )}
                     </RotatingVisualization>
                     <OrbitControls enableZoom={false} enablePan={false} />
@@ -826,7 +1036,11 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                       <div className="space-y-3 sm:space-y-4 font-mono">
                         <div
                           className="border-l-4 pl-3 sm:pl-4"
-                          style={{ borderColor: (selectedItem as (typeof ELEMENTAL_DATA)[0]).color }}
+                          style={{
+                            borderColor: (
+                              selectedItem as (typeof ELEMENTAL_DATA)[0]
+                            ).color,
+                          }}
                         >
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
@@ -834,23 +1048,34 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                                 DAMAGE CLASSIFICATION
                               </div>
                               <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-wider">
-                                {(selectedItem as (typeof ELEMENTAL_DATA)[0]).name}
+                                {
+                                  (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                    .name
+                                }
                               </h3>
                             </div>
                             <span
                               className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded border-2 font-bold ${
-                                (selectedItem as (typeof ELEMENTAL_DATA)[0]).threat === "CRITICAL"
+                                (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                  .threat === "CRITICAL"
                                   ? "border-destructive text-destructive bg-destructive/10"
-                                  : (selectedItem as (typeof ELEMENTAL_DATA)[0]).threat === "HIGH"
+                                  : (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                        .threat === "HIGH"
                                     ? "border-accent text-accent bg-accent/10"
                                     : "border-muted-foreground text-muted-foreground bg-muted/20"
                               }`}
                             >
-                              {(selectedItem as (typeof ELEMENTAL_DATA)[0]).threat}
+                              {
+                                (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                  .threat
+                              }
                             </span>
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).description}
+                            {
+                              (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                .description
+                            }
                           </p>
                         </div>
 
@@ -859,7 +1084,10 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                             [TACTICAL ANALYSIS]
                           </div>
                           <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).effect}
+                            {
+                              (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                .effect
+                            }
                           </div>
                         </div>
 
@@ -871,12 +1099,21 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           }}
                         >
                           <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
-                            <span style={{ color: (selectedItem as (typeof ELEMENTAL_DATA)[0]).color }}>
+                            <span
+                              style={{
+                                color: (
+                                  selectedItem as (typeof ELEMENTAL_DATA)[0]
+                                ).color,
+                              }}
+                            >
                               [STATUS EFFECT]
                             </span>
                           </div>
                           <div className="text-xs sm:text-sm text-foreground leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).statusEffect}
+                            {
+                              (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                .statusEffect
+                            }
                           </div>
                         </div>
 
@@ -888,7 +1125,10 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                             </div>
                           </div>
                           <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).narrative}
+                            {
+                              (selectedItem as (typeof ELEMENTAL_DATA)[0])
+                                .narrative
+                            }
                           </div>
                         </div>
                       </div>
@@ -899,59 +1139,90 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           style={{ borderColor: "currentColor" }}
                         >
                           <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">
-                            {activeTab === "triggers" ? "CONDITIONAL PROTOCOL" : "EXECUTION PROTOCOL"}
+                            {activeTab === "triggers"
+                              ? "CONDITIONAL PROTOCOL"
+                              : "EXECUTION PROTOCOL"}
                           </div>
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-wider">
                               {(selectedItem as Trigger | Action).name}
                             </h3>
-                            {"damageType" in selectedItem && (selectedItem as Action).damageType && (
-                              <div
-                                className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-xs font-bold"
-                                style={{
-                                  backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}15`,
-                                  borderColor: getElementalData((selectedItem as Action).damageType!)?.color,
-                                  color: getElementalData((selectedItem as Action).damageType!)?.color,
-                                }}
-                              >
+                            {"damageType" in selectedItem &&
+                              (selectedItem as Action).damageType && (
                                 <div
-                                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                  className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-xs font-bold"
                                   style={{
-                                    backgroundColor: getElementalData((selectedItem as Action).damageType!)?.color,
+                                    backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}15`,
+                                    borderColor: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
+                                    color: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
                                   }}
-                                />
-                                {getElementalData((selectedItem as Action).damageType!)?.name.toUpperCase()}
-                              </div>
-                            )}
+                                >
+                                  <div
+                                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                    style={{
+                                      backgroundColor: getElementalData(
+                                        (selectedItem as Action).damageType!,
+                                      )?.color,
+                                    }}
+                                  />
+                                  {getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.name.toUpperCase()}
+                                </div>
+                              )}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                             {(selectedItem as Trigger | Action).description}
                           </p>
                         </div>
 
-                        {"damageType" in selectedItem && (selectedItem as Action).damageType && (
-                          <div
-                            className="p-3 sm:p-4 rounded border-2"
-                            style={{
-                              backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}10`,
-                              borderColor: `${getElementalData((selectedItem as Action).damageType!)?.color}40`,
-                            }}
-                          >
-                            <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
-                              <span style={{ color: getElementalData((selectedItem as Action).damageType!)?.color }}>
-                                [ELEMENTAL DAMAGE:{" "}
-                                {getElementalData((selectedItem as Action).damageType!)?.name.toUpperCase()}]
-                              </span>
+                        {"damageType" in selectedItem &&
+                          (selectedItem as Action).damageType && (
+                            <div
+                              className="p-3 sm:p-4 rounded border-2"
+                              style={{
+                                backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}10`,
+                                borderColor: `${getElementalData((selectedItem as Action).damageType!)?.color}40`,
+                              }}
+                            >
+                              <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
+                                <span
+                                  style={{
+                                    color: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
+                                  }}
+                                >
+                                  [ELEMENTAL DAMAGE:{" "}
+                                  {getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.name.toUpperCase()}
+                                  ]
+                                </span>
+                              </div>
+                              <div className="text-xs sm:text-sm text-foreground leading-relaxed mb-2">
+                                {
+                                  getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.effect
+                                }
+                              </div>
+                              <div className="text-[10px] sm:text-xs text-muted-foreground pt-2 border-t border-current/20">
+                                <span className="font-bold">
+                                  Status Effect:
+                                </span>{" "}
+                                {
+                                  getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.statusEffect
+                                }
+                              </div>
                             </div>
-                            <div className="text-xs sm:text-sm text-foreground leading-relaxed mb-2">
-                              {getElementalData((selectedItem as Action).damageType!)?.effect}
-                            </div>
-                            <div className="text-[10px] sm:text-xs text-muted-foreground pt-2 border-t border-current/20">
-                              <span className="font-bold">Status Effect:</span>{" "}
-                              {getElementalData((selectedItem as Action).damageType!)?.statusEffect}
-                            </div>
-                          </div>
-                        )}
+                          )}
 
                         {"cooldown" in selectedItem && (
                           <div className="p-3 sm:p-4 rounded border-2 border-secondary/30 bg-secondary/10">
@@ -962,7 +1233,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                               <div className="text-2xl sm:text-3xl font-bold text-foreground">
                                 {(selectedItem as Action).cooldown}
                               </div>
-                              <div className="text-xs sm:text-sm text-muted-foreground">MILLISECONDS</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground">
+                                MILLISECONDS
+                              </div>
                             </div>
                             <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                               Minimum interval between protocol executions
@@ -1011,10 +1284,16 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                   </div>
                   <p className="text-xs sm:text-sm uppercase tracking-wider">
                     [SELECT{" "}
-                    {activeTab === "triggers" ? "CONDITIONAL" : activeTab === "actions" ? "EXECUTION" : "DAMAGE VECTOR"}
+                    {activeTab === "triggers"
+                      ? "CONDITIONAL"
+                      : activeTab === "actions"
+                        ? "EXECUTION"
+                        : "DAMAGE VECTOR"}
                     ]
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-1">Access clearance: ALPHA</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-1">
+                    Access clearance: ALPHA
+                  </p>
                 </div>
               </div>
             )}
@@ -1022,5 +1301,5 @@ export function Codex({ isOpen, onClose }: CodexProps) {
         </div>
       </Card>
     </div>
-  )
+  );
 }
