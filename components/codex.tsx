@@ -814,7 +814,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4">
-      <Card className="w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-primary/50 bg-background/80">
           <div className="flex items-center gap-3 sm:gap-4 flex-1">
             {showMobileDetail && (
@@ -835,22 +835,11 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                 <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">
                   BREACH TERMINAL
                 </h2>
-                <span className="text-[10px] sm:text-xs text-muted-foreground font-mono hidden sm:inline">
-                  v2.4.7
-                </span>
-                <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs">
-                  <Shield className="w-3 h-3 text-secondary" />
-                  <span className="text-secondary font-mono">
-                    CLEARANCE: ALPHA
-                  </span>
-                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 mt-0.5 sm:mt-1 text-[9px] sm:text-xs text-muted-foreground font-mono">
                 <span>ACCESS: GRANTED</span>
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden sm:inline">TIME: {currentTime}</span>
-                <span>•</span>
-                <span className="text-primary">RECORDING</span>
               </div>
             </div>
           </div>
@@ -865,7 +854,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
         </div>
 
         <div
-          className={`flex gap-1 sm:gap-2 p-2 sm:p-3 border-b border-border/50 bg-background/50 ${showMobileDetail ? "hidden md:flex" : "flex"}`}
+          className={`flex gap-1 sm:gap-2 p-2 sm:p-3 border-b border-border/50 bg-background/50 ${showMobileDetail ? "hidden md:flex" : "flex"} overflow-x-auto`}
         >
           <Button
             variant={activeTab === "triggers" ? "default" : "outline"}
@@ -1299,7 +1288,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
             )}
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

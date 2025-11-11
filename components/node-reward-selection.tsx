@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { Trigger, Action, TriggerActionPair } from "@/types/game"
-import type { NodeType } from "@/lib/network-layers"
-import { Coins, Heart, Zap, Sparkles } from "lucide-react"
-import { useState } from "react"
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Trigger, Action, TriggerActionPair } from "@/types/game";
+import type { NodeType } from "@/lib/network-layers";
+import { Coins, Heart, Zap, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 interface NodeRewardSelectionProps {
-  nodeType: NodeType
-  availableTriggers: Trigger[]
-  availableActions: Action[]
-  currentPairs: TriggerActionPair[]
-  currentHP: number
-  maxHP: number
-  onSelectTrigger: (trigger: Trigger) => void
-  onSelectAction: (action: Action) => void
-  onSelectUpgrade: (pairIndex: number) => void
-  onSelectHeal: () => void
-  onSelectFragments: () => void
-  onSelectSpecial: (type: "perk" | "malware") => void
-  isOpen: boolean
+  nodeType: NodeType;
+  availableTriggers: Trigger[];
+  availableActions: Action[];
+  currentPairs: TriggerActionPair[];
+  currentHP: number;
+  maxHP: number;
+  onSelectTrigger: (trigger: Trigger) => void;
+  onSelectAction: (action: Action) => void;
+  onSelectUpgrade: (pairIndex: number) => void;
+  onSelectHeal: () => void;
+  onSelectFragments: () => void;
+  onSelectSpecial: (type: "perk" | "malware") => void;
+  isOpen: boolean;
 }
 
 export function NodeRewardSelection({
@@ -39,35 +39,41 @@ export function NodeRewardSelection({
   onSelectSpecial,
   isOpen,
 }: NodeRewardSelectionProps) {
-  const [isIntegrating, setIsIntegrating] = useState(false)
-  const [selectedReward, setSelectedReward] = useState<string>("")
+  const [isIntegrating, setIsIntegrating] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<string>("");
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleRewardSelection = (callback: () => void, rewardName: string) => {
-    console.log("[v0] Reward selected:", rewardName)
-    console.log("[v0] Setting isIntegrating to true")
-    setSelectedReward(rewardName)
-    setIsIntegrating(true)
+    console.log("[v0] Reward selected:", rewardName);
+    console.log("[v0] Setting isIntegrating to true");
+    setSelectedReward(rewardName);
+    setIsIntegrating(true);
 
     requestAnimationFrame(() => {
-      console.log("[v0] Animation frame started, isIntegrating should be visible")
-    })
+      console.log(
+        "[v0] Animation frame started, isIntegrating should be visible",
+      );
+    });
 
     setTimeout(() => {
-      console.log("[v0] Integration complete after 2s, executing callback")
-      callback()
-      setIsIntegrating(false)
-      setSelectedReward("")
-      console.log("[v0] Animation state reset")
-    }, 2000)
-  }
+      console.log("[v0] Integration complete after 2s, executing callback");
+      callback();
+      setIsIntegrating(false);
+      setSelectedReward("");
+      console.log("[v0] Animation state reset");
+    }, 2000);
+  };
 
   const renderModuleSelection = () => (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-bold text-primary mb-2">Choose a New Module</h3>
-        <p className="text-sm text-muted-foreground mb-4">Select a Trigger or Action to add to your arsenal</p>
+        <h3 className="text-lg font-bold text-primary mb-2">
+          Choose a New Module
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select a Trigger or Action to add to your arsenal
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -80,10 +86,19 @@ export function NodeRewardSelection({
                 <Card
                   key={trigger.id}
                   className="p-3 cursor-pointer hover:border-cyan-400 transition-colors border-2"
-                  onClick={() => handleRewardSelection(() => onSelectTrigger(trigger), trigger.name)}
+                  onClick={() =>
+                    handleRewardSelection(
+                      () => onSelectTrigger(trigger),
+                      trigger.name,
+                    )
+                  }
                 >
-                  <h5 className="font-bold text-sm text-cyan-400">{trigger.name}</h5>
-                  <p className="text-xs text-muted-foreground mt-1">{trigger.description}</p>
+                  <h5 className="font-bold text-sm text-cyan-400">
+                    {trigger.name}
+                  </h5>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {trigger.description}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -99,10 +114,19 @@ export function NodeRewardSelection({
                 <Card
                   key={action.id}
                   className="p-3 cursor-pointer hover:border-magenta-400 transition-colors border-2"
-                  onClick={() => handleRewardSelection(() => onSelectAction(action), action.name)}
+                  onClick={() =>
+                    handleRewardSelection(
+                      () => onSelectAction(action),
+                      action.name,
+                    )
+                  }
                 >
-                  <h5 className="font-bold text-sm text-magenta-400">{action.name}</h5>
-                  <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+                  <h5 className="font-bold text-sm text-magenta-400">
+                    {action.name}
+                  </h5>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {action.description}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -110,7 +134,7 @@ export function NodeRewardSelection({
         </div>
       </div>
     </div>
-  )
+  );
 
   const renderUpgradeSelection = () => (
     <div className="space-y-4">
@@ -119,7 +143,9 @@ export function NodeRewardSelection({
           <Zap className="inline w-5 h-5 mr-2" />
           Upgrade Module
         </h3>
-        <p className="text-sm text-muted-foreground mb-4">Enhance one of your existing protocols</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Enhance one of your existing protocols
+        </p>
       </div>
 
       <ScrollArea className="h-[50dvh]">
@@ -129,7 +155,10 @@ export function NodeRewardSelection({
               key={index}
               className="p-4 cursor-pointer hover:border-primary transition-colors border-2"
               onClick={() =>
-                handleRewardSelection(() => onSelectUpgrade(index), `${pair.trigger.name} → ${pair.action.name}`)
+                handleRewardSelection(
+                  () => onSelectUpgrade(index),
+                  `${pair.trigger.name} → ${pair.action.name}`,
+                )
               }
             >
               <div className="flex items-center justify-between">
@@ -137,7 +166,9 @@ export function NodeRewardSelection({
                   <h5 className="font-bold text-sm">
                     {pair.trigger.name} → {pair.action.name}
                   </h5>
-                  <p className="text-xs text-muted-foreground mt-1">Reduce cooldown by 20%</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Reduce cooldown by 20%
+                  </p>
                 </div>
                 <Zap className="w-5 h-5 text-primary" />
               </div>
@@ -146,25 +177,29 @@ export function NodeRewardSelection({
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 
   const renderFragmentReward = () => (
     <div className="space-y-4 text-center">
       <Coins className="w-16 h-16 text-yellow-400 mx-auto" />
       <h3 className="text-2xl font-bold text-yellow-400">Cipher Fragments!</h3>
-      <p className="text-muted-foreground">Collect encrypted data fragments for meta-progression</p>
+      <p className="text-muted-foreground">
+        Collect encrypted data fragments for meta-progression
+      </p>
       <Button
-        onClick={() => handleRewardSelection(onSelectFragments, "Cipher Fragments")}
+        onClick={() =>
+          handleRewardSelection(onSelectFragments, "Cipher Fragments")
+        }
         className="bg-yellow-600 hover:bg-yellow-700 text-white"
       >
         Collect +50 Fragments
       </Button>
     </div>
-  )
+  );
 
   const renderHealReward = () => {
-    const healAmount = Math.floor(maxHP * 0.3)
-    const canHeal = currentHP < maxHP
+    const healAmount = Math.floor(maxHP * 0.3);
+    const canHeal = currentHP < maxHP;
 
     return (
       <div className="space-y-4 text-center">
@@ -181,8 +216,8 @@ export function NodeRewardSelection({
           {canHeal ? "Heal" : "Already at Max HP"}
         </Button>
       </div>
-    )
-  }
+    );
+  };
 
   const renderSpecialReward = () => (
     <div className="space-y-4">
@@ -195,24 +230,40 @@ export function NodeRewardSelection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card
           className="p-4 cursor-pointer hover:border-green-400 transition-colors border-2"
-          onClick={() => handleRewardSelection(() => onSelectSpecial("perk"), "System Perk")}
+          onClick={() =>
+            handleRewardSelection(() => onSelectSpecial("perk"), "System Perk")
+          }
         >
           <h5 className="font-bold text-green-400 mb-2">System Perk</h5>
-          <p className="text-xs text-muted-foreground">Gain a powerful temporary buff for this run</p>
+          <p className="text-xs text-muted-foreground">
+            Gain a powerful temporary buff for this run
+          </p>
         </Card>
 
         <Card
           className="p-4 cursor-pointer hover:border-orange-400 transition-colors border-2"
-          onClick={() => handleRewardSelection(() => onSelectSpecial("malware"), "Malware Injection")}
+          onClick={() =>
+            handleRewardSelection(
+              () => onSelectSpecial("malware"),
+              "Malware Injection",
+            )
+          }
         >
           <h5 className="font-bold text-orange-400 mb-2">Malware Injection</h5>
-          <p className="text-xs text-muted-foreground">Powerful module with a drawback</p>
+          <p className="text-xs text-muted-foreground">
+            Powerful module with a drawback
+          </p>
         </Card>
       </div>
     </div>
-  )
+  );
 
-  console.log("[v0] NodeRewardSelection render - isIntegrating:", isIntegrating, "selectedReward:", selectedReward)
+  console.log(
+    "[v0] NodeRewardSelection render - isIntegrating:",
+    isIntegrating,
+    "selectedReward:",
+    selectedReward,
+  );
 
   return (
     <>
@@ -228,7 +279,6 @@ export function NodeRewardSelection({
 
       {isIntegrating && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-lg">
-          {console.log("[v0] Rendering integration animation overlay")}
           <div className="text-center space-y-6">
             {/* Spinning hexagon rings */}
             <div className="relative w-32 h-32 mx-auto">
@@ -245,7 +295,9 @@ export function NodeRewardSelection({
               <div className="text-2xl font-bold text-primary font-mono tracking-wider animate-pulse-glow">
                 INTEGRATING REWARD
               </div>
-              <div className="text-sm text-cyan-400 font-mono">{selectedReward}</div>
+              <div className="text-sm text-cyan-400 font-mono">
+                {selectedReward}
+              </div>
               <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground font-mono">
                 <span className="animate-typing-1">.</span>
                 <span className="animate-typing-2">.</span>
@@ -257,7 +309,9 @@ export function NodeRewardSelection({
             <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
               <div className="absolute inset-0 animate-binary-scroll font-mono text-xs text-green-400">
                 {Array.from({ length: 50 }, (_, i) => (
-                  <div key={i}>{Math.random().toString(2).substring(2, 50)}</div>
+                  <div key={i}>
+                    {Math.random().toString(2).substring(2, 50)}
+                  </div>
                 ))}
               </div>
             </div>
@@ -265,5 +319,5 @@ export function NodeRewardSelection({
         </div>
       )}
     </>
-  )
+  );
 }

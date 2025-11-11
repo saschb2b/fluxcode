@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { X, Edit2, ArrowLeft } from "lucide-react"
-import { CHARACTER_PRESETS } from "@/lib/character-presets"
-import type { CustomFighterClass } from "@/lib/meta-progression"
-import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
-import { AVAILABLE_ACTIONS } from "@/lib/actions"
-import { FighterClassEditor } from "./fighter-class-editor"
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { X, Edit2, ArrowLeft } from "lucide-react";
+import { CHARACTER_PRESETS } from "@/lib/character-presets";
+import type { CustomFighterClass } from "@/lib/meta-progression";
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
+import { AVAILABLE_ACTIONS } from "@/lib/actions";
+import { FighterClassEditor } from "./fighter-class-editor";
 
 interface FighterClassManagerProps {
-  customClasses: CustomFighterClass[]
-  selectedClassId: string | null
-  onSaveClasses: (classes: CustomFighterClass[]) => void
-  onSelectClass: (classId: string) => void
-  onClose: () => void
+  customClasses: CustomFighterClass[];
+  selectedClassId: string | null;
+  onSaveClasses: (classes: CustomFighterClass[]) => void;
+  onSelectClass: (classId: string) => void;
+  onClose: () => void;
 }
 
 export function FighterClassManager({
@@ -25,11 +25,13 @@ export function FighterClassManager({
   onSelectClass,
   onClose,
 }: FighterClassManagerProps) {
-  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(null)
+  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(
+    null,
+  );
 
   const activeClasses = useMemo(() => {
     if (customClasses.length > 0) {
-      return customClasses
+      return customClasses;
     }
     // Return default classes if no custom classes exist
     return CHARACTER_PRESETS.map((preset) => ({
@@ -41,36 +43,49 @@ export function FighterClassManager({
         actionId: pair.action.id,
         priority: pair.priority,
       })),
-    }))
-  }, [customClasses])
+    }));
+  }, [customClasses]);
 
   const handleEditClass = (classToEdit: CustomFighterClass) => {
-    setEditingClass(classToEdit)
-  }
+    setEditingClass(classToEdit);
+  };
 
   const handleSaveEdit = (updatedClass: CustomFighterClass) => {
-    const updatedClasses = activeClasses.map((c) => (c.id === updatedClass.id ? updatedClass : c))
-    onSaveClasses(updatedClasses)
-    setEditingClass(null)
-  }
+    const updatedClasses = activeClasses.map((c) =>
+      c.id === updatedClass.id ? updatedClass : c,
+    );
+    onSaveClasses(updatedClasses);
+    setEditingClass(null);
+  };
 
   const handleCancelEdit = () => {
-    setEditingClass(null)
-  }
+    setEditingClass(null);
+  };
 
   if (editingClass) {
-    return <FighterClassEditor classData={editingClass} onSave={handleSaveEdit} onCancel={handleCancelEdit} />
+    return (
+      <FighterClassEditor
+        classData={editingClass}
+        onSave={handleSaveEdit}
+        onCancel={handleCancelEdit}
+      />
+    );
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black/90 to-gray-900/90 border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black/90 to-gray-900/90 border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
         <div className="sticky top-0 bg-gradient-to-r from-cyan-950/95 to-black/95 backdrop-blur-md border-b border-cyan-500/30 p-6 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-3xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
-              FIGHTER CLASSES
+            <h2
+              className="text-3xl font-bold text-cyan-400"
+              style={{ fontFamily: "monospace" }}
+            >
+              FIGHTERS
             </h2>
-            <p className="text-sm text-cyan-300/70 mt-1">Select and customize your combat style</p>
+            <p className="text-sm text-cyan-300/70 mt-1">
+              Select and customize your combat style
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -84,7 +99,7 @@ export function FighterClassManager({
 
         <div className="p-6 space-y-6">
           {activeClasses.map((classItem) => {
-            const isSelected = classItem.id === selectedClassId
+            const isSelected = classItem.id === selectedClassId;
 
             return (
               <Card
@@ -101,16 +116,20 @@ export function FighterClassManager({
                       <div className="flex items-center gap-3 mb-2">
                         <div
                           className="w-4 h-4 rounded-full border-2"
-                          style={{ backgroundColor: classItem.color, borderColor: classItem.color }}
+                          style={{
+                            backgroundColor: classItem.color,
+                            borderColor: classItem.color,
+                          }}
                         />
-                        <h3 className="text-2xl font-bold" style={{ color: classItem.color, fontFamily: "monospace" }}>
+                        <h3
+                          className="text-2xl font-bold"
+                          style={{
+                            color: classItem.color,
+                            fontFamily: "monospace",
+                          }}
+                        >
                           {classItem.name}
                         </h3>
-                        {isSelected && (
-                          <span className="px-2 py-1 bg-green-500/20 border border-green-500/50 rounded text-xs text-green-400 font-bold">
-                            ACTIVE
-                          </span>
-                        )}
                       </div>
 
                       <div className="mt-3">
@@ -118,38 +137,35 @@ export function FighterClassManager({
                           STARTING PROTOCOLS ({classItem.startingPairs.length})
                         </div>
                         <div className="space-y-1">
-                          {classItem.startingPairs.slice(0, 3).map((pair, idx) => {
-                            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
-                            const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
-                            return (
-                              <div
-                                key={idx}
-                                className="text-sm text-cyan-300/90 bg-black/30 px-3 py-1.5 rounded border border-cyan-500/20"
-                              >
-                                <span className="text-cyan-400">IF</span> {trigger?.name || "Unknown"}{" "}
-                                <span className="text-green-400">THEN</span> {action?.name || "Unknown"}
-                              </div>
-                            )
-                          })}
+                          {classItem.startingPairs
+                            .slice(0, 3)
+                            .map((pair, idx) => {
+                              const trigger = AVAILABLE_TRIGGERS.find(
+                                (t) => t.id === pair.triggerId,
+                              );
+                              const action = AVAILABLE_ACTIONS.find(
+                                (a) => a.id === pair.actionId,
+                              );
+                              return (
+                                <div
+                                  key={idx}
+                                  className="text-sm text-cyan-300/90 bg-black/30 px-3 py-1.5 rounded border border-cyan-500/20"
+                                >
+                                  <span className="text-cyan-400">IF</span>{" "}
+                                  {trigger?.name || "Unknown"}{" "}
+                                  <span className="text-green-400">THEN</span>{" "}
+                                  {action?.name || "Unknown"}
+                                </div>
+                              );
+                            })}
                           {classItem.startingPairs.length > 3 && (
                             <div className="text-xs text-cyan-300/50 px-3 py-1">
-                              +{classItem.startingPairs.length - 3} more protocols...
+                              +{classItem.startingPairs.length - 3} more
+                              protocols...
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClass(classItem)}
-                        className="border-cyan-500/50 hover:bg-cyan-500/20"
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
                     </div>
                   </div>
 
@@ -161,23 +177,23 @@ export function FighterClassManager({
                       SELECT CLASS
                     </Button>
                   )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditClass(classItem)}
+                      className="w-full border-cyan-500/50 hover:bg-cyan-500/20"
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  </div>
                 </div>
               </Card>
-            )
+            );
           })}
         </div>
-
-        <div className="sticky bottom-0 bg-gradient-to-t from-black/95 to-transparent backdrop-blur-md border-t border-cyan-500/30 p-6">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="w-full border-cyan-500/50 hover:bg-cyan-500/20 bg-transparent"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            BACK TO HUB
-          </Button>
-        </div>
-      </Card>
+      </div>
     </div>
-  )
+  );
 }
