@@ -238,6 +238,14 @@ export const AVAILABLE_TRIGGERS: Trigger[] = [
     },
   },
   {
+    id: "enemy-lagged",
+    name: "Enemy Lagged",
+    description: "Triggers when enemy is affected by Cryo-Flux Lag",
+    check: (context: BattleContext) => {
+      return !!context.enemyStatus?.some((e) => e.type === "lag")
+    },
+  },
+  {
     id: "enemy-stunned",
     name: "Enemy Stunned",
     description: "Triggers when enemy is stunned",

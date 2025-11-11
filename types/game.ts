@@ -14,7 +14,7 @@ export enum DamageType {
 }
 
 export interface StatusEffect {
-  type: "arc" | "disable" | "degrade" | "slow" | "burn" | "stagger" | "viral_infection" | "emp" | "stun"
+  type: "arc" | "disable" | "degrade" | "slow" | "burn" | "stagger" | "viral_infection" | "emp" | "stun" | "lag" // Added "lag" status effect
   duration: number // milliseconds remaining
   stacks?: number // for stackable effects like slow/degrade
   value?: number // damage per tick for burn, or percentage for degrade

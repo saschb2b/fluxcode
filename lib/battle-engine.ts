@@ -14,6 +14,13 @@ interface EMPStack {
   shieldDrainPercent: number
 }
 
+interface LagStack {
+  endTime: number
+  cooldownIncrease: number // 15% per stack
+  movementReduction: number // 10% per stack
+  actionFailureChance: number // 5% per stack
+}
+
 export interface BattleState {
   playerPos: Position
   playerHP: number
@@ -26,7 +33,9 @@ export interface BattleState {
   enemyBurnStacks: BurnStack[]
   enemyViralStacks: ViralStack[]
   enemyEMPStacks: EMPStack[]
+  enemyLagStacks: LagStack[]
   shieldRegenDisabled: boolean
+  enemyImmuneToStatus?: boolean // Added status immunity flag for testing
 }
 
 export interface BattleHistoryPoint {
@@ -52,6 +61,7 @@ export interface BattleUpdate {
   burnStacks?: number
   viralStacks?: number
   empStacks?: number
+  lagStacks?: number // Added lag stacks to battle updates
 }
 
 export class BattleEngine {
@@ -86,7 +96,9 @@ export class BattleEngine {
       enemyBurnStacks: initialState.enemyBurnStacks || [],
       enemyViralStacks: initialState.enemyViralStacks || [],
       enemyEMPStacks: initialState.enemyEMPStacks || [],
+      enemyLagStacks: initialState.enemyLagStacks || [], // Initialize Lag stacks
       shieldRegenDisabled: initialState.shieldRegenDisabled || false,
+      enemyImmuneToStatus: initialState.enemyImmuneToStatus || false, // Initialize status immunity flag
     }
     this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
     this.enemyPairs = [...enemyPairs].sort((a, b) => b.priority - a.priority)
@@ -131,12 +143,14 @@ export class BattleEngine {
     this.state.enemyBurnStacks = this.state.enemyBurnStacks.filter((stack) => stack.endTime > this.battleTime)
     this.state.enemyViralStacks = this.state.enemyViralStacks.filter((stack) => stack.endTime > this.battleTime)
     this.state.enemyEMPStacks = this.state.enemyEMPStacks.filter((stack) => stack.endTime > this.battleTime)
+    this.state.enemyLagStacks = this.state.enemyLagStacks.filter((stack) => stack.endTime > this.battleTime)
 
     this.state.shieldRegenDisabled = this.state.enemyEMPStacks.length > 0
 
     update.burnStacks = this.state.enemyBurnStacks.length
     update.viralStacks = this.state.enemyViralStacks.length
     update.empStacks = this.state.enemyEMPStacks.length
+    update.lagStacks = this.state.enemyLagStacks.length // Update lag stack count
 
     const newProjectiles = this.updateProjectiles(deltaTime)
     update.projectiles = newProjectiles
@@ -172,6 +186,9 @@ export class BattleEngine {
     }
     if (hitUpdate.empStacks !== undefined) {
       update.empStacks = hitUpdate.empStacks
+    }
+    if (hitUpdate.lagStacks !== undefined) {
+      update.lagStacks = hitUpdate.lagStacks
     }
 
     if (this.state.playerHP <= 0) {
@@ -249,6 +266,8 @@ export class BattleEngine {
       isPlayer,
     }
 
+    const lagCooldownMultiplier = this.getLagCooldownMultiplier(!isPlayer)
+
     this.actionCooldowns.forEach((time, key) => {
       const newTime = time - deltaTime
       if (newTime <= 0) {
@@ -262,14 +281,34 @@ export class BattleEngine {
       const cooldownKey = `${isPlayer ? "player" : "enemy"}-${pair.action.id}`
 
       if (this.actionCooldowns.has(cooldownKey)) {
+        const remainingCooldown = this.actionCooldowns.get(cooldownKey)!
+        if (!isPlayer && remainingCooldown > 100) {
+          // Only log if significant cooldown remains
+          console.log(`[v0] Enemy action ${pair.action.id} on cooldown: ${Math.round(remainingCooldown)}ms remaining`)
+        }
         continue
+      }
+
+      if (!isPlayer && this.state.enemyLagStacks.length > 0) {
+        const failureChance = this.state.enemyLagStacks.reduce((acc, stack) => acc + stack.actionFailureChance, 0)
+        if (Math.random() < failureChance) {
+          console.log(`[v0] Enemy action stuttered due to Lag (${Math.round(failureChance * 100)}% chance)`)
+          // Action fails, skip to next pair
+          continue
+        }
       }
 
       const triggerResult = pair.trigger.check(context)
 
       if (triggerResult) {
         console.log(`[v0] ${isPlayer ? "Player" : "Enemy"} executing: ${pair.trigger.id} -> ${pair.action.id}`)
-        this.actionCooldowns.set(cooldownKey, pair.action.cooldown)
+        const adjustedCooldown = pair.action.cooldown * lagCooldownMultiplier
+        if (!isPlayer && lagCooldownMultiplier > 1.0 && pair.action.cooldown > 0) {
+          console.log(
+            `[v0] Lag increased cooldown: ${pair.action.cooldown}ms -> ${Math.round(adjustedCooldown)}ms (+${Math.round((lagCooldownMultiplier - 1) * 100)}%)`,
+          )
+        }
+        this.actionCooldowns.set(cooldownKey, adjustedCooldown)
         return {
           ...pair.action.execute(context),
           triggerId: pair.trigger.id,
@@ -279,6 +318,14 @@ export class BattleEngine {
     }
 
     return null
+  }
+
+  private getLagCooldownMultiplier(isEnemy: boolean): number {
+    if (!isEnemy || this.state.enemyLagStacks.length === 0) return 1.0
+
+    const lagStacks = this.state.enemyLagStacks.length
+    // Each stack adds 15% cooldown increase
+    return 1.0 + lagStacks * 0.15
   }
 
   private applyAction(action: ActionResult, isPlayer: boolean): BattleUpdate {
@@ -522,6 +569,7 @@ export class BattleEngine {
     burnStacks?: number
     viralStacks?: number
     empStacks?: number
+    lagStacks?: number
   } {
     const update: {
       playerHP?: number
@@ -532,6 +580,7 @@ export class BattleEngine {
       burnStacks?: number
       viralStacks?: number
       empStacks?: number
+      lagStacks?: number
     } = {}
     const remainingProjectiles: Projectile[] = []
 
@@ -553,7 +602,14 @@ export class BattleEngine {
         Math.abs(proj.position.x - this.state.enemyPos.x) < 0.6 &&
         proj.position.y === this.state.enemyPos.y
       ) {
-        if (proj.damageType === "corrosive" && proj.statusChance && Math.random() < proj.statusChance) {
+        const canApplyStatus = !this.state.enemyImmuneToStatus
+
+        if (
+          canApplyStatus &&
+          proj.damageType === "corrosive" &&
+          proj.statusChance &&
+          Math.random() < proj.statusChance
+        ) {
           const armorStrip = Math.max(1, Math.floor(this.state.enemyArmor * 0.1))
           if (this.state.enemyArmor > 0) {
             this.state.enemyArmor = Math.max(0, this.state.enemyArmor - armorStrip)
@@ -561,7 +617,7 @@ export class BattleEngine {
           }
         }
 
-        if (proj.damageType === "thermal" && proj.statusChance && Math.random() < proj.statusChance) {
+        if (canApplyStatus && proj.damageType === "thermal" && proj.statusChance && Math.random() < proj.statusChance) {
           const MAX_BURN_STACKS = 5
           const BURN_DURATION = 4000
           const BURN_DAMAGE_PER_TICK = 2
@@ -575,7 +631,7 @@ export class BattleEngine {
           }
         }
 
-        if (proj.damageType === "viral" && proj.statusChance && Math.random() < proj.statusChance) {
+        if (canApplyStatus && proj.damageType === "viral" && proj.statusChance && Math.random() < proj.statusChance) {
           const MAX_VIRAL_STACKS = 5
           const VIRAL_DURATION = 10000
 
@@ -587,7 +643,7 @@ export class BattleEngine {
           }
         }
 
-        if (proj.damageType === "energy" && proj.statusChance && Math.random() < proj.statusChance) {
+        if (canApplyStatus && proj.damageType === "energy" && proj.statusChance && Math.random() < proj.statusChance) {
           const MAX_EMP_STACKS = 5
           const EMP_DURATION = 5000 // 5 seconds
           const SHIELD_DRAIN_PERCENT = 0.08 // 8% of current shields per proc
@@ -607,7 +663,33 @@ export class BattleEngine {
           }
         }
 
+        if (canApplyStatus && proj.damageType === "glacial" && proj.statusChance && Math.random() < proj.statusChance) {
+          const MAX_LAG_STACKS = 5
+          const LAG_DURATION = 6000 // 6 seconds
+          const COOLDOWN_INCREASE = 0.15 // 15% per stack
+          const MOVEMENT_REDUCTION = 0.1 // 10% per stack (for future implementation)
+          const ACTION_FAILURE_CHANCE = 0.05 // 5% per stack
+
+          if (this.state.enemyLagStacks.length < MAX_LAG_STACKS) {
+            this.state.enemyLagStacks.push({
+              endTime: this.battleTime + LAG_DURATION,
+              cooldownIncrease: COOLDOWN_INCREASE,
+              movementReduction: MOVEMENT_REDUCTION,
+              actionFailureChance: ACTION_FAILURE_CHANCE,
+            })
+            update.lagStacks = this.state.enemyLagStacks.length
+            console.log(`[v0] Applied Lag stack (${this.state.enemyLagStacks.length}/${MAX_LAG_STACKS})`)
+          }
+        }
+
         let damage = proj.damage
+
+        if (proj.damageType === "glacial") {
+          if (this.state.enemyShields > 0) {
+            damage = damage * 0.9 // 10% penalty against shields
+          }
+          // Moderate (100%) damage against armor and HP - no modification needed
+        }
 
         if (proj.damageType === "energy") {
           if (this.state.enemyShields > 0) {

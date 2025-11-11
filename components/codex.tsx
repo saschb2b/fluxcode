@@ -93,13 +93,16 @@ const ELEMENTAL_DATA = [
   },
   {
     type: DamageType.GLACIAL,
-    name: "Glacial",
+    name: "Cryo-Flux",
     color: "#06b6d4",
-    description: "Cryogenic system slowdown",
-    effect: "Moderate damage. Slows enemy movement and attack speed.",
-    statusEffect: "Slow - Reduces enemy movement speed and increases cooldowns by freezing processing cycles",
-    narrative: "Sub-zero coolant injection. Slows computational processes and restricts mechanical movement.",
-    threat: "STANDARD",
+    description: "Quantum-cooled time manipulation",
+    effect:
+      "-10% damage vs shields, moderate (100%) vs armor/HP. Impedes enemy processing cycles and creates tactical windows.",
+    statusEffect:
+      "Lag - Each stack increases enemy cooldowns by +15%, reduces movement by -10%, and adds 5% chance of action failure. Creates frame-drop stuttering (stacks up to 5x, 6s duration)",
+    narrative:
+      "Controlled injections of quantum-cooled Cryo-Flux agents. Doesn't directly disable protocols but critically destabilizes an enemy's internal clock cycles and processing environment, causing intermittent system hangs, cooldown delays, and movement restrictions. Synergizes with all elements by extending exposure windows.",
+    threat: "HIGH",
   },
 ]
 

@@ -16,8 +16,6 @@ import type { CustomFighterClass } from "@/lib/meta-progression"
 import type { FighterCustomization } from "@/lib/fighter-parts"
 import type { GameState } from "@/types/game"
 import { HEAD_SHAPES, BODY_SHAPES, ARM_SHAPES, CHASSIS_TYPES } from "@/lib/fighter-parts"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
@@ -40,10 +38,13 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
   const [enableMovement, setEnableMovement] = useState(false)
   const [enableShield, setEnableShield] = useState(false)
   const [enableArmor, setEnableArmor] = useState(false)
+  const [enableAttacking, setEnableAttacking] = useState(false)
+  const [immuneToStatus, setImmuneToStatus] = useState(false)
   const [armorStrips, setArmorStrips] = useState(0)
   const [burnStacks, setBurnStacks] = useState(0)
   const [viralStacks, setViralStacks] = useState(0)
   const [empStacks, setEmpStacks] = useState(0)
+  const [lagStacks, setLagStacks] = useState(0)
 
   const battleEngineRef = useRef<BattleEngine | null>(null)
   const animationFrameRef = useRef<number>()
@@ -63,23 +64,48 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
     setBurnStacks(0)
     setViralStacks(0)
     setEmpStacks(0)
+    setLagStacks(0)
 
     const playerPairs = buildTriggerActionPairs(classData.startingPairs)
 
-    const enemyPairs = enableMovement
-      ? buildTriggerActionPairs([
+    const enemyPairs = []
+    if (enableMovement) {
+      enemyPairs.push(
+        ...buildTriggerActionPairs([
           {
-            triggerId: "always",
-            actionId: "dodge",
+            triggerId: "at-front",
+            actionId: "move-backward",
+            priority: 3,
+          },
+          {
+            triggerId: "at-back",
+            actionId: "move-forward",
+            priority: 4,
+          },
+          {
+            triggerId: "different-row",
+            actionId: "move-up",
             priority: 5,
           },
           {
-            triggerId: "timer-3s",
-            actionId: "teleport",
-            priority: 4,
+            triggerId: "same-row",
+            actionId: "move-down",
+            priority: 6,
           },
-        ])
-      : []
+        ]),
+      )
+    }
+    if (enableAttacking) {
+      enemyPairs.push(
+        ...buildTriggerActionPairs([
+          {
+            triggerId: "always",
+            actionId: "shoot",
+            priority: 1, // Higher priority so it executes before movement
+          },
+        ]),
+      )
+    }
 
     const shieldAmount = enableShield ? 200 : 0
     const armorAmount = enableArmor ? 150 : 0
@@ -93,6 +119,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       enemyArmor: armorAmount,
       projectiles: [],
       justTookDamage: false,
+      enemyImmuneToStatus: immuneToStatus,
     }
 
     battleEngineRef.current = new BattleEngine(initialState, playerPairs, enemyPairs, customization, undefined)
@@ -104,9 +131,9 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         hp: 999999,
         maxHp: 999999,
         shields: shieldAmount,
-        maxShields: shieldAmount,
+        maxShields: enableShield ? 200 : 0,
         armor: armorAmount,
-        maxArmor: armorAmount,
+        maxArmor: enableArmor ? 150 : 0,
       },
       projectiles: [],
     })
@@ -130,6 +157,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
     setBurnStacks(0)
     setViralStacks(0)
     setEmpStacks(0)
+    setLagStacks(0)
     setMetrics({
       totalDamage: 0,
       dps: 0,
@@ -199,6 +227,10 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         setEmpStacks(update.empStacks)
       }
 
+      if (update.lagStacks !== undefined) {
+        setLagStacks(update.lagStacks)
+      }
+
       setGameState({
         player: {
           position: newState.playerPos,
@@ -254,7 +286,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isRunning, enableShield, enableArmor])
+  }, [isRunning, enableShield, enableArmor, enableAttacking, immuneToStatus])
 
   const [metrics, setMetrics] = useState({
     totalDamage: 0,
@@ -439,6 +471,12 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
               {empStacks}x EMP (Shield Disabled)
             </p>
           )}
+          {lagStacks > 0 && (
+            <p className="text-cyan-400 text-xs font-mono mt-1 flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-cyan-500 animate-pulse" style={{ animationDuration: "2s" }} />
+              {lagStacks}x Lag (+{lagStacks * 15}% CD, {lagStacks * 5}% Stutter)
+            </p>
+          )}
         </div>
 
         <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-black/80 border border-cyan-500/50 px-2 py-1 md:px-3 md:py-2 rounded">
@@ -450,39 +488,82 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
 
       <div className="p-3 md:p-4 bg-gradient-to-t from-black to-gray-900 border-t border-cyan-500/50">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-3 bg-black/50 border border-cyan-500/30 p-3 rounded">
-            <div className="flex items-center gap-2">
-              <Move className="w-4 h-4 text-cyan-400" />
-              <Label htmlFor="movement-toggle" className="text-sm text-cyan-300 font-mono cursor-pointer">
-                Enable Movement
-              </Label>
-            </div>
-            <Switch
-              id="movement-toggle"
-              checked={enableMovement}
-              onCheckedChange={setEnableMovement}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
+            <button
+              onClick={() => !isRunning && setEnableMovement(!enableMovement)}
               disabled={isRunning}
-            />
-          </div>
+              className={`flex flex-col items-center justify-center p-3 rounded border transition-all ${
+                enableMovement
+                  ? "bg-cyan-500/20 border-cyan-500 text-cyan-300"
+                  : "bg-black/50 border-cyan-500/30 text-cyan-500/50 hover:border-cyan-500/50"
+              } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <Move className="w-5 h-5 mb-1" />
+              <span className="text-xs font-mono">Movement</span>
+              <span className="text-[10px] font-mono mt-0.5">{enableMovement ? "ON" : "OFF"}</span>
+            </button>
 
-          <div className="flex items-center justify-between mb-3 bg-black/50 border border-blue-500/30 p-3 rounded">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-400/20" />
-              <Label htmlFor="shield-toggle" className="text-sm text-blue-300 font-mono cursor-pointer">
-                Enable Shield (200)
-              </Label>
-            </div>
-            <Switch id="shield-toggle" checked={enableShield} onCheckedChange={setEnableShield} disabled={isRunning} />
-          </div>
+            <button
+              onClick={() => !isRunning && setEnableAttacking(!enableAttacking)}
+              disabled={isRunning}
+              className={`flex flex-col items-center justify-center p-3 rounded border transition-all ${
+                enableAttacking
+                  ? "bg-red-500/20 border-red-500 text-red-300"
+                  : "bg-black/50 border-red-500/30 text-red-500/50 hover:border-red-500/50"
+              } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <Target className="w-5 h-5 mb-1" />
+              <span className="text-xs font-mono">Attacking</span>
+              <span className="text-[10px] font-mono mt-0.5">{enableAttacking ? "ON" : "OFF"}</span>
+            </button>
 
-          <div className="flex items-center justify-between mb-3 bg-black/50 border border-orange-500/30 p-3 rounded">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-orange-400 bg-orange-400/20" />
-              <Label htmlFor="armor-toggle" className="text-sm text-orange-300 font-mono cursor-pointer">
-                Enable Armor (150)
-              </Label>
-            </div>
-            <Switch id="armor-toggle" checked={enableArmor} onCheckedChange={setEnableArmor} disabled={isRunning} />
+            <button
+              onClick={() => !isRunning && setEnableShield(!enableShield)}
+              disabled={isRunning}
+              className={`flex flex-col items-center justify-center p-3 rounded border transition-all ${
+                enableShield
+                  ? "bg-blue-500/20 border-blue-500 text-blue-300"
+                  : "bg-black/50 border-blue-500/30 text-blue-500/50 hover:border-blue-500/50"
+              } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <div className="w-5 h-5 mb-1 rounded-full border-2 border-current flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-current opacity-30" />
+              </div>
+              <span className="text-xs font-mono">Shield</span>
+              <span className="text-[10px] font-mono mt-0.5">{enableShield ? "ON" : "OFF"}</span>
+            </button>
+
+            <button
+              onClick={() => !isRunning && setEnableArmor(!enableArmor)}
+              disabled={isRunning}
+              className={`flex flex-col items-center justify-center p-3 rounded border transition-all ${
+                enableArmor
+                  ? "bg-orange-500/20 border-orange-500 text-orange-300"
+                  : "bg-black/50 border-orange-500/30 text-orange-500/50 hover:border-orange-500/50"
+              } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <div className="w-5 h-5 mb-1 rounded border-2 border-current flex items-center justify-center">
+                <div className="w-2 h-2 rounded bg-current opacity-30" />
+              </div>
+              <span className="text-xs font-mono">Armor</span>
+              <span className="text-[10px] font-mono mt-0.5">{enableArmor ? "ON" : "OFF"}</span>
+            </button>
+
+            <button
+              onClick={() => !isRunning && setImmuneToStatus(!immuneToStatus)}
+              disabled={isRunning}
+              className={`flex flex-col items-center justify-center p-3 rounded border transition-all ${
+                immuneToStatus
+                  ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                  : "bg-black/50 border-purple-500/30 text-purple-500/50 hover:border-purple-500/50"
+              } ${isRunning ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <div className="w-5 h-5 mb-1 rounded-full border-2 border-current flex items-center justify-center">
+                <Zap className="w-3 h-3" />
+              </div>
+              <span className="text-xs font-mono">Immunity</span>
+              <span className="text-[10px] font-mono mt-0.5">{immuneToStatus ? "ON" : "OFF"}</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
