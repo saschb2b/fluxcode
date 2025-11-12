@@ -379,6 +379,10 @@ export default function Home() {
 
       {showFighterClassEditor && gameState.selectedConstruct && gameState.activeSlot && (
         <FighterClassManager
+          key={`calibration-${gameState.activeSlot.slotId}-${JSON.stringify(
+            latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]?.tacticalProtocols ||
+              [],
+          )}`}
           customClasses={[
             {
               id: gameState.selectedConstruct.id,
