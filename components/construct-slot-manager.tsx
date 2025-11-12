@@ -1,7 +1,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { X, Plus, Lock } from "lucide-react"
+import { X, Plus, Lock, Shield, Heart, Layers } from "lucide-react"
 import { CONSTRUCTS } from "@/lib/constructs"
 import type { Construct } from "@/types/game"
 import type { PlayerProgress } from "@/lib/meta-progression"
@@ -98,6 +98,46 @@ export function ConstructSlotManager({
                             {construct.name}
                           </h3>
                         </div>
+
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                          {/* HP */}
+                          <div className="flex items-center gap-1.5 bg-red-950/30 border border-red-500/30 rounded px-2 py-1">
+                            <Heart className="w-3.5 h-3.5 text-red-400" />
+                            <span className="text-xs font-bold text-white">{construct.baseHp}</span>
+                          </div>
+
+                          {/* Shields */}
+                          {construct.baseShields > 0 && (
+                            <div className="flex items-center gap-1.5 bg-blue-950/30 border border-blue-500/30 rounded px-2 py-1">
+                              <Shield className="w-3.5 h-3.5 text-blue-400" />
+                              <span className="text-xs font-bold text-white">{construct.baseShields}</span>
+                            </div>
+                          )}
+
+                          {/* Armor */}
+                          {construct.baseArmor > 0 && (
+                            <div className="flex items-center gap-1.5 bg-gray-950/30 border border-gray-500/30 rounded px-2 py-1">
+                              <Layers className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="text-xs font-bold text-white">{construct.baseArmor}</span>
+                            </div>
+                          )}
+
+                          {/* Resistances */}
+                          {Object.keys(construct.resistances).length > 0 && (
+                            <div className="flex items-center gap-1 bg-purple-950/30 border border-purple-500/30 rounded px-2 py-1">
+                              <span className="text-xs text-purple-400 font-mono">
+                                {Object.entries(construct.resistances).map(([type, value]) => (
+                                  <span key={type} className="mr-1">
+                                    {type.charAt(0).toUpperCase()}
+                                    {Math.round((value as number) * 100)}%
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {/* </CHANGE> */}
+
                         <div className="grid grid-cols-2 gap-2 mb-3">
                           <div className="bg-black/40 rounded p-2 border border-cyan-500/30">
                             <div className="text-xs text-cyan-400">PROTOCOLS</div>
