@@ -405,6 +405,11 @@ export default function Home() {
                 latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]
                   ?.tacticalProtocols || [],
               customization: fighterCustomization,
+              constructStats: {
+                maxHp: gameState.selectedConstruct.baseHp,
+                maxShields: gameState.selectedConstruct.baseShields,
+                maxArmor: gameState.selectedConstruct.baseArmor,
+              },
             },
           ]}
           selectedClassId={gameState.selectedConstruct.id}

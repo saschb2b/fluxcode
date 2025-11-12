@@ -64,6 +64,10 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
   const MAX_MOVEMENT_PROTOCOLS = construct?.maxMovementSlots || 6
   const MAX_TACTICAL_PROTOCOLS = construct?.maxTacticalSlots || 6
 
+  const constructMaxHp = classData.constructStats?.maxHp || construct?.baseHp || 100
+  const constructMaxShields = classData.constructStats?.maxShields || construct?.baseShields || 0
+  const constructMaxArmor = classData.constructStats?.maxArmor || construct?.baseArmor || 0
+
   useEffect(() => {
     setName(classData.name)
     setMovementProtocols(classData.startingMovementPairs || [])
@@ -698,12 +702,12 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                       <CustomizableFighter
                         position={{ x: 3, y: 1 }}
                         isPlayer={true}
-                        hp={construct?.baseHp || 100}
-                        maxHp={construct?.baseHp || 100}
-                        shields={construct?.baseShields || 0}
-                        maxShields={construct?.baseShields || 0}
-                        armor={construct?.baseArmor || 0}
-                        maxArmor={construct?.baseArmor || 0}
+                        hp={constructMaxHp}
+                        maxHp={constructMaxHp}
+                        shields={constructMaxShields}
+                        maxShields={constructMaxShields}
+                        armor={constructMaxArmor}
+                        maxArmor={constructMaxArmor}
                         customization={customization}
                       />
                       <OrbitControls enableZoom={false} enablePan={false} />

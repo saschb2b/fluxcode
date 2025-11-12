@@ -77,6 +77,23 @@ export interface CustomFighterClass {
     actionId: string
     priority: number
   }>
+  startingMovementPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  startingTacticalPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  constructStats?: {
+    maxHp: number
+    maxShields: number
+    maxArmor: number
+  }
   customization?: FighterCustomization
 }
 
