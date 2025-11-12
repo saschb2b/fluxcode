@@ -398,8 +398,15 @@ export default function Home() {
           selectedClassId={gameState.selectedConstruct.id}
           skipSelection={true}
           onSaveClasses={(classes) => {
+            console.log("[v0] SAVE: onSaveClasses called with classes:", classes)
             const updatedClass = classes[0]
+            console.log("[v0] SAVE: updatedClass:", updatedClass)
+            console.log("[v0] SAVE: activeSlot:", gameState.activeSlot)
+
             if (updatedClass && gameState.activeSlot) {
+              console.log("[v0] SAVE: Movement protocols to save:", updatedClass.startingMovementPairs)
+              console.log("[v0] SAVE: Tactical protocols to save:", updatedClass.startingTacticalPairs)
+
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
                 [gameState.activeSlot.slotId]: {
@@ -408,10 +415,14 @@ export default function Home() {
                   tacticalProtocols: updatedClass.startingTacticalPairs || [],
                 },
               }
+              console.log("[v0] SAVE: newSlots object:", newSlots)
+
               gameState.updatePlayerProgress({
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
               })
+
+              console.log("[v0] SAVE: Player progress updated, now reloading construct")
 
               // Reload the construct to update the protocols in game state
               gameState.setConstruct(gameState.selectedConstruct!, gameState.activeSlot.slotId)
