@@ -39,6 +39,7 @@ import {
 } from "@/lib/fighter-parts"
 import { ClassTestSimulator } from "@/components/class-test-simulator"
 import { Badge } from "@/components/ui/badge"
+import { getConstructById } from "@/lib/constructs"
 
 interface FighterClassEditorProps {
   classData: CustomFighterClass
@@ -59,8 +60,9 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
     "head" | "body" | "arms" | "accessory" | "weapon" | "chassis" | "colors"
   >("head")
 
-  const MAX_MOVEMENT_PROTOCOLS = 6
-  const MAX_TACTICAL_PROTOCOLS = 6
+  const construct = getConstructById(classData.id)
+  const MAX_MOVEMENT_PROTOCOLS = construct?.maxMovementSlots || 6
+  const MAX_TACTICAL_PROTOCOLS = construct?.maxTacticalSlots || 6
 
   const addMovementProtocol = () => {
     if (movementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) {
