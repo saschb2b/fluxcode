@@ -399,8 +399,13 @@ export default function Home() {
           skipSelection={true}
           onSaveClasses={(classes) => {
             const updatedClass = classes[0]
+            console.log("[v0] SAVE CALIBRATION: updatedClass", updatedClass)
 
             if (updatedClass && gameState.activeSlot) {
+              console.log("[v0] SAVE CALIBRATION: activeSlot", gameState.activeSlot)
+              console.log("[v0] SAVE CALIBRATION: startingMovementPairs", updatedClass.startingMovementPairs)
+              console.log("[v0] SAVE CALIBRATION: startingTacticalPairs", updatedClass.startingTacticalPairs)
+
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
                 [gameState.activeSlot.slotId]: {
@@ -410,12 +415,16 @@ export default function Home() {
                 },
               }
 
+              console.log("[v0] SAVE CALIBRATION: newSlots", newSlots)
+
               const newProgress = {
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
               }
 
+              console.log("[v0] SAVE CALIBRATION: About to update player progress")
               gameState.updatePlayerProgress(newProgress)
+              console.log("[v0] SAVE CALIBRATION: Player progress updated")
 
               const movementProtocols = (updatedClass.startingMovementPairs || [])
                 .map((p: any) => {
@@ -435,11 +444,15 @@ export default function Home() {
                 })
                 .filter((p: any): p is any => p !== null)
 
+              console.log("[v0] SAVE CALIBRATION: movementProtocols", movementProtocols)
+              console.log("[v0] SAVE CALIBRATION: tacticalProtocols", tacticalProtocols)
+
               movementProtocols.forEach((p: any) => {
                 const existing = gameState.movementPairs.find(
                   (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
                 )
                 if (!existing) {
+                  console.log("[v0] SAVE CALIBRATION: Adding movement pair", p)
                   gameState.addMovementPair(p.trigger, p.action)
                 }
               })
@@ -449,9 +462,13 @@ export default function Home() {
                   (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
                 )
                 if (!existing) {
+                  console.log("[v0] SAVE CALIBRATION: Adding tactical pair", p)
                   gameState.addTacticalPair(p.trigger, p.action)
                 }
               })
+
+              console.log("[v0] SAVE CALIBRATION: Final game state movementPairs", gameState.movementPairs)
+              console.log("[v0] SAVE CALIBRATION: Final game state tacticalPairs", gameState.tacticalPairs)
             }
             handleCloseFighterClassEditor()
           }}
