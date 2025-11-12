@@ -641,24 +641,14 @@ export function useGameState(): GameState {
 
   const setConstruct = useCallback(
     (construct: Construct, slotId: string) => {
-      console.log("[v0] === SET CONSTRUCT START ===")
-      console.log("[v0] Construct:", construct.name, construct.id)
-      console.log("[v0] Slot ID:", slotId)
-      console.log("[v0] Current playerProgress.activeConstructSlots:", playerProgress.activeConstructSlots)
-
       setSelectedConstructState(construct)
 
       const slotData = playerProgress.activeConstructSlots?.[slotId]
-      console.log("[v0] Slot data loaded:", slotData)
 
       let movementProtocols: TriggerActionPair[] = []
       let tacticalProtocols: TriggerActionPair[] = []
 
       if (slotData && slotData.constructId === construct.id) {
-        console.log("[v0] Loading protocols from slot data")
-        console.log("[v0] Raw movement protocols:", slotData.movementProtocols)
-        console.log("[v0] Raw tactical protocols:", slotData.tacticalProtocols)
-
         movementProtocols = slotData.movementProtocols
           .map((p) => {
             const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
@@ -668,8 +658,6 @@ export function useGameState(): GameState {
           })
           .filter((p): p is TriggerActionPair => p !== null)
 
-        console.log("[v0] Parsed movement protocols:", movementProtocols)
-
         tacticalProtocols = slotData.tacticalProtocols
           .map((p) => {
             const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
@@ -678,10 +666,6 @@ export function useGameState(): GameState {
             return { trigger, action, priority: p.priority, enabled: true }
           })
           .filter((p): p is TriggerActionPair => p !== null)
-
-        console.log("[v0] Parsed tactical protocols:", tacticalProtocols)
-      } else {
-        console.log("[v0] No slot data or construct mismatch, using empty protocols")
       }
 
       const newActiveSlot: ActiveConstructSlot = {
@@ -690,12 +674,10 @@ export function useGameState(): GameState {
         movementProtocols,
         tacticalProtocols,
       }
-      console.log("[v0] New active slot:", newActiveSlot)
 
       setActiveSlotState(newActiveSlot)
       setMovementPairs(movementProtocols)
       setTacticalPairs(tacticalProtocols)
-      console.log("[v0] State updated with protocols")
 
       const allPairs = [...movementProtocols, ...tacticalProtocols]
       const uniqueTriggers = Array.from(new Set(allPairs.map((p) => p.trigger.id)))
@@ -729,11 +711,9 @@ export function useGameState(): GameState {
           },
         },
       }
-      console.log("[v0] New progress being saved:", newProgress.activeConstructSlots)
 
       setPlayerProgress(newProgress)
       saveProgress(newProgress)
-      console.log("[v0] Progress saved to localStorage")
 
       const hpBonus = getTotalStatBonus(newProgress, "hp")
       const shieldBonus = getTotalStatBonus(newProgress, "shield_capacity")
@@ -752,8 +732,6 @@ export function useGameState(): GameState {
         armor: maxArmor,
         maxArmor,
       }))
-
-      console.log("[v0] === SET CONSTRUCT END ===")
     },
     [playerProgress],
   )
@@ -806,13 +784,7 @@ export function useGameState(): GameState {
     extractFromBreach,
     justEarnedReward,
     enemy,
-    addMovementPair,
-    addTacticalPair,
-    removeMovementPair,
-    removeTacticalPair,
-    updateMovementPriority,
-    updateTacticalPriority,
-    toggleMovementPair,
-    toggleTacticalPair,
+    setMovementPairs,
+    setTacticalPairs,
   }
 }

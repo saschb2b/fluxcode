@@ -20,6 +20,8 @@ import { claimContractReward, forceRefreshContracts } from "@/lib/network-contra
 import type { Construct } from "@/types/game"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { CustomFighterClass } from "@/lib/meta-progression"
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
+import { AVAILABLE_ACTIONS } from "@/lib/actions"
 
 export default function Home() {
   const gameState = useGameState()
@@ -379,10 +381,7 @@ export default function Home() {
 
       {showFighterClassEditor && gameState.selectedConstruct && gameState.activeSlot && (
         <FighterClassManager
-          key={`calibration-${gameState.activeSlot.slotId}-${JSON.stringify(
-            latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]?.tacticalProtocols ||
-              [],
-          )}`}
+          key={`calibration-${gameState.activeSlot.slotId}-${Date.now()}`}
           customClasses={[
             {
               id: gameState.selectedConstruct.id,
@@ -401,29 +400,22 @@ export default function Home() {
           selectedClassId={gameState.selectedConstruct.id}
           skipSelection={true}
           onSaveClasses={(classes) => {
-            console.log("[v0] === CALIBRATION SAVE START ===")
-            console.log("[v0] Classes to save:", classes)
-
             const updatedClass = classes[0]
-            console.log("[v0] Updated class:", updatedClass)
 
             if (updatedClass && gameState.activeSlot) {
               const slotId = gameState.activeSlot.slotId
-              console.log("[v0] Slot ID:", slotId)
 
               const movementProtocols = (updatedClass.startingMovementPairs || []).map((p) => ({
                 triggerId: p.triggerId,
                 actionId: p.actionId,
                 priority: p.priority,
               }))
-              console.log("[v0] Movement protocols to save:", movementProtocols)
 
               const tacticalProtocols = (updatedClass.startingTacticalPairs || []).map((p) => ({
                 triggerId: p.triggerId,
                 actionId: p.actionId,
                 priority: p.priority,
               }))
-              console.log("[v0] Tactical protocols to save:", tacticalProtocols)
 
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
@@ -433,36 +425,63 @@ export default function Home() {
                   tacticalProtocols,
                 },
               }
-              console.log("[v0] New slots object:", newSlots)
 
               const newProgress = {
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
               }
-              console.log("[v0] New progress object activeConstructSlots:", newProgress.activeConstructSlots)
 
               gameState.updatePlayerProgress(newProgress)
-              console.log("[v0] updatePlayerProgress called")
-
               latestPlayerProgressRef.current = newProgress
-              console.log("[v0] latestPlayerProgressRef updated")
-              console.log(
-                "[v0] latestPlayerProgressRef.current.activeConstructSlots:",
-                latestPlayerProgressRef.current.activeConstructSlots,
-              )
 
-              console.log("[v0] About to call setConstruct after 50ms delay")
-              setTimeout(() => {
-                console.log("[v0] Calling setConstruct now")
-                console.log(
-                  "[v0] Current gameState.playerProgress.activeConstructSlots:",
-                  gameState.playerProgress.activeConstructSlots,
-                )
-                gameState.setConstruct(gameState.selectedConstruct!, slotId)
-                console.log("[v0] setConstruct completed")
-              }, 50)
+              // This avoids the race condition where setConstruct reads stale state
+              const movementPairs = movementProtocols
+                .map((p) => {
+                  const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+                  const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter(Boolean) as any[]
+
+              const tacticalPairs = tacticalProtocols
+                .map((p) => {
+                  const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+                  const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter(Boolean) as any[]
+
+              // Update the pairs using the existing add methods
+              if (gameState.addMovementPair && gameState.removeMovementPair) {
+                // Clear existing pairs
+                const currentMovementCount = gameState.movementPairs?.length || 0
+                for (let i = currentMovementCount - 1; i >= 0; i--) {
+                  gameState.removeMovementPair(i)
+                }
+                // Add new pairs
+                movementPairs.forEach((pair) => {
+                  if (pair && gameState.addMovementPair) {
+                    gameState.addMovementPair(pair.trigger, pair.action)
+                  }
+                })
+              }
+
+              if (gameState.addTacticalPair && gameState.removeTacticalPair) {
+                // Clear existing pairs
+                const currentTacticalCount = gameState.tacticalPairs?.length || 0
+                for (let i = currentTacticalCount - 1; i >= 0; i--) {
+                  gameState.removeTacticalPair(i)
+                }
+                // Add new pairs
+                tacticalPairs.forEach((pair) => {
+                  if (pair && gameState.addTacticalPair) {
+                    gameState.addTacticalPair(pair.trigger, pair.action)
+                  }
+                })
+              }
             }
-            console.log("[v0] === CALIBRATION SAVE END ===")
             handleCloseCalibration()
           }}
           onSelectClass={() => {}}
