@@ -337,7 +337,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Rush forward while attacking (15 damage)",
     cooldown: 2000,
     damageType: DamageType.KINETIC,
-    coreType: "movement",
+    coreType: "tactical", // Reclassified from movement to tactical - primary purpose is dealing damage
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -855,7 +855,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Move back while shooting (12 damage)",
     cooldown: 1800,
     damageType: DamageType.KINETIC,
-    coreType: "movement",
+    coreType: "tactical", // Reclassified from movement to tactical - primary purpose is attacking while repositioning
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
