@@ -106,7 +106,8 @@ export interface BattleUpdate {
 
 export class BattleEngine {
   private state: BattleState
-  private playerPairs: TriggerActionPair[]
+  private playerMovementPairs: TriggerActionPair[]
+  private playerTacticalPairs: TriggerActionPair[]
   private enemyPairs: TriggerActionPair[][]
   private actionCooldowns: Map<string, number> = new Map()
   private movementCooldowns: Map<string, number> = new Map()
@@ -122,15 +123,23 @@ export class BattleEngine {
 
   constructor(
     initialState: BattleState,
-    playerPairs: TriggerActionPair[],
+    playerMovementPairs: TriggerActionPair[], // Split player pairs into movement and tactical
+    playerTacticalPairs: TriggerActionPair[],
     enemyPairs: TriggerActionPair[] | TriggerActionPair[][],
     playerCustomization?: any,
     enemyCustomization?: any | any[],
   ) {
-    console.log("[v0] BattleEngine constructor - playerPairs count:", playerPairs.length)
+    const playerPairs = [...playerMovementPairs, ...playerTacticalPairs]
+
+    console.log("[v0] BattleEngine constructor - playerMovementPairs count:", playerMovementPairs.length)
+    console.log("[v0] BattleEngine constructor - playerTacticalPairs count:", playerTacticalPairs.length)
     console.log(
-      "[v0] BattleEngine constructor - playerPairs:",
-      playerPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority}, core: ${p.action.coreType})`),
+      "[v0] BattleEngine constructor - playerMovementPairs:",
+      playerMovementPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+    )
+    console.log(
+      "[v0] BattleEngine constructor - playerTacticalPairs:",
+      playerTacticalPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
     )
     console.log(
       "[v0] BattleEngine constructor - player shields:",
@@ -189,7 +198,8 @@ export class BattleEngine {
       enemyImmuneToStatus: initialState.enemyImmuneToStatus || false,
     }
 
-    this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
+    this.playerMovementPairs = [...playerMovementPairs].sort((a, b) => b.priority - a.priority)
+    this.playerTacticalPairs = [...playerTacticalPairs].sort((a, b) => b.priority - a.priority)
 
     if (initialState.enemies && initialState.enemies.length > 0) {
       // Check if enemies have triggerActionPairs embedded in them
@@ -396,7 +406,7 @@ export class BattleEngine {
       return update
     }
 
-    const playerMovementAction = this.executeMovementCore(this.playerPairs, true, deltaTime)
+    const playerMovementAction = this.executeMovementCore(this.playerMovementPairs, true, deltaTime)
     if (playerMovementAction) {
       const actionUpdate = this.applyAction(playerMovementAction, true)
       Object.assign(update, actionUpdate)
@@ -407,7 +417,7 @@ export class BattleEngine {
     }
 
     if (!playerMovementAction) {
-      const playerTacticalAction = this.executeTacticalCore(this.playerPairs, true, deltaTime)
+      const playerTacticalAction = this.executeTacticalCore(this.playerTacticalPairs, true, deltaTime)
       if (playerTacticalAction) {
         const actionUpdate = this.applyAction(playerTacticalAction, true)
         Object.assign(update, actionUpdate)

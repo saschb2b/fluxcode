@@ -84,6 +84,8 @@ export function useGameState(): GameState {
   const [enemies, setEnemies] = useState<any[]>([])
   const [projectiles, setProjectiles] = useState<any[]>([])
   const [triggerActionPairs, setTriggerActionPairs] = useState<TriggerActionPair[]>([])
+  const [movementPairs, setMovementPairs] = useState<TriggerActionPair[]>([])
+  const [tacticalPairs, setTacticalPairs] = useState<TriggerActionPair[]>([])
   const [unlockedTriggers, setUnlockedTriggers] = useState<Trigger[]>([])
   const [unlockedActions, setUnlockedActions] = useState<Action[]>([])
   const [showRewardSelection, setShowRewardSelection] = useState(false)
@@ -291,14 +293,22 @@ export function useGameState(): GameState {
   ])
 
   const startBattle = useCallback(() => {
-    const enabledPairs = triggerActionPairs.filter((pair) => pair.enabled !== false)
+    const enabledMovementPairs = movementPairs.filter((pair) => pair.enabled !== false)
+    const enabledTacticalPairs = tacticalPairs.filter((pair) => pair.enabled !== false)
 
-    console.log("[v0] Starting battle with player pairs:", enabledPairs)
-    console.log("[v0] triggerActionPairs count:", enabledPairs.length)
-    console.log(
-      "[v0] triggerActionPairs details:",
-      enabledPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
-    )
+    // Backwards compatibility: if dual-core pairs are empty, fall back to legacy triggerActionPairs
+    const finalMovementPairs =
+      enabledMovementPairs.length > 0
+        ? enabledMovementPairs
+        : triggerActionPairs.filter((p) => p.action.coreType === "movement" && p.enabled !== false)
+
+    const finalTacticalPairs =
+      enabledTacticalPairs.length > 0
+        ? enabledTacticalPairs
+        : triggerActionPairs.filter((p) => p.action.coreType === "tactical" && p.enabled !== false)
+
+    console.log("[v0] Starting battle with movement pairs:", finalMovementPairs)
+    console.log("[v0] Starting battle with tactical pairs:", finalTacticalPairs)
     console.log("[v0] startBattle - enemies array length:", enemies.length)
     console.log(
       "[v0] startBattle - enemies details:",
@@ -411,7 +421,8 @@ export function useGameState(): GameState {
         justTookDamage: false,
         shieldRegenDisabled: false,
       },
-      enabledPairs,
+      finalMovementPairs,
+      finalTacticalPairs,
       enemyPairs,
       fighterCustomization,
       enemyCustomizations,
@@ -420,7 +431,16 @@ export function useGameState(): GameState {
     console.log("[v0] Battle engine created with", enemies.length, "enemies, starting animation loop")
     lastTimeRef.current = 0
     setBattleState("fighting")
-  }, [player, enemies, triggerActionPairs, wave, fighterCustomization, enemyCustomizations])
+  }, [
+    player,
+    enemies,
+    movementPairs,
+    tacticalPairs,
+    triggerActionPairs,
+    wave,
+    fighterCustomization,
+    enemyCustomizations,
+  ])
 
   const getRandomRewards = useCallback((allTriggers: Trigger[], allActions: Action[]) => {
     const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
@@ -975,6 +995,12 @@ export function useGameState(): GameState {
         )
         setTriggerActionPairs(pairs)
 
+        // Split into movement and tactical pairs for dual-core
+        const movementPairs = pairs.filter((p) => p.action.coreType === "movement")
+        const tacticalPairs = pairs.filter((p) => p.action.coreType === "tactical")
+        setMovementPairs(movementPairs)
+        setTacticalPairs(tacticalPairs)
+
         const uniqueTriggers = Array.from(new Set(pairs.map((p) => p.trigger.id)))
           .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
           .filter((t): t is Trigger => t !== null)
@@ -987,6 +1013,17 @@ export function useGameState(): GameState {
         setUnlockedActions(uniqueActions)
       } else {
         setTriggerActionPairs(selectedCharacter.startingPairs.map((pair) => ({ ...pair, enabled: true })))
+
+        if (selectedCharacter.startingMovementPairs && selectedCharacter.startingTacticalPairs) {
+          setMovementPairs(selectedCharacter.startingMovementPairs.map((pair) => ({ ...pair, enabled: true })))
+          setTacticalPairs(selectedCharacter.startingTacticalPairs.map((pair) => ({ ...pair, enabled: true })))
+        } else {
+          // Backwards compatibility: split by coreType
+          const movementPairs = selectedCharacter.startingPairs.filter((p) => p.action.coreType === "movement")
+          const tacticalPairs = selectedCharacter.startingPairs.filter((p) => p.action.coreType === "tactical")
+          setMovementPairs(movementPairs.map((pair) => ({ ...pair, enabled: true })))
+          setTacticalPairs(tacticalPairs.map((pair) => ({ ...pair, enabled: true })))
+        }
 
         const uniqueTriggers = Array.from(new Set(selectedCharacter.startingPairs.map((p) => p.trigger.id)))
           .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
@@ -1001,6 +1038,8 @@ export function useGameState(): GameState {
       }
     } else {
       setTriggerActionPairs([])
+      setMovementPairs([])
+      setTacticalPairs([])
       setUnlockedTriggers([])
       setUnlockedActions([])
     }
@@ -1053,6 +1092,66 @@ export function useGameState(): GameState {
   const togglePair = useCallback((index: number, enabled: boolean) => {
     console.log("[v0] togglePair called for index:", index, "enabled:", enabled)
     setTriggerActionPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
+  const addMovementPair = useCallback((trigger: Trigger, action: Action) => {
+    console.log("[v0] addMovementPair called:", trigger.id, "->", action.id)
+    setMovementPairs((prev) => {
+      const updated = [
+        ...prev,
+        {
+          trigger,
+          action,
+          priority: prev.length + 1,
+          enabled: true,
+        },
+      ]
+      return updated
+    })
+  }, [])
+
+  const addTacticalPair = useCallback((trigger: Trigger, action: Action) => {
+    console.log("[v0] addTacticalPair called:", trigger.id, "->", action.id)
+    setTacticalPairs((prev) => {
+      const updated = [
+        ...prev,
+        {
+          trigger,
+          action,
+          priority: prev.length + 1,
+          enabled: true,
+        },
+      ]
+      return updated
+    })
+  }, [])
+
+  const removeMovementPair = useCallback((index: number) => {
+    console.log("[v0] removeMovementPair called for index:", index)
+    setMovementPairs((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const removeTacticalPair = useCallback((index: number) => {
+    console.log("[v0] removeTacticalPair called for index:", index)
+    setTacticalPairs((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const updateMovementPriority = useCallback((index: number, priority: number) => {
+    setMovementPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
+  }, [])
+
+  const updateTacticalPriority = useCallback((index: number, priority: number) => {
+    setTacticalPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
+  }, [])
+
+  const toggleMovementPair = useCallback((index: number, enabled: boolean) => {
+    console.log("[v0] toggleMovementPair called for index:", index, "enabled:", enabled)
+    setMovementPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
+  const toggleTacticalPair = useCallback((index: number, enabled: boolean) => {
+    console.log("[v0] toggleTacticalPair called for index:", index, "enabled:", enabled)
+    setTacticalPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
   }, [])
 
   const selectRewardTrigger = useCallback(
@@ -1177,6 +1276,11 @@ export function useGameState(): GameState {
         console.log("[v0] Loading custom class protocols:", pairs)
         setTriggerActionPairs(pairs)
 
+        const movementPairs = pairs.filter((p) => p.action.coreType === "movement")
+        const tacticalPairs = pairs.filter((p) => p.action.coreType === "tactical")
+        setMovementPairs(movementPairs)
+        setTacticalPairs(tacticalPairs)
+
         const uniqueTriggers = Array.from(new Set(pairs.map((p) => p.trigger.id)))
           .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
           .filter((t): t is Trigger => t !== null)
@@ -1198,6 +1302,17 @@ export function useGameState(): GameState {
       } else {
         console.log("[v0] Loading default preset protocols")
         setTriggerActionPairs(character.startingPairs.map((pair) => ({ ...pair, enabled: true })))
+
+        if (character.startingMovementPairs && character.startingTacticalPairs) {
+          setMovementPairs(character.startingMovementPairs.map((pair) => ({ ...pair, enabled: true })))
+          setTacticalPairs(character.startingTacticalPairs.map((pair) => ({ ...pair, enabled: true })))
+        } else {
+          // Backwards compatibility
+          const movementPairs = character.startingPairs.filter((p) => p.action.coreType === "movement")
+          const tacticalPairs = character.startingPairs.filter((p) => p.action.coreType === "tactical")
+          setMovementPairs(movementPairs.map((pair) => ({ ...pair, enabled: true })))
+          setTacticalPairs(tacticalPairs.map((pair) => ({ ...pair, enabled: true })))
+        }
 
         const uniqueTriggers = Array.from(new Set(character.startingPairs.map((p) => p.trigger.id)))
           .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
@@ -1287,6 +1402,8 @@ export function useGameState(): GameState {
     enemies,
     projectiles,
     triggerActionPairs,
+    movementPairs,
+    tacticalPairs,
     unlockedTriggers,
     unlockedActions,
     startBattle,
@@ -1323,5 +1440,13 @@ export function useGameState(): GameState {
     extractFromBreach,
     justEarnedReward,
     enemy,
+    addMovementPair,
+    addTacticalPair,
+    removeMovementPair,
+    removeTacticalPair,
+    updateMovementPriority,
+    updateTacticalPriority,
+    toggleMovementPair,
+    toggleTacticalPair,
   }
 }
