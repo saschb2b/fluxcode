@@ -1,21 +1,21 @@
-"use client";
+"use client"
 
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { X, Edit2, ArrowLeft } from "lucide-react";
-import { CHARACTER_PRESETS } from "@/lib/character-presets";
-import type { CustomFighterClass } from "@/lib/meta-progression";
-import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
-import { AVAILABLE_ACTIONS } from "@/lib/actions";
-import { FighterClassEditor } from "./fighter-class-editor";
+import { useState, useMemo } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { X, Edit2 } from "lucide-react"
+import { CHARACTER_PRESETS } from "@/lib/character-presets"
+import type { CustomFighterClass } from "@/lib/meta-progression"
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
+import { AVAILABLE_ACTIONS } from "@/lib/actions"
+import { FighterClassEditor } from "./fighter-class-editor"
 
 interface FighterClassManagerProps {
-  customClasses: CustomFighterClass[];
-  selectedClassId: string | null;
-  onSaveClasses: (classes: CustomFighterClass[]) => void;
-  onSelectClass: (classId: string) => void;
-  onClose: () => void;
+  customClasses: CustomFighterClass[]
+  selectedClassId: string | null
+  onSaveClasses: (classes: CustomFighterClass[]) => void
+  onSelectClass: (classId: string) => void
+  onClose: () => void
 }
 
 export function FighterClassManager({
@@ -25,15 +25,12 @@ export function FighterClassManager({
   onSelectClass,
   onClose,
 }: FighterClassManagerProps) {
-  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(
-    null,
-  );
+  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(null)
 
   const activeClasses = useMemo(() => {
     if (customClasses.length > 0) {
-      return customClasses;
+      return customClasses
     }
-    // Return default classes if no custom classes exist
     return CHARACTER_PRESETS.map((preset) => ({
       id: preset.id,
       name: preset.name,
@@ -43,33 +40,36 @@ export function FighterClassManager({
         actionId: pair.action.id,
         priority: pair.priority,
       })),
-    }));
-  }, [customClasses]);
+      startingMovementPairs: preset.startingMovementPairs.map((pair) => ({
+        triggerId: pair.trigger.id,
+        actionId: pair.action.id,
+        priority: pair.priority,
+      })),
+      startingTacticalPairs: preset.startingTacticalPairs.map((pair) => ({
+        triggerId: pair.trigger.id,
+        actionId: pair.action.id,
+        priority: pair.priority,
+      })),
+      customization: preset.customization,
+    }))
+  }, [customClasses])
 
   const handleEditClass = (classToEdit: CustomFighterClass) => {
-    setEditingClass(classToEdit);
-  };
+    setEditingClass(classToEdit)
+  }
 
   const handleSaveEdit = (updatedClass: CustomFighterClass) => {
-    const updatedClasses = activeClasses.map((c) =>
-      c.id === updatedClass.id ? updatedClass : c,
-    );
-    onSaveClasses(updatedClasses);
-    setEditingClass(null);
-  };
+    const updatedClasses = activeClasses.map((c) => (c.id === updatedClass.id ? updatedClass : c))
+    onSaveClasses(updatedClasses)
+    setEditingClass(null)
+  }
 
   const handleCancelEdit = () => {
-    setEditingClass(null);
-  };
+    setEditingClass(null)
+  }
 
   if (editingClass) {
-    return (
-      <FighterClassEditor
-        classData={editingClass}
-        onSave={handleSaveEdit}
-        onCancel={handleCancelEdit}
-      />
-    );
+    return <FighterClassEditor classData={editingClass} onSave={handleSaveEdit} onCancel={handleCancelEdit} />
   }
 
   return (
@@ -77,15 +77,10 @@ export function FighterClassManager({
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black/90 to-gray-900/90 border-2 border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.3)]">
         <div className="sticky top-0 bg-gradient-to-r from-cyan-950/95 to-black/95 backdrop-blur-md border-b border-cyan-500/30 p-6 flex items-center justify-between z-10">
           <div>
-            <h2
-              className="text-3xl font-bold text-cyan-400"
-              style={{ fontFamily: "monospace" }}
-            >
+            <h2 className="text-3xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
               FIGHTERS
             </h2>
-            <p className="text-sm text-cyan-300/70 mt-1">
-              Select and customize your combat style
-            </p>
+            <p className="text-sm text-cyan-300/70 mt-1">Select and customize your combat style</p>
           </div>
           <Button
             variant="ghost"
@@ -99,7 +94,7 @@ export function FighterClassManager({
 
         <div className="p-6 space-y-6">
           {activeClasses.map((classItem) => {
-            const isSelected = classItem.id === selectedClassId;
+            const isSelected = classItem.id === selectedClassId
 
             return (
               <Card
@@ -133,38 +128,91 @@ export function FighterClassManager({
                       </div>
 
                       <div className="mt-3">
-                        <div className="text-xs text-cyan-300/70 mb-2">
-                          STARTING PROTOCOLS ({classItem.startingPairs.length})
-                        </div>
-                        <div className="space-y-1">
-                          {classItem.startingPairs
-                            .slice(0, 3)
-                            .map((pair, idx) => {
-                              const trigger = AVAILABLE_TRIGGERS.find(
-                                (t) => t.id === pair.triggerId,
-                              );
-                              const action = AVAILABLE_ACTIONS.find(
-                                (a) => a.id === pair.actionId,
-                              );
-                              return (
-                                <div
-                                  key={idx}
-                                  className="text-sm text-cyan-300/90 bg-black/30 px-3 py-1.5 rounded border border-cyan-500/20"
-                                >
-                                  <span className="text-cyan-400">IF</span>{" "}
-                                  {trigger?.name || "Unknown"}{" "}
-                                  <span className="text-green-400">THEN</span>{" "}
-                                  {action?.name || "Unknown"}
+                        {classItem.startingMovementPairs?.length > 0 || classItem.startingTacticalPairs?.length > 0 ? (
+                          <>
+                            {classItem.startingMovementPairs && classItem.startingMovementPairs.length > 0 && (
+                              <div className="mb-3">
+                                <div className="text-xs text-purple-400/90 mb-2 font-bold">
+                                  MOVEMENT CORE ({classItem.startingMovementPairs.length})
                                 </div>
-                              );
-                            })}
-                          {classItem.startingPairs.length > 3 && (
-                            <div className="text-xs text-cyan-300/50 px-3 py-1">
-                              +{classItem.startingPairs.length - 3} more
-                              protocols...
+                                <div className="space-y-1">
+                                  {classItem.startingMovementPairs.slice(0, 2).map((pair, idx) => {
+                                    const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
+                                    const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="text-sm text-purple-300/90 bg-purple-950/20 px-3 py-1.5 rounded border border-purple-500/30"
+                                      >
+                                        <span className="text-purple-400">IF</span> {trigger?.name || "Unknown"}{" "}
+                                        <span className="text-green-400">THEN</span> {action?.name || "Unknown"}
+                                      </div>
+                                    )
+                                  })}
+                                  {classItem.startingMovementPairs.length > 2 && (
+                                    <div className="text-xs text-purple-300/50 px-3 py-1">
+                                      +{classItem.startingMovementPairs.length - 2} more...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {classItem.startingTacticalPairs && classItem.startingTacticalPairs.length > 0 && (
+                              <div>
+                                <div className="text-xs text-orange-400/90 mb-2 font-bold">
+                                  TACTICAL CORE ({classItem.startingTacticalPairs.length})
+                                </div>
+                                <div className="space-y-1">
+                                  {classItem.startingTacticalPairs.slice(0, 2).map((pair, idx) => {
+                                    const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
+                                    const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className="text-sm text-orange-300/90 bg-orange-950/20 px-3 py-1.5 rounded border border-orange-500/30"
+                                      >
+                                        <span className="text-orange-400">IF</span> {trigger?.name || "Unknown"}{" "}
+                                        <span className="text-green-400">THEN</span> {action?.name || "Unknown"}
+                                      </div>
+                                    )
+                                  })}
+                                  {classItem.startingTacticalPairs.length > 2 && (
+                                    <div className="text-xs text-orange-300/50 px-3 py-1">
+                                      +{classItem.startingTacticalPairs.length - 2} more...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          // Fallback to old startingPairs display if dual-core data is not available
+                          <>
+                            <div className="text-xs text-cyan-300/70 mb-2">
+                              STARTING PROTOCOLS ({classItem.startingPairs.length})
                             </div>
-                          )}
-                        </div>
+                            <div className="space-y-1">
+                              {classItem.startingPairs.slice(0, 3).map((pair, idx) => {
+                                const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
+                                const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+                                return (
+                                  <div
+                                    key={idx}
+                                    className="text-sm text-cyan-300/90 bg-black/30 px-3 py-1.5 rounded border border-cyan-500/20"
+                                  >
+                                    <span className="text-cyan-400">IF</span> {trigger?.name || "Unknown"}{" "}
+                                    <span className="text-green-400">THEN</span> {action?.name || "Unknown"}
+                                  </div>
+                                )
+                              })}
+                              {classItem.startingPairs.length > 3 && (
+                                <div className="text-xs text-cyan-300/50 px-3 py-1">
+                                  +{classItem.startingPairs.length - 3} more protocols...
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -190,10 +238,10 @@ export function FighterClassManager({
                   </div>
                 </div>
               </Card>
-            );
+            )
           })}
         </div>
       </div>
     </div>
-  );
+  )
 }
