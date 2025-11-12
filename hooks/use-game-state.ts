@@ -753,59 +753,16 @@ export function useGameState(): GameState {
     const currentLayerData = networkLayers[currentLayerIndex]
     const customizationsArray: FighterCustomization[] = []
     for (let i = 0; i < enemyCount; i++) {
-      customizationsArray.push(generateRandomCustomization())
-    }
+      const isGuardian = currentNodeIsGuardian && i === 0
+      const isPawn = currentNodeIsGuardian && i > 0
 
-    if (currentLayerData) {
-      enemiesArray.forEach((enemy, index) => {
-        const isGuardian = currentNodeIsGuardian && index === 0
-        let shields = 0
-        let armor = 0
-        let resistances: Partial<Record<DamageType, number>> = {}
+      const customization = generateRandomCustomization()
 
-        switch (currentLayerData.id) {
-          case "data-stream":
-            shields = 0
-            armor = 0
-            resistances = {}
-            break
-          case "firewall":
-            armor = Math.floor(enemy.maxHp * 0.25)
-            resistances = {
-              kinetic: 0.3,
-              corrosive: -0.2,
-            }
-            break
-          case "archive":
-            shields = Math.floor(enemy.maxHp * 0.3)
-            armor = 0
-            resistances = {
-              energy: 0.25,
-              viral: -0.15,
-            }
-            break
-          case "core-approach":
-            shields = Math.floor(enemy.maxHp * 0.25)
-            armor = Math.floor(enemy.maxHp * 0.2)
-            resistances = {
-              energy: 0.2,
-              kinetic: 0.2,
-              thermal: -0.1,
-            }
-            break
-        }
+      if (isPawn) {
+        enemiesArray[i].isPawn = true
+      }
 
-        if (isGuardian) {
-          shields = Math.floor(shields * 1.3)
-          armor = Math.floor(armor * 1.3)
-        }
-
-        enemy.shields = shields
-        enemy.maxShields = shields
-        enemy.armor = armor
-        enemy.maxArmor = armor
-        enemy.resistances = resistances
-      })
+      customizationsArray.push(customization)
     }
 
     setPlayer((prev) => ({
