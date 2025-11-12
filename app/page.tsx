@@ -398,35 +398,43 @@ export default function Home() {
           skipSelection={true}
           onSaveClasses={(classes) => {
             const updatedClass = classes[0]
-            console.log("[v0] SAVE CALIBRATION: updatedClass", updatedClass)
 
             if (updatedClass && gameState.activeSlot) {
-              console.log("[v0] SAVE CALIBRATION: activeSlot", gameState.activeSlot)
-              console.log("[v0] SAVE CALIBRATION: startingMovementPairs", updatedClass.startingMovementPairs)
-              console.log("[v0] SAVE CALIBRATION: startingTacticalPairs", updatedClass.startingTacticalPairs)
+              const slotId = gameState.activeSlot.slotId
+
+              const movementProtocols = (updatedClass.startingMovementPairs || []).map((p) => ({
+                triggerId: p.triggerId,
+                actionId: p.actionId,
+                priority: p.priority,
+              }))
+
+              const tacticalProtocols = (updatedClass.startingTacticalPairs || []).map((p) => ({
+                triggerId: p.triggerId,
+                actionId: p.actionId,
+                priority: p.priority,
+              }))
 
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
-                [gameState.activeSlot.slotId]: {
+                [slotId]: {
                   constructId: gameState.activeSlot.constructId,
-                  movementProtocols: updatedClass.startingMovementPairs || [],
-                  tacticalProtocols: updatedClass.startingTacticalPairs || [],
+                  movementProtocols,
+                  tacticalProtocols,
                 },
               }
-
-              console.log("[v0] SAVE CALIBRATION: newSlots", newSlots)
 
               const newProgress = {
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
               }
 
-              console.log("[v0] SAVE CALIBRATION: About to update player progress")
               gameState.updatePlayerProgress(newProgress)
-              console.log("[v0] SAVE CALIBRATION: Player progress updated")
 
-              const slotId = gameState.activeSlot.slotId
-              gameState.setConstruct(gameState.selectedConstruct!, slotId)
+              latestPlayerProgressRef.current = newProgress
+
+              setTimeout(() => {
+                gameState.setConstruct(gameState.selectedConstruct!, slotId)
+              }, 50)
             }
             handleCloseCalibration()
           }}
