@@ -126,6 +126,9 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
 
   const updateTacticalProtocolTrigger = (index: number, triggerId: string) => {
     const updated = [...tacticalProtocols]
+    if (updated[index].isDefault) {
+      return
+    }
     updated[index] = { ...updated[index], triggerId }
     setTacticalProtocols(updated)
   }
@@ -539,6 +542,7 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                       {tacticalProtocols.map((protocol, index) => {
                         const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === protocol.triggerId)
                         const action = AVAILABLE_ACTIONS.find((a) => a.id === protocol.actionId)
+                        const isDefaultProtocol = protocol.isDefault === true
 
                         return (
                           <Card
@@ -575,13 +579,23 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                     {!protocol.triggerId && (
                                       <span className="ml-2 text-yellow-400 text-xs">⚠ Required</span>
                                     )}
+                                    {isDefaultProtocol && (
+                                      <span className="ml-2 text-cyan-400 text-xs">🔒 Built-in</span>
+                                    )}
                                   </label>
                                   <Select
                                     value={protocol.triggerId}
                                     onValueChange={(value) => updateTacticalProtocolTrigger(index, value)}
+                                    disabled={isDefaultProtocol}
                                   >
                                     <SelectTrigger
-                                      className={`w-full bg-black/50 ${!protocol.triggerId ? "border-yellow-500/70" : "border-orange-500/50"}`}
+                                      className={`w-full bg-black/50 ${
+                                        isDefaultProtocol
+                                          ? "opacity-60 cursor-not-allowed border-cyan-500/50"
+                                          : !protocol.triggerId
+                                            ? "border-yellow-500/70"
+                                            : "border-orange-500/50"
+                                      }`}
                                     >
                                       <SelectValue placeholder="Select trigger..." />
                                     </SelectTrigger>
@@ -596,7 +610,9 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                     </SelectContent>
                                   </Select>
                                   <p className="text-xs sm:text-sm text-orange-300/50 mt-1">
-                                    {trigger?.description || "Choose when this protocol activates"}
+                                    {isDefaultProtocol
+                                      ? "Built-in trigger cannot be changed"
+                                      : trigger?.description || "Choose when this protocol activates"}
                                   </p>
                                 </div>
 
@@ -653,6 +669,7 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                 size="icon"
                                 onClick={() => removeTacticalProtocol(index)}
                                 className="hover:bg-red-500/20 hover:border-red-500 border border-transparent"
+                                disabled={isDefaultProtocol}
                               >
                                 <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
                               </Button>

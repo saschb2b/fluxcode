@@ -106,6 +106,7 @@ export interface TriggerActionPair {
   lastExecuted?: number
   enabled?: boolean // Added enabled property to track if protocol is active
   coreType?: "movement" | "tactical" // Added coreType for backwards compatibility and migration
+  isDefault?: boolean // Added flag to mark default protocols that have locked triggers
 }
 
 export interface BattleContext {

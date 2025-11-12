@@ -1121,6 +1121,23 @@ export function useGameState(): GameState {
           .filter((p): p is TriggerActionPair => p !== null)
       }
 
+      if (tacticalProtocols.length === 0) {
+        const alwaysTrigger = AVAILABLE_TRIGGERS.find((t) => t.id === "always")
+        const shootAction = AVAILABLE_ACTIONS.find((a) => a.id === "shoot")
+
+        if (alwaysTrigger && shootAction) {
+          tacticalProtocols = [
+            {
+              trigger: alwaysTrigger,
+              action: shootAction,
+              priority: 1,
+              enabled: true,
+              isDefault: true, // Mark as default so UI knows it's unchangeable
+            },
+          ]
+        }
+      }
+
       const newActiveSlot: ActiveConstructSlot = {
         slotId,
         constructId: construct.id,
