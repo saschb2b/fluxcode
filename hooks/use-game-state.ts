@@ -12,6 +12,8 @@ import type {
   BattleHistoryPoint,
   PlayerProgress,
   DamageType,
+  Construct,
+  ActiveConstructSlot,
 } from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
@@ -99,6 +101,9 @@ export function useGameState(): GameState {
     generateRandomCustomization(),
   ])
   const [enemy, setEnemy] = useState<any>(null)
+
+  const [selectedConstruct, setSelectedConstructState] = useState<Construct | null>(null)
+  const [activeSlot, setActiveSlotState] = useState<ActiveConstructSlot | null>(null)
 
   const battleEngineRef = useRef<BattleEngine | null>(null)
   const animationFrameRef = useRef<number>()
@@ -1018,7 +1023,7 @@ export function useGameState(): GameState {
           setMovementPairs(selectedCharacter.startingMovementPairs.map((pair) => ({ ...pair, enabled: true })))
           setTacticalPairs(selectedCharacter.startingTacticalPairs.map((pair) => ({ ...pair, enabled: true })))
         } else {
-          // Backwards compatibility: split by coreType
+          // Backwards compatibility
           const movementPairs = selectedCharacter.startingPairs.filter((p) => p.action.coreType === "movement")
           const tacticalPairs = selectedCharacter.startingPairs.filter((p) => p.action.coreType === "tactical")
           setMovementPairs(movementPairs.map((pair) => ({ ...pair, enabled: true })))
@@ -1395,6 +1400,109 @@ export function useGameState(): GameState {
     setBattleState("defeat")
   }, [playerProgress, currentLayerIndex, currentNodeIndex])
 
+  // Added setConstruct method
+  const setConstruct = useCallback(
+    (construct: Construct, slotId: string) => {
+      console.log("[v0] Setting construct:", construct.id, "in slot:", slotId)
+      setSelectedConstructState(construct)
+
+      // Load saved protocols for this construct from player progress
+      const slotData = playerProgress.activeConstructSlots?.[slotId]
+
+      let movementProtocols: TriggerActionPair[] = []
+      let tacticalProtocols: TriggerActionPair[] = []
+
+      if (slotData && slotData.constructId === construct.id) {
+        // Load saved protocols
+        movementProtocols = slotData.movementProtocols
+          .map((p) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+            if (!trigger || !action) return null
+            return { trigger, action, priority: p.priority, enabled: true }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+
+        tacticalProtocols = slotData.tacticalProtocols
+          .map((p) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+            if (!trigger || !action) return null
+            return { trigger, action, priority: p.priority, enabled: true }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+      }
+
+      const newActiveSlot: ActiveConstructSlot = {
+        slotId,
+        constructId: construct.id,
+        movementProtocols,
+        tacticalProtocols,
+      }
+
+      setActiveSlotState(newActiveSlot)
+      setMovementPairs(movementProtocols)
+      setTacticalPairs(tacticalProtocols)
+
+      // Collect unique triggers and actions from protocols
+      const allPairs = [...movementProtocols, ...tacticalProtocols]
+      const uniqueTriggers = Array.from(new Set(allPairs.map((p) => p.trigger.id)))
+        .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+        .filter((t): t is Trigger => t !== null)
+
+      const uniqueActions = Array.from(new Set(allPairs.map((p) => p.action.id)))
+        .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+        .filter((a): a is Action => a !== null)
+
+      setUnlockedTriggers(uniqueTriggers)
+      setUnlockedActions(uniqueActions)
+
+      // Update player progress
+      const newProgress = {
+        ...playerProgress,
+        selectedConstructSlot: slotId,
+        activeConstructSlots: {
+          ...(playerProgress.activeConstructSlots || {}),
+          [slotId]: {
+            constructId: construct.id,
+            movementProtocols: movementProtocols.map((p) => ({
+              triggerId: p.trigger.id,
+              actionId: p.action.id,
+              priority: p.priority,
+            })),
+            tacticalProtocols: tacticalProtocols.map((p) => ({
+              triggerId: p.trigger.id,
+              actionId: p.action.id,
+              priority: p.priority,
+            })),
+          },
+        },
+      }
+      setPlayerProgress(newProgress)
+      saveProgress(newProgress)
+
+      // Apply construct base stats to player
+      const hpBonus = getTotalStatBonus(newProgress, "hp")
+      const shieldBonus = getTotalStatBonus(newProgress, "shield_capacity")
+      const armorBonus = getTotalStatBonus(newProgress, "armor_rating")
+
+      const maxHp = construct.baseHp + hpBonus
+      const maxShields = construct.baseShields + shieldBonus
+      const maxArmor = construct.baseArmor + armorBonus
+
+      setPlayer((prev) => ({
+        ...prev,
+        hp: maxHp,
+        maxHp,
+        shields: maxShields,
+        maxShields,
+        armor: maxArmor,
+        maxArmor,
+      }))
+    },
+    [playerProgress],
+  )
+
   return {
     battleState,
     wave,
@@ -1425,6 +1533,9 @@ export function useGameState(): GameState {
     continueAfterIntro,
     setCharacter,
     selectedCharacter,
+    selectedConstruct,
+    activeSlot,
+    setConstruct,
     fighterCustomization,
     setCustomization,
     enemyCustomization,

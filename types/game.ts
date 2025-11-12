@@ -127,17 +127,48 @@ export interface BattleContext {
   isPlayer: boolean
 }
 
+export interface Construct {
+  id: string
+  name: string
+  description: string
+  lore: string
+  color: string
+  // Base stats
+  baseHp: number
+  baseShields: number
+  baseArmor: number
+  // Slot configuration
+  maxMovementSlots: number
+  maxTacticalSlots: number
+  // Optional passive ability
+  passiveAbility?: {
+    name: string
+    description: string
+    effect: string // e.g., "evasion_boost", "damage_boost", "cooldown_reduction"
+    value: number
+  }
+  // Resistances
+  resistances?: Partial<Record<DamageType, number>>
+}
+
+export interface ActiveConstructSlot {
+  slotId: string // "slot-1", "slot-2", "slot-3"
+  constructId: string | null // null = empty slot
+  movementProtocols: TriggerActionPair[]
+  tacticalProtocols: TriggerActionPair[]
+}
+
 export interface CharacterPreset {
   id: string
   name: string
   description: string
   playstyle: string
   color: string
-  startingPairs: TriggerActionPair[]
-  startingTriggers: Trigger[]
-  startingActions: Action[]
-  startingMovementPairs?: TriggerActionPair[] // Added separate movement and tactical protocol arrays
-  startingTacticalPairs?: TriggerActionPair[]
+  startingPairs: TriggerActionPair[] // Kept for backwards compatibility
+  startingTriggers: any[]
+  startingActions: any[]
+  startingMovementPairs: TriggerActionPair[] // Added dual-core protocol arrays
+  startingTacticalPairs: TriggerActionPair[]
 }
 
 export interface GameState {
@@ -175,6 +206,9 @@ export interface GameState {
   rerollsRemaining: number
   rerollRewards: () => void
   selectedCharacter: CharacterPreset | null
+  selectedConstruct: Construct | null
+  activeSlot: ActiveConstructSlot | null
+  setConstruct: (construct: Construct, slotId: string) => void
   setCharacter: (character: CharacterPreset) => void
   fighterCustomization: FighterCustomization | null
   setCustomization: (customization: FighterCustomization) => void
