@@ -30,7 +30,7 @@ export default function Home() {
   const [showCodex, setShowCodex] = useState(false)
   const [showContracts, setShowContracts] = useState(false)
   const [showSlotManager, setShowSlotManager] = useState(false)
-  const [showCalibration, setShowCalibration] = useState(false)
+  const [showFighterClassEditor, setShowFighterClassEditor] = useState(false)
   const [pendingSlotAssignment, setPendingSlotAssignment] = useState<string | null>(null)
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -188,12 +188,10 @@ export default function Home() {
   }
 
   const handleOpenCalibration = () => {
-    setShowCalibration(true)
+    setShowFighterClassEditor(true)
   }
 
-  const handleCloseCalibration = () => {
-    setShowCalibration(false)
-  }
+  const handleCloseCalibration = () => {}
 
   const handleOpenClassManager = () => {
     setGamePhase("class-manager")
@@ -279,6 +277,10 @@ export default function Home() {
       ...gameState.playerProgress,
       contractProgress: refreshedContracts,
     })
+  }
+
+  const handleCloseFighterClassEditor = () => {
+    setShowFighterClassEditor(false)
   }
 
   return (
@@ -372,7 +374,7 @@ export default function Home() {
         />
       )}
 
-      {showCalibration && gameState.selectedConstruct && gameState.activeSlot && (
+      {showFighterClassEditor && gameState.selectedConstruct && gameState.activeSlot && (
         <FighterClassManager
           customClasses={[
             {
@@ -394,6 +396,7 @@ export default function Home() {
             },
           ]}
           selectedClassId={gameState.selectedConstruct.id}
+          skipSelection={true}
           onSaveClasses={(classes) => {
             const updatedClass = classes[0]
             if (updatedClass && gameState.activeSlot) {
@@ -413,10 +416,10 @@ export default function Home() {
               // Reload the construct to update the protocols in game state
               gameState.setConstruct(gameState.selectedConstruct!, gameState.activeSlot.slotId)
             }
-            handleCloseCalibration()
+            handleCloseFighterClassEditor()
           }}
           onSelectClass={() => {}}
-          onClose={handleCloseCalibration}
+          onClose={handleCloseFighterClassEditor}
         />
       )}
 

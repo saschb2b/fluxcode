@@ -16,6 +16,7 @@ interface FighterClassManagerProps {
   onSaveClasses: (classes: CustomFighterClass[]) => void
   onSelectClass: (classId: string) => void
   onClose: () => void
+  skipSelection?: boolean
 }
 
 export function FighterClassManager({
@@ -24,8 +25,14 @@ export function FighterClassManager({
   onSaveClasses,
   onSelectClass,
   onClose,
+  skipSelection = false,
 }: FighterClassManagerProps) {
-  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(null)
+  const [editingClass, setEditingClass] = useState<CustomFighterClass | null>(() => {
+    if (skipSelection && customClasses.length > 0) {
+      return customClasses[0]
+    }
+    return null
+  })
 
   const activeClasses = useMemo(() => {
     if (customClasses.length > 0) {
