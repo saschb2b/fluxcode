@@ -170,7 +170,7 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
       </div>
 
       {/* Enemy Introduction Screen */}
-      {gameState.showEnemyIntro && (
+      {gameState.showEnemyIntro && gameState.enemy && (
         <EnemyIntroduction
           wave={gameState.wave}
           enemyCustomization={gameState.enemyCustomization}
