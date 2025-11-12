@@ -43,7 +43,9 @@ export function ConstructSelection({ onSelect, onBack, currentSlotId = "slot-1" 
           <h1 className="text-2xl sm:text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
             SELECT CONSTRUCT
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mb-2">SLOT: {currentSlotId.toUpperCase()}</p>
+          <p className="text-xs sm:text-sm text-gray-400 mb-2">
+            ASSIGNING TO: <span className="text-cyan-400 font-bold">{currentSlotId.toUpperCase()}</span>
+          </p>
           <div className="h-1 w-32 sm:w-64 mx-auto bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
         </div>
 

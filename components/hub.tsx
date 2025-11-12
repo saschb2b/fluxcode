@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import type React from "react"
 import { Card } from "@/components/ui/card"
-import { Play, User, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap, FileText } from "lucide-react"
+import { Play, User, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap, FileText, Settings } from "lucide-react"
 import type { Construct } from "@/types/game"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { PlayerProgress } from "@/lib/meta-progression"
@@ -20,6 +20,8 @@ interface HubProps {
   onOpenShop: () => void
   onOpenCodex: () => void
   onOpenContracts: () => void
+  onOpenSlotManager: () => void
+  onOpenCalibration: () => void
   onOpenClassManager: () => void
   bgmAudioRef?: React.RefObject<HTMLAudioElement | null>
   isInHub?: boolean
@@ -35,6 +37,8 @@ export function Hub({
   onOpenShop,
   onOpenCodex,
   onOpenContracts,
+  onOpenSlotManager,
+  onOpenCalibration,
   onOpenClassManager,
   bgmAudioRef,
   isInHub = true,
@@ -116,15 +120,26 @@ export function Hub({
                     {selectedConstruct.name}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={onOpenClassManager}
-                  className="w-full border-cyan-500/50 hover:bg-cyan-500/20 active:scale-95 bg-transparent"
-                >
-                  <User className="w-5 h-5 mr-2" />
-                  Manage Constructs
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={onOpenSlotManager}
+                    className="w-full border-cyan-500/50 hover:bg-cyan-500/20 active:scale-95 bg-transparent"
+                  >
+                    <Settings className="w-5 h-5 mr-2" />
+                    Construct Slots
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={onOpenCalibration}
+                    className="w-full border-purple-500/50 hover:bg-purple-500/20 active:scale-95 bg-transparent"
+                  >
+                    <Zap className="w-5 h-5 mr-2" />
+                    Calibration
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
@@ -134,12 +149,12 @@ export function Hub({
                 <User className="w-16 h-16 text-muted-foreground mx-auto mb-3" />
                 <p className="text-base text-muted-foreground mb-4">No construct deployed</p>
                 <Button
-                  onClick={onOpenClassManager}
+                  onClick={onOpenSlotManager}
                   size="lg"
                   className="bg-cyan-500 hover:bg-cyan-400 text-black active:scale-95 w-full"
                 >
                   <User className="w-5 h-5 mr-2" />
-                  Deploy Construct
+                  Select Construct
                 </Button>
               </div>
             </Card>
@@ -349,14 +364,23 @@ export function Hub({
       <div className="crt-effect absolute inset-0 pointer-events-none" />
       {isInHub && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/98 to-transparent backdrop-blur-md border-t border-cyan-500/30 z-40 lg:hidden">
-          <div className="grid grid-cols-4 gap-1 p-2 max-w-2xl mx-auto">
+          <div className="grid grid-cols-5 gap-1 p-2 max-w-2xl mx-auto">
             <Button
-              onClick={onOpenClassManager}
+              onClick={onOpenSlotManager}
               variant="ghost"
               className="flex-col h-16 gap-1 hover:bg-cyan-500/20 active:scale-95"
             >
-              <User className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] text-cyan-400 font-bold">CLASS</span>
+              <Settings className="w-5 h-5 text-cyan-400" />
+              <span className="text-[10px] text-cyan-400 font-bold">SLOTS</span>
+            </Button>
+            <Button
+              onClick={onOpenCalibration}
+              variant="ghost"
+              className="flex-col h-16 gap-1 hover:bg-purple-500/20 active:scale-95"
+              disabled={!selectedConstruct}
+            >
+              <Zap className="w-5 h-5 text-purple-400" />
+              <span className="text-[10px] text-purple-400 font-bold">CALIBRATE</span>
             </Button>
             {playerProgress.totalRuns > 0 && (
               <>

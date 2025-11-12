@@ -11,6 +11,7 @@ import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
 import { NetworkContractsView } from "@/components/network-contracts-view"
 import { FighterClassManager } from "@/components/fighter-class-manager"
+import { ConstructSlotManager } from "@/components/construct-slot-manager"
 import { WelcomeDialog } from "@/components/welcome-dialog"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
@@ -28,6 +29,9 @@ export default function Home() {
   const [showMetaShop, setShowMetaShop] = useState(false)
   const [showCodex, setShowCodex] = useState(false)
   const [showContracts, setShowContracts] = useState(false)
+  const [showSlotManager, setShowSlotManager] = useState(false)
+  const [showCalibration, setShowCalibration] = useState(false)
+  const [pendingSlotAssignment, setPendingSlotAssignment] = useState<string | null>(null)
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -65,12 +69,13 @@ export default function Home() {
 
   useEffect(() => {
     if (gamePhase === "hub") {
-      if (gameState.playerProgress.selectedConstructId) {
-        const persistedConstruct = CONSTRUCTS.find(
-          (construct) => construct.id === gameState.playerProgress.selectedConstructId,
-        )
+      const slotId = gameState.playerProgress.selectedConstructSlot || "slot-1"
+      const slotData = gameState.playerProgress.activeConstructSlots?.[slotId]
+
+      if (slotData) {
+        const persistedConstruct = CONSTRUCTS.find((construct) => construct.id === slotData.constructId)
         if (persistedConstruct && !gameState.selectedConstruct) {
-          gameState.setConstruct(persistedConstruct)
+          gameState.setConstruct(persistedConstruct, slotId)
         }
       }
 
@@ -91,9 +96,10 @@ export default function Home() {
     setGamePhase("hub")
   }
 
-  const handleConstructSelect = (construct: Construct, slotIndex: number) => {
-    gameState.setConstruct(construct, slotIndex)
+  const handleConstructSelect = (construct: Construct, slotId: string) => {
+    gameState.setConstruct(construct, slotId)
     setGamePhase("hub")
+    setPendingSlotAssignment(null)
   }
 
   const handleCustomizationConfirm = (customization: FighterCustomizationType) => {
@@ -123,6 +129,7 @@ export default function Home() {
   }
 
   const handleOpenConstructSelect = () => {
+    setPendingSlotAssignment("slot-1") // Default to slot-1 if opened from hub
     setGamePhase("construct-select")
   }
 
@@ -152,6 +159,40 @@ export default function Home() {
 
   const handleCloseContracts = () => {
     setShowContracts(false)
+  }
+
+  const handleOpenSlotManager = () => {
+    setShowSlotManager(true)
+  }
+
+  const handleCloseSlotManager = () => {
+    setShowSlotManager(false)
+    setPendingSlotAssignment(null)
+  }
+
+  const handleSelectSlot = (slotId: string) => {
+    const slotData = gameState.playerProgress.activeConstructSlots?.[slotId]
+    if (slotData) {
+      const construct = CONSTRUCTS.find((c) => c.id === slotData.constructId)
+      if (construct) {
+        gameState.setConstruct(construct, slotId)
+        setShowSlotManager(false)
+      }
+    }
+  }
+
+  const handleAssignToSlot = (slotId: string) => {
+    setPendingSlotAssignment(slotId)
+    setShowSlotManager(false)
+    setGamePhase("construct-select")
+  }
+
+  const handleOpenCalibration = () => {
+    setShowCalibration(true)
+  }
+
+  const handleCloseCalibration = () => {
+    setShowCalibration(false)
   }
 
   const handleOpenClassManager = () => {
@@ -250,7 +291,7 @@ export default function Home() {
 
       {gamePhase === "hub" && isInitialLoadComplete && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
-          {!gameState.selectedConstruct && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
+          {!gameState.selectedConstruct && <WelcomeDialog onOpenClassManager={handleOpenSlotManager} />}
 
           <Hub
             selectedConstruct={gameState.selectedConstruct}
@@ -263,6 +304,8 @@ export default function Home() {
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
+            onOpenSlotManager={handleOpenSlotManager}
+            onOpenCalibration={handleOpenCalibration}
             onOpenClassManager={handleOpenClassManager}
             bgmAudioRef={audioRef}
             isInHub={true}
@@ -275,7 +318,7 @@ export default function Home() {
           <ConstructSelection
             onSelect={handleConstructSelect}
             onBack={handleBackToHub}
-            playerProgress={gameState.playerProgress}
+            currentSlotId={pendingSlotAssignment || "slot-1"}
           />
         </main>
       )}
@@ -284,7 +327,7 @@ export default function Home() {
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <FighterClassManager
             customClasses={gameState.playerProgress.customFighterClasses || []}
-            selectedClassId={gameState.playerProgress.selectedConstructId}
+            selectedClassId={gameState.playerProgress.selectedConstructSlot || null}
             onSaveClasses={handleSaveCustomClasses}
             onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
@@ -317,6 +360,64 @@ export default function Home() {
             currentCustomization={fighterCustomization}
           />
         </div>
+      )}
+
+      {showSlotManager && (
+        <ConstructSlotManager
+          playerProgress={gameState.playerProgress}
+          currentSlotId={gameState.playerProgress.selectedConstructSlot || null}
+          onSelectSlot={handleSelectSlot}
+          onAssignToSlot={handleAssignToSlot}
+          onClose={handleCloseSlotManager}
+        />
+      )}
+
+      {showCalibration && gameState.selectedConstruct && gameState.activeSlot && (
+        <FighterClassManager
+          customClasses={[
+            {
+              id: gameState.selectedConstruct.id,
+              name: gameState.selectedConstruct.name,
+              color: gameState.selectedConstruct.color,
+              startingPairs: [],
+              startingMovementPairs: gameState.movementPairs.map((p) => ({
+                triggerId: p.trigger.id,
+                actionId: p.action.id,
+                priority: p.priority,
+              })),
+              startingTacticalPairs: gameState.tacticalPairs.map((p) => ({
+                triggerId: p.trigger.id,
+                actionId: p.action.id,
+                priority: p.priority,
+              })),
+              customization: fighterCustomization,
+            },
+          ]}
+          selectedClassId={gameState.selectedConstruct.id}
+          onSaveClasses={(classes) => {
+            const updatedClass = classes[0]
+            if (updatedClass && gameState.activeSlot) {
+              const newSlots = {
+                ...(gameState.playerProgress.activeConstructSlots || {}),
+                [gameState.activeSlot.slotId]: {
+                  constructId: gameState.activeSlot.constructId,
+                  movementProtocols: updatedClass.startingMovementPairs || [],
+                  tacticalProtocols: updatedClass.startingTacticalPairs || [],
+                },
+              }
+              gameState.updatePlayerProgress({
+                ...gameState.playerProgress,
+                activeConstructSlots: newSlots,
+              })
+
+              // Reload the construct to update the protocols in game state
+              gameState.setConstruct(gameState.selectedConstruct!, gameState.activeSlot.slotId)
+            }
+            handleCloseCalibration()
+          }}
+          onSelectClass={() => {}}
+          onClose={handleCloseCalibration}
+        />
       )}
 
       {showCodex && <Codex isOpen={showCodex} onClose={handleCloseCodex} />}
