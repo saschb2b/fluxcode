@@ -83,6 +83,7 @@ export interface Action {
   description: string
   cooldown: number
   damageType?: DamageType // Optional damage type
+  coreType: "movement" | "tactical" // Added coreType field to classify actions into movement or tactical categories
   execute: (context: BattleContext) => ActionResult
 }
 
@@ -104,6 +105,7 @@ export interface TriggerActionPair {
   priority: number
   lastExecuted?: number
   enabled?: boolean // Added enabled property to track if protocol is active
+  coreType?: "movement" | "tactical" // Added coreType for backwards compatibility and migration
 }
 
 export interface BattleContext {
@@ -134,17 +136,9 @@ export interface CharacterPreset {
   startingPairs: TriggerActionPair[]
   startingTriggers: Trigger[]
   startingActions: Action[]
+  startingMovementPairs?: TriggerActionPair[] // Added separate movement and tactical protocol arrays
+  startingTacticalPairs?: TriggerActionPair[]
 }
-
-export interface BattleHistoryPoint {
-  time: number
-  playerHP: number
-  enemyHP: number
-}
-
-import type { FighterCustomization } from "@/lib/fighter-parts"
-import type { PlayerProgress } from "@/lib/meta-progression"
-import type { NetworkLayer } from "@/lib/network-layers"
 
 export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
@@ -154,6 +148,8 @@ export interface GameState {
   enemies: Fighter[] // Added enemies array for multi-enemy support
   projectiles: Projectile[]
   triggerActionPairs: TriggerActionPair[]
+  movementPairs?: TriggerActionPair[] // Added separate movement and tactical protocol arrays for dual-core system
+  tacticalPairs?: TriggerActionPair[]
   unlockedTriggers: Trigger[]
   unlockedActions: Action[]
   startBattle: () => void
@@ -163,6 +159,14 @@ export interface GameState {
   removeTriggerActionPair: (index: number) => void
   updatePairPriority: (index: number, priority: number) => void
   togglePair: (index: number, enabled: boolean) => void
+  addMovementPair?: (trigger: Trigger, action: Action) => void // Added dual-core protocol management functions
+  addTacticalPair?: (trigger: Trigger, action: Action) => void
+  removeMovementPair?: (index: number) => void
+  removeTacticalPair?: (index: number) => void
+  updateMovementPriority?: (index: number, priority: number) => void
+  updateTacticalPriority?: (index: number, priority: number) => void
+  toggleMovementPair?: (index: number, enabled: boolean) => void
+  toggleTacticalPair?: (index: number, enabled: boolean) => void
   showRewardSelection: boolean
   availableRewardTriggers: Trigger[]
   availableRewardActions: Action[]
@@ -176,7 +180,7 @@ export interface GameState {
   setCustomization: (customization: FighterCustomization) => void
   enemyCustomization: FighterCustomization
   enemyCustomizations: FighterCustomization[] // Added array for multiple enemy customizations
-  battleHistory: BattleHistoryPoint[]
+  battleHistory: any[] // Temporary fix for BattleHistoryPoint undeclared variable
   showEnemyIntro: boolean
   continueAfterIntro: () => void
   playerProgress: PlayerProgress
@@ -188,3 +192,7 @@ export interface GameState {
   extractFromBreach: () => void
   justEarnedReward: { type: "trigger" | "action"; name: string } | null
 }
+
+import type { FighterCustomization } from "@/lib/fighter-parts"
+import type { PlayerProgress } from "@/lib/meta-progression"
+import type { NetworkLayer } from "@/lib/network-layers"
