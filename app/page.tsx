@@ -191,7 +191,9 @@ export default function Home() {
     setShowFighterClassEditor(true)
   }
 
-  const handleCloseCalibration = () => {}
+  const handleCloseCalibration = () => {
+    setShowFighterClassEditor(false)
+  }
 
   const handleOpenClassManager = () => {
     setGamePhase("class-manager")
@@ -277,10 +279,6 @@ export default function Home() {
       ...gameState.playerProgress,
       contractProgress: refreshedContracts,
     })
-  }
-
-  const handleCloseFighterClassEditor = () => {
-    setShowFighterClassEditor(false)
   }
 
   return (
@@ -382,16 +380,10 @@ export default function Home() {
               name: gameState.selectedConstruct.name,
               color: gameState.selectedConstruct.color,
               startingPairs: [],
-              startingMovementPairs: gameState.movementPairs.map((p) => ({
-                triggerId: p.trigger.id,
-                actionId: p.action.id,
-                priority: p.priority,
-              })),
-              startingTacticalPairs: gameState.tacticalPairs.map((p) => ({
-                triggerId: p.trigger.id,
-                actionId: p.action.id,
-                priority: p.priority,
-              })),
+              startingMovementPairs:
+                gameState.playerProgress.activeConstructSlots?.[gameState.activeSlot.slotId]?.movementProtocols || [],
+              startingTacticalPairs:
+                gameState.playerProgress.activeConstructSlots?.[gameState.activeSlot.slotId]?.tacticalProtocols || [],
               customization: fighterCustomization,
             },
           ]}
@@ -426,54 +418,15 @@ export default function Home() {
               gameState.updatePlayerProgress(newProgress)
               console.log("[v0] SAVE CALIBRATION: Player progress updated")
 
-              const movementProtocols = (updatedClass.startingMovementPairs || [])
-                .map((p: any) => {
-                  const trigger = gameState.unlockedTriggers.find((t) => t.id === p.triggerId)
-                  const action = gameState.unlockedActions.find((a) => a.id === p.actionId)
-                  if (!trigger || !action) return null
-                  return { trigger, action, priority: p.priority, enabled: true }
-                })
-                .filter((p: any): p is any => p !== null)
+              const slotId = gameState.activeSlot.slotId
+              gameState.setConstruct(gameState.selectedConstruct!, slotId)
 
-              const tacticalProtocols = (updatedClass.startingTacticalPairs || [])
-                .map((p: any) => {
-                  const trigger = gameState.unlockedTriggers.find((t) => t.id === p.triggerId)
-                  const action = gameState.unlockedActions.find((a) => a.id === p.actionId)
-                  if (!trigger || !action) return null
-                  return { trigger, action, priority: p.priority, enabled: true }
-                })
-                .filter((p: any): p is any => p !== null)
-
-              console.log("[v0] SAVE CALIBRATION: movementProtocols", movementProtocols)
-              console.log("[v0] SAVE CALIBRATION: tacticalProtocols", tacticalProtocols)
-
-              movementProtocols.forEach((p: any) => {
-                const existing = gameState.movementPairs.find(
-                  (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
-                )
-                if (!existing) {
-                  console.log("[v0] SAVE CALIBRATION: Adding movement pair", p)
-                  gameState.addMovementPair(p.trigger, p.action)
-                }
-              })
-
-              tacticalProtocols.forEach((p: any) => {
-                const existing = gameState.tacticalPairs.find(
-                  (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
-                )
-                if (!existing) {
-                  console.log("[v0] SAVE CALIBRATION: Adding tactical pair", p)
-                  gameState.addTacticalPair(p.trigger, p.action)
-                }
-              })
-
-              console.log("[v0] SAVE CALIBRATION: Final game state movementPairs", gameState.movementPairs)
-              console.log("[v0] SAVE CALIBRATION: Final game state tacticalPairs", gameState.tacticalPairs)
+              console.log("[v0] SAVE CALIBRATION: Construct reloaded")
             }
-            handleCloseFighterClassEditor()
+            handleCloseCalibration()
           }}
           onSelectClass={() => {}}
-          onClose={handleCloseFighterClassEditor}
+          onClose={handleCloseCalibration}
         />
       )}
 
