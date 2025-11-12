@@ -34,6 +34,7 @@ export default function Home() {
   const [pendingSlotAssignment, setPendingSlotAssignment] = useState<string | null>(null)
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const latestPlayerProgressRef = useRef(gameState.playerProgress)
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -55,6 +56,10 @@ export default function Home() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    latestPlayerProgressRef.current = gameState.playerProgress
+  }, [gameState.playerProgress])
 
   useEffect(() => {
     if (gameState.selectedCharacter && gameState.playerProgress.customFighterClasses) {
@@ -381,9 +386,11 @@ export default function Home() {
               color: gameState.selectedConstruct.color,
               startingPairs: [],
               startingMovementPairs:
-                gameState.playerProgress.activeConstructSlots?.[gameState.activeSlot.slotId]?.movementProtocols || [],
+                latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]
+                  ?.movementProtocols || [],
               startingTacticalPairs:
-                gameState.playerProgress.activeConstructSlots?.[gameState.activeSlot.slotId]?.tacticalProtocols || [],
+                latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]
+                  ?.tacticalProtocols || [],
               customization: fighterCustomization,
             },
           ]}
@@ -420,8 +427,6 @@ export default function Home() {
 
               const slotId = gameState.activeSlot.slotId
               gameState.setConstruct(gameState.selectedConstruct!, slotId)
-
-              console.log("[v0] SAVE CALIBRATION: Construct reloaded")
             }
             handleCloseCalibration()
           }}
