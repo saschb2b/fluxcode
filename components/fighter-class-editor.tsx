@@ -698,8 +698,12 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                       <CustomizableFighter
                         position={{ x: 3, y: 1 }}
                         isPlayer={true}
-                        hp={100}
-                        maxHp={100}
+                        hp={construct?.baseHp || 100}
+                        maxHp={construct?.baseHp || 100}
+                        shields={construct?.baseShields || 0}
+                        maxShields={construct?.baseShields || 0}
+                        armor={construct?.baseArmor || 0}
+                        maxArmor={construct?.baseArmor || 0}
                         customization={customization}
                       />
                       <OrbitControls enableZoom={false} enablePan={false} />
