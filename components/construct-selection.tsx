@@ -5,7 +5,6 @@ import { AVAILABLE_CONSTRUCTS, isConstructUnlocked } from "@/lib/constructs"
 import type { Construct } from "@/types/game"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Lock } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
 interface ConstructSelectionProps {
   onSelect: (construct: Construct, slotId: string) => void
@@ -112,19 +111,29 @@ export function ConstructSelection({ onSelect, onBack, currentSlotId = "slot-1" 
               {/* Base Stats */}
               <div className="mb-3 sm:mb-4">
                 <p className="text-[10px] sm:text-sm text-gray-500 mb-2">BASE CONFIGURATION</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="p-2 rounded bg-red-950/40 border border-red-700/50">
-                    <p className="text-[10px] text-red-400">HP</p>
-                    <p className="text-white font-bold text-lg">{selectedConstruct.baseHp}</p>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-red-700/50">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-red-400 text-xs font-medium">{selectedConstruct.baseHp}</span>
                   </div>
-                  <div className="p-2 rounded bg-blue-950/40 border border-blue-700/50">
-                    <p className="text-[10px] text-blue-400">SHIELD</p>
-                    <p className="text-white font-bold text-lg">{selectedConstruct.baseShields}</p>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-blue-700/50">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-blue-400 text-xs font-medium">{selectedConstruct.baseShields}</span>
                   </div>
-                  <div className="p-2 rounded bg-yellow-950/40 border border-yellow-700/50">
-                    <p className="text-[10px] text-yellow-400">ARMOR</p>
-                    <p className="text-white font-bold text-lg">{selectedConstruct.baseArmor}</p>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-gray-600">
+                    <div className="w-2 h-2 rounded-full bg-gray-400" />
+                    <span className="text-gray-400 text-xs font-medium">{selectedConstruct.baseArmor}</span>
                   </div>
+                  {selectedConstruct.resistances && Object.keys(selectedConstruct.resistances).length > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-purple-700/50">
+                      <div className="w-2 h-2 rounded-full bg-purple-500" />
+                      <span className="text-purple-400 text-xs font-medium">
+                        {Object.entries(selectedConstruct.resistances)
+                          .map(([key, val]) => `${key.slice(0, 3).toUpperCase()}:${val}%`)
+                          .join(" ")}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -149,29 +158,7 @@ export function ConstructSelection({ onSelect, onBack, currentSlotId = "slot-1" 
                 </div>
               </div>
 
-              {/* Passive Ability */}
-              {selectedConstruct.passiveAbility && (
-                <div className="mb-3 p-2 sm:p-3 rounded bg-purple-950/40 border border-purple-700/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-[8px] border-purple-500 text-purple-400">
-                      PASSIVE
-                    </Badge>
-                    <p className="text-purple-300 font-bold text-xs sm:text-sm">
-                      {selectedConstruct.passiveAbility.name}
-                    </p>
-                  </div>
-                  <p className="text-gray-400 text-[10px] sm:text-xs">{selectedConstruct.passiveAbility.description}</p>
-                </div>
-              )}
-
               {/* Warning */}
-              <div className="mt-auto p-2 sm:p-3 rounded bg-amber-950/40 border border-amber-700/50">
-                <p className="text-amber-400 text-[10px] sm:text-xs font-bold mb-1">⚠ CONSTRUCT STATUS</p>
-                <p className="text-gray-400 text-[10px] sm:text-xs">
-                  This construct comes with NO pre-programmed protocols. You must assign protocols manually before
-                  deployment.
-                </p>
-              </div>
             </div>
           </div>
 
