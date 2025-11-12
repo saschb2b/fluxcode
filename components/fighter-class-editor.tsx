@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
@@ -63,6 +63,12 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
   const construct = getConstructById(classData.id)
   const MAX_MOVEMENT_PROTOCOLS = construct?.maxMovementSlots || 6
   const MAX_TACTICAL_PROTOCOLS = construct?.maxTacticalSlots || 6
+
+  useEffect(() => {
+    setName(classData.name)
+    setMovementProtocols(classData.startingMovementPairs || [])
+    setTacticalProtocols(classData.startingTacticalPairs || [])
+  }, [classData])
 
   const addMovementProtocol = () => {
     if (movementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) {
