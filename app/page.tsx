@@ -313,6 +313,8 @@ export default function Home() {
             fighterCustomization={fighterCustomization}
             playerProgress={gameState.playerProgress}
             playerMaxHp={gameState.player.maxHp}
+            playerMaxShields={gameState.player.maxShields}
+            playerMaxArmor={gameState.player.maxArmor}
             onStartRun={handleStartRun}
             onSelectConstruct={handleOpenConstructSelect}
             onCustomizeFighter={handleOpenCustomization}

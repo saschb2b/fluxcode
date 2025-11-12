@@ -15,6 +15,8 @@ interface HubProps {
   fighterCustomization: FighterCustomizationType
   playerProgress: PlayerProgress
   playerMaxHp: number // Added to receive player's max HP
+  playerMaxShields?: number // Added player shields prop
+  playerMaxArmor?: number // Added player armor prop
   onStartRun: () => void
   onSelectConstruct: () => void
   onCustomizeFighter: () => void
@@ -33,6 +35,8 @@ export function Hub({
   fighterCustomization,
   playerProgress,
   playerMaxHp, // Receive player's max HP
+  playerMaxShields = 0, // Receive player's max Shields
+  playerMaxArmor = 0, // Receive player's max Armor
   onStartRun,
   onSelectConstruct,
   onCustomizeFighter,
@@ -113,10 +117,10 @@ export function Hub({
             ? {
                 hp: playerMaxHp,
                 maxHp: playerMaxHp,
-                shields: selectedConstruct.shields,
-                maxShields: selectedConstruct.shields,
-                armor: selectedConstruct.armor,
-                maxArmor: selectedConstruct.armor,
+                shields: playerMaxShields, // Use player's actual shields instead of construct base values
+                maxShields: playerMaxShields,
+                armor: playerMaxArmor, // Use player's actual armor instead of construct base values
+                maxArmor: playerMaxArmor,
               }
             : undefined
         }
