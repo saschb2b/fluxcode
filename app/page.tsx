@@ -398,15 +398,9 @@ export default function Home() {
           selectedClassId={gameState.selectedConstruct.id}
           skipSelection={true}
           onSaveClasses={(classes) => {
-            console.log("[v0] SAVE: onSaveClasses called with classes:", classes)
             const updatedClass = classes[0]
-            console.log("[v0] SAVE: updatedClass:", updatedClass)
-            console.log("[v0] SAVE: activeSlot:", gameState.activeSlot)
 
             if (updatedClass && gameState.activeSlot) {
-              console.log("[v0] SAVE: Movement protocols to save:", updatedClass.startingMovementPairs)
-              console.log("[v0] SAVE: Tactical protocols to save:", updatedClass.startingTacticalPairs)
-
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
                 [gameState.activeSlot.slotId]: {
@@ -415,17 +409,49 @@ export default function Home() {
                   tacticalProtocols: updatedClass.startingTacticalPairs || [],
                 },
               }
-              console.log("[v0] SAVE: newSlots object:", newSlots)
 
-              gameState.updatePlayerProgress({
+              const newProgress = {
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
+              }
+
+              gameState.updatePlayerProgress(newProgress)
+
+              const movementProtocols = (updatedClass.startingMovementPairs || [])
+                .map((p: any) => {
+                  const trigger = gameState.unlockedTriggers.find((t) => t.id === p.triggerId)
+                  const action = gameState.unlockedActions.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter((p: any): p is any => p !== null)
+
+              const tacticalProtocols = (updatedClass.startingTacticalPairs || [])
+                .map((p: any) => {
+                  const trigger = gameState.unlockedTriggers.find((t) => t.id === p.triggerId)
+                  const action = gameState.unlockedActions.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter((p: any): p is any => p !== null)
+
+              movementProtocols.forEach((p: any) => {
+                const existing = gameState.movementPairs.find(
+                  (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
+                )
+                if (!existing) {
+                  gameState.addMovementPair(p.trigger, p.action)
+                }
               })
 
-              console.log("[v0] SAVE: Player progress updated, now reloading construct")
-
-              // Reload the construct to update the protocols in game state
-              gameState.setConstruct(gameState.selectedConstruct!, gameState.activeSlot.slotId)
+              tacticalProtocols.forEach((p: any) => {
+                const existing = gameState.tacticalPairs.find(
+                  (existing) => existing.trigger.id === p.trigger.id && existing.action.id === p.action.id,
+                )
+                if (!existing) {
+                  gameState.addTacticalPair(p.trigger, p.action)
+                }
+              })
             }
             handleCloseFighterClassEditor()
           }}
