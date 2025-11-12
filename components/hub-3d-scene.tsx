@@ -10,9 +10,18 @@ import type { FighterCustomization } from "@/lib/fighter-parts"
 interface Hub3DSceneProps {
   fighterCustomization: FighterCustomization
   hasCharacter: boolean
+  constructStats?: {
+    // Added construct stats prop
+    hp: number
+    maxHp: number
+    shields: number
+    maxShields: number
+    armor: number
+    maxArmor: number
+  }
 }
 
-export function Hub3DScene({ fighterCustomization, hasCharacter }: Hub3DSceneProps) {
+export function Hub3DScene({ fighterCustomization, hasCharacter, constructStats }: Hub3DSceneProps) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       <Canvas>
@@ -36,8 +45,12 @@ export function Hub3DScene({ fighterCustomization, hasCharacter }: Hub3DScenePro
               <CustomizableFighter
                 position={{ x: 2.5, y: 1 }}
                 isPlayer={true}
-                hp={100}
-                maxHp={100}
+                hp={constructStats?.hp || 100}
+                maxHp={constructStats?.maxHp || 100}
+                shields={constructStats?.shields || 0}
+                maxShields={constructStats?.maxShields || 0}
+                armor={constructStats?.armor || 0}
+                maxArmor={constructStats?.maxArmor || 0}
                 customization={fighterCustomization}
               />
 

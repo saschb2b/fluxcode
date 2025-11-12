@@ -14,6 +14,7 @@ interface HubProps {
   selectedConstruct: Construct | null
   fighterCustomization: FighterCustomizationType
   playerProgress: PlayerProgress
+  playerMaxHp: number // Added to receive player's max HP
   onStartRun: () => void
   onSelectConstruct: () => void
   onCustomizeFighter: () => void
@@ -31,6 +32,7 @@ export function Hub({
   selectedConstruct,
   fighterCustomization,
   playerProgress,
+  playerMaxHp, // Receive player's max HP
   onStartRun,
   onSelectConstruct,
   onCustomizeFighter,
@@ -103,7 +105,22 @@ export function Hub({
           backgroundSize: "50px 50px",
         }}
       />
-      <Hub3DScene fighterCustomization={fighterCustomization} hasCharacter={!!selectedConstruct} />
+      <Hub3DScene
+        fighterCustomization={fighterCustomization}
+        hasCharacter={!!selectedConstruct}
+        constructStats={
+          selectedConstruct
+            ? {
+                hp: playerMaxHp,
+                maxHp: playerMaxHp,
+                shields: selectedConstruct.shields,
+                maxShields: selectedConstruct.shields,
+                armor: selectedConstruct.armor,
+                maxArmor: selectedConstruct.armor,
+              }
+            : undefined
+        }
+      />
       <div className="relative z-10 min-h-full flex flex-col lg:grid lg:grid-cols-[1fr_2fr_1fr] lg:gap-6 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-6">
         <div className="hidden lg:flex flex-col gap-6">
           <div className="backdrop-blur-sm bg-black/30 px-6 py-4 rounded-lg border border-cyan-500/30">
