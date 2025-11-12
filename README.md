@@ -31,6 +31,36 @@ Battle Protocol combines strategic AI programming with real-time tactical combat
 - **UI Components**: shadcn/ui
 - **Styling**: Tailwind CSS v4
 
+## 🏗️ Architecture
+
+### Dual-Core Protocol System
+
+The battle AI uses a **dual-core protocol system** that separates movement from tactical actions to prevent conflicts:
+
+#### **Movement Core Directives**
+- Handles positioning, evasion, and movement actions
+- Fast-cooldown actions (dodge, strafe, move)
+- Evaluates **first** on every battle tick
+- Independent cooldown tracking
+
+**Movement Actions**: `dodge`, `move-forward`, `move-backward`, `move-up`, `move-down`, `strafe-left`, `strafe-right`, `dash-forward`, `jump`, `teleport`, `dash-attack`, `retreat-shot`
+
+#### **Tactical Core Directives**
+- Handles attacks, buffs, debuffs, healing, and status effects
+- Standard and slow-cooldown actions
+- Evaluates **second** (only if no movement action was taken)
+- Independent cooldown tracking
+
+**Tactical Actions**: All shoot variants, heals, buffs, debuffs, status effects, field effects
+
+#### **Execution Flow**
+1. **Movement Core** evaluates all movement protocols in priority order
+2. If a movement action triggers, it executes and **blocks** tactical core for that tick
+3. If no movement action triggers, **Tactical Core** evaluates
+4. Only one action executes per tick per fighter
+
+**Why This Architecture?** Previously, fast-cooldown movement actions could perpetually trigger and block slow-cooldown tactical actions, resulting in passive fighters that never attacked. The dual-core system ensures fighters remain aggressive while maintaining evasion capabilities.
+
 ## 🚀 Getting Started
 
 \`\`\`bash

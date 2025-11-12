@@ -106,9 +106,12 @@ export interface BattleUpdate {
 
 export class BattleEngine {
   private state: BattleState
-  private playerPairs: TriggerActionPair[]
+  private playerMovementPairs: TriggerActionPair[]
+  private playerTacticalPairs: TriggerActionPair[]
   private enemyPairs: TriggerActionPair[][]
   private actionCooldowns: Map<string, number> = new Map()
+  private movementCooldowns: Map<string, number> = new Map()
+  private tacticalCooldowns: Map<string, number> = new Map()
   private projectileIdCounter = 0
   private battleHistory: BattleHistoryPoint[] = []
   private battleTime = 0
@@ -120,15 +123,23 @@ export class BattleEngine {
 
   constructor(
     initialState: BattleState,
-    playerPairs: TriggerActionPair[],
+    playerMovementPairs: TriggerActionPair[], // Split player pairs into movement and tactical
+    playerTacticalPairs: TriggerActionPair[],
     enemyPairs: TriggerActionPair[] | TriggerActionPair[][],
     playerCustomization?: any,
     enemyCustomization?: any | any[],
   ) {
-    console.log("[v0] BattleEngine constructor - playerPairs count:", playerPairs.length)
+    const playerPairs = [...playerMovementPairs, ...playerTacticalPairs]
+
+    console.log("[v0] BattleEngine constructor - playerMovementPairs count:", playerMovementPairs.length)
+    console.log("[v0] BattleEngine constructor - playerTacticalPairs count:", playerTacticalPairs.length)
     console.log(
-      "[v0] BattleEngine constructor - playerPairs:",
-      playerPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+      "[v0] BattleEngine constructor - playerMovementPairs:",
+      playerMovementPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+    )
+    console.log(
+      "[v0] BattleEngine constructor - playerTacticalPairs:",
+      playerTacticalPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
     )
     console.log(
       "[v0] BattleEngine constructor - player shields:",
@@ -187,7 +198,8 @@ export class BattleEngine {
       enemyImmuneToStatus: initialState.enemyImmuneToStatus || false,
     }
 
-    this.playerPairs = [...playerPairs].sort((a, b) => b.priority - a.priority)
+    this.playerMovementPairs = [...playerMovementPairs].sort((a, b) => b.priority - a.priority)
+    this.playerTacticalPairs = [...playerTacticalPairs].sort((a, b) => b.priority - a.priority)
 
     if (initialState.enemies && initialState.enemies.length > 0) {
       // Check if enemies have triggerActionPairs embedded in them
@@ -394,23 +406,44 @@ export class BattleEngine {
       return update
     }
 
-    const playerAction = this.executeAI(this.playerPairs, true, deltaTime)
-    if (playerAction) {
-      const actionUpdate = this.applyAction(playerAction, true)
+    const playerMovementAction = this.executeMovementCore(this.playerMovementPairs, true, deltaTime)
+    if (playerMovementAction) {
+      const actionUpdate = this.applyAction(playerMovementAction, true)
       Object.assign(update, actionUpdate)
       update.pairExecuted = {
-        triggerId: playerAction.triggerId,
-        actionId: playerAction.actionId,
+        triggerId: playerMovementAction.triggerId,
+        actionId: playerMovementAction.actionId,
+      }
+    }
+
+    if (!playerMovementAction) {
+      const playerTacticalAction = this.executeTacticalCore(this.playerTacticalPairs, true, deltaTime)
+      if (playerTacticalAction) {
+        const actionUpdate = this.applyAction(playerTacticalAction, true)
+        Object.assign(update, actionUpdate)
+        update.pairExecuted = {
+          triggerId: playerTacticalAction.triggerId,
+          actionId: playerTacticalAction.actionId,
+        }
       }
     }
 
     this.state.enemies.forEach((enemy, index) => {
       if (enemy.hp > 0) {
         const enemyPairs = this.enemyPairs[Math.min(index, this.enemyPairs.length - 1)]
-        const enemyAction = this.executeEnemyAI(enemyPairs, enemy, deltaTime)
-        if (enemyAction) {
-          const actionUpdate = this.applyAction(enemyAction, false, enemy)
+
+        const enemyMovementAction = this.executeEnemyMovementCore(enemyPairs, enemy, deltaTime)
+        if (enemyMovementAction) {
+          const actionUpdate = this.applyAction(enemyMovementAction, false, enemy)
           Object.assign(update, actionUpdate)
+        }
+
+        if (!enemyMovementAction) {
+          const enemyTacticalAction = this.executeEnemyTacticalCore(enemyPairs, enemy, deltaTime)
+          if (enemyTacticalAction) {
+            const actionUpdate = this.applyAction(enemyTacticalAction, false, enemy)
+            Object.assign(update, actionUpdate)
+          }
         }
       }
     })
@@ -447,6 +480,248 @@ export class BattleEngine {
 
     enemy.hp = Math.max(0, enemy.hp - totalDamage)
     return totalDamage
+  }
+
+  private executeMovementCore(pairs: TriggerActionPair[], isPlayer: boolean, deltaTime: number): ActionResult | null {
+    const movementPairs = pairs.filter((pair) => pair.action.coreType === "movement")
+
+    let enemyPosForContext = this.state.enemyPos
+
+    if (isPlayer && this.state.enemies.length > 0) {
+      const livingEnemies = this.state.enemies.filter((e) => e.hp > 0)
+      if (livingEnemies.length > 0) {
+        const nearestEnemy = livingEnemies.reduce((nearest, enemy) => {
+          const distToEnemy =
+            Math.abs(enemy.position.x - this.state.playerPos.x) + Math.abs(enemy.position.y - this.state.playerPos.y)
+          const distToNearest =
+            Math.abs(nearest.position.x - this.state.playerPos.x) +
+            Math.abs(nearest.position.y - this.state.playerPos.y)
+          return distToEnemy < distToNearest ? enemy : nearest
+        })
+        enemyPosForContext = nearestEnemy.position
+      }
+    }
+
+    const context: BattleContext = {
+      playerPos: this.state.playerPos,
+      enemyPos: enemyPosForContext,
+      playerHP: this.state.playerHP,
+      enemyHP: this.state.enemyHP,
+      justTookDamage: this.state.justTookDamage,
+      isPlayer,
+    }
+
+    const lagCooldownMultiplier = this.getLagCooldownMultiplier(!isPlayer)
+
+    this.movementCooldowns.forEach((time, key) => {
+      const newTime = time - deltaTime
+      if (newTime <= 0) {
+        this.movementCooldowns.delete(key)
+      } else {
+        this.movementCooldowns.set(key, newTime)
+      }
+    })
+
+    for (const pair of movementPairs) {
+      const cooldownKey = `${isPlayer ? "player" : "enemy"}-${pair.action.id}`
+
+      if (this.movementCooldowns.has(cooldownKey)) {
+        continue
+      }
+
+      const triggerResult = pair.trigger.check(context)
+
+      if (triggerResult) {
+        console.log(
+          `[v0] ${isPlayer ? "Player" : "Enemy"} Movement Core executing: ${pair.trigger.id} -> ${pair.action.id}`,
+        )
+        const adjustedCooldown = pair.action.cooldown * lagCooldownMultiplier
+        this.movementCooldowns.set(cooldownKey, adjustedCooldown)
+        return {
+          ...pair.action.execute(context),
+          triggerId: pair.trigger.id,
+          actionId: pair.action.id,
+        }
+      }
+    }
+
+    return null
+  }
+
+  private executeTacticalCore(pairs: TriggerActionPair[], isPlayer: boolean, deltaTime: number): ActionResult | null {
+    const tacticalPairs = pairs.filter((pair) => pair.action.coreType === "tactical")
+
+    let enemyPosForContext = this.state.enemyPos
+
+    if (isPlayer && this.state.enemies.length > 0) {
+      const livingEnemies = this.state.enemies.filter((e) => e.hp > 0)
+      if (livingEnemies.length > 0) {
+        const nearestEnemy = livingEnemies.reduce((nearest, enemy) => {
+          const distToEnemy =
+            Math.abs(enemy.position.x - this.state.playerPos.x) + Math.abs(enemy.position.y - this.state.playerPos.y)
+          const distToNearest =
+            Math.abs(nearest.position.x - this.state.playerPos.x) +
+            Math.abs(nearest.position.y - this.state.playerPos.y)
+          return distToEnemy < distToNearest ? enemy : nearest
+        })
+        enemyPosForContext = nearestEnemy.position
+      }
+    }
+
+    const context: BattleContext = {
+      playerPos: this.state.playerPos,
+      enemyPos: enemyPosForContext,
+      playerHP: this.state.playerHP,
+      enemyHP: this.state.enemyHP,
+      justTookDamage: this.state.justTookDamage,
+      isPlayer,
+    }
+
+    const lagCooldownMultiplier = this.getLagCooldownMultiplier(!isPlayer)
+
+    this.tacticalCooldowns.forEach((time, key) => {
+      const newTime = time - deltaTime
+      if (newTime <= 0) {
+        this.tacticalCooldowns.delete(key)
+      } else {
+        this.tacticalCooldowns.set(key, newTime)
+      }
+    })
+
+    for (const pair of tacticalPairs) {
+      const cooldownKey = `${isPlayer ? "player" : "enemy"}-${pair.action.id}`
+
+      if (this.tacticalCooldowns.has(cooldownKey)) {
+        continue
+      }
+
+      const triggerResult = pair.trigger.check(context)
+
+      if (triggerResult) {
+        console.log(
+          `[v0] ${isPlayer ? "Player" : "Enemy"} Tactical Core executing: ${pair.trigger.id} -> ${pair.action.id}`,
+        )
+        const adjustedCooldown = pair.action.cooldown * lagCooldownMultiplier
+        this.tacticalCooldowns.set(cooldownKey, adjustedCooldown)
+        return {
+          ...pair.action.execute(context),
+          triggerId: pair.trigger.id,
+          actionId: pair.action.id,
+        }
+      }
+    }
+
+    return null
+  }
+
+  private executeEnemyMovementCore(
+    pairs: TriggerActionPair[],
+    enemy: EnemyState,
+    deltaTime: number,
+  ): ActionResult | null {
+    const movementPairs = pairs.filter((pair) => pair.action.coreType === "movement")
+
+    if (!enemy.position) {
+      console.error("[v0] Enemy position is undefined, skipping Movement Core execution")
+      return null
+    }
+
+    const context: BattleContext = {
+      playerPos: enemy.position,
+      enemyPos: this.state.playerPos,
+      playerHP: enemy.hp,
+      enemyHP: this.state.playerHP,
+      justTookDamage: this.state.justTookDamage,
+      isPlayer: false,
+    }
+
+    const lagCooldownMultiplier = this.getEnemyLagCooldownMultiplier(enemy)
+
+    for (const pair of movementPairs) {
+      const cooldownKey = `${enemy.id}-movement-${pair.action.id}`
+
+      if (this.movementCooldowns.has(cooldownKey)) {
+        continue
+      }
+
+      if (enemy.lagStacks.length > 0) {
+        const failureChance = enemy.lagStacks.reduce((acc, stack) => acc + stack.actionFailureChance, 0)
+        if (Math.random() < failureChance) {
+          console.log(`[v0] Enemy ${enemy.id} movement stuttered due to Lag`)
+          continue
+        }
+      }
+
+      const triggerResult = pair.trigger.check(context)
+
+      if (triggerResult) {
+        console.log(`[v0] Enemy ${enemy.id} Movement Core executing: ${pair.trigger.id} -> ${pair.action.id}`)
+        const adjustedCooldown = pair.action.cooldown * lagCooldownMultiplier
+        this.movementCooldowns.set(cooldownKey, adjustedCooldown)
+        return {
+          ...pair.action.execute(context),
+          triggerId: pair.trigger.id,
+          actionId: pair.action.id,
+        }
+      }
+    }
+
+    return null
+  }
+
+  private executeEnemyTacticalCore(
+    pairs: TriggerActionPair[],
+    enemy: EnemyState,
+    deltaTime: number,
+  ): ActionResult | null {
+    const tacticalPairs = pairs.filter((pair) => pair.action.coreType === "tactical")
+
+    if (!enemy.position) {
+      console.error("[v0] Enemy position is undefined, skipping Tactical Core execution")
+      return null
+    }
+
+    const context: BattleContext = {
+      playerPos: enemy.position,
+      enemyPos: this.state.playerPos,
+      playerHP: enemy.hp,
+      enemyHP: this.state.playerHP,
+      justTookDamage: this.state.justTookDamage,
+      isPlayer: false,
+    }
+
+    const lagCooldownMultiplier = this.getEnemyLagCooldownMultiplier(enemy)
+
+    for (const pair of tacticalPairs) {
+      const cooldownKey = `${enemy.id}-tactical-${pair.action.id}`
+
+      if (this.tacticalCooldowns.has(cooldownKey)) {
+        continue
+      }
+
+      if (enemy.lagStacks.length > 0) {
+        const failureChance = enemy.lagStacks.reduce((acc, stack) => acc + stack.actionFailureChance, 0)
+        if (Math.random() < failureChance) {
+          console.log(`[v0] Enemy ${enemy.id} tactical action stuttered due to Lag`)
+          continue
+        }
+      }
+
+      const triggerResult = pair.trigger.check(context)
+
+      if (triggerResult) {
+        console.log(`[v0] Enemy ${enemy.id} Tactical Core executing: ${pair.trigger.id} -> ${pair.action.id}`)
+        const adjustedCooldown = pair.action.cooldown * lagCooldownMultiplier
+        this.tacticalCooldowns.set(cooldownKey, adjustedCooldown)
+        return {
+          ...pair.action.execute(context),
+          triggerId: pair.trigger.id,
+          actionId: pair.action.id,
+        }
+      }
+    }
+
+    return null
   }
 
   private executeAI(pairs: TriggerActionPair[], isPlayer: boolean, deltaTime: number): ActionResult | null {

@@ -98,30 +98,98 @@ export function CharacterSelection({ onSelect, onBack }: CharacterSelectionProps
                 <p className="text-[10px] sm:text-sm text-gray-500 mb-1.5 sm:mb-3">STARTING PROTOCOLS</p>
                 <ScrollArea className="h-full max-h-[18dvh] sm:max-h-[25dvh] overflow-hidden">
                   <div className="space-y-1.5 sm:space-y-2 pr-2 sm:pr-4">
-                    {selectedCharacter.startingPairs
-                      .sort((a, b) => b.priority - a.priority)
-                      .map((pair, index) => (
-                        <div
-                          key={index}
-                          className="p-1.5 sm:p-3 rounded bg-black/60 border border-gray-700/50 hover:border-gray-600 transition-colors overflow-hidden"
-                        >
-                          <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-sm overflow-x-auto">
-                            <span
-                              className="px-1 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0"
-                              style={{
-                                backgroundColor: `${selectedCharacter.color}20`,
-                                color: selectedCharacter.color,
-                              }}
-                            >
-                              {pair.priority}
-                            </span>
-                            <span className="text-cyan-400 shrink-0">IF</span>
-                            <span className="text-white font-medium truncate">{pair.trigger.name}</span>
-                            <span className="text-pink-400 shrink-0">THEN</span>
-                            <span className="text-white font-medium truncate">{pair.action.name}</span>
-                          </div>
+                    {selectedCharacter.startingMovementPairs && selectedCharacter.startingMovementPairs.length > 0 && (
+                      <>
+                        <div className="text-[9px] sm:text-xs text-cyan-400/70 font-bold tracking-wider">
+                          MOVEMENT CORE DIRECTIVES ({selectedCharacter.startingMovementPairs.length})
                         </div>
-                      ))}
+                        {selectedCharacter.startingMovementPairs
+                          .sort((a, b) => b.priority - a.priority)
+                          .map((pair, index) => (
+                            <div
+                              key={`movement-${index}`}
+                              className="p-1.5 sm:p-3 rounded bg-blue-950/60 border border-blue-700/50 hover:border-blue-600 transition-colors overflow-hidden"
+                            >
+                              <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-sm overflow-x-auto">
+                                <span
+                                  className="px-1 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0"
+                                  style={{
+                                    backgroundColor: `${selectedCharacter.color}20`,
+                                    color: selectedCharacter.color,
+                                  }}
+                                >
+                                  {pair.priority}
+                                </span>
+                                <span className="text-cyan-400 shrink-0">IF</span>
+                                <span className="text-white font-medium truncate">{pair.trigger.name}</span>
+                                <span className="text-blue-400 shrink-0">THEN</span>
+                                <span className="text-white font-medium truncate">{pair.action.name}</span>
+                              </div>
+                            </div>
+                          ))}
+                      </>
+                    )}
+
+                    {selectedCharacter.startingTacticalPairs && selectedCharacter.startingTacticalPairs.length > 0 && (
+                      <>
+                        <div className="text-[9px] sm:text-xs text-green-400/70 font-bold tracking-wider mt-2">
+                          TACTICAL CORE DIRECTIVES ({selectedCharacter.startingTacticalPairs.length})
+                        </div>
+                        {selectedCharacter.startingTacticalPairs
+                          .sort((a, b) => b.priority - a.priority)
+                          .map((pair, index) => (
+                            <div
+                              key={`tactical-${index}`}
+                              className="p-1.5 sm:p-3 rounded bg-green-950/60 border border-green-700/50 hover:border-green-600 transition-colors overflow-hidden"
+                            >
+                              <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-sm overflow-x-auto">
+                                <span
+                                  className="px-1 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0"
+                                  style={{
+                                    backgroundColor: `${selectedCharacter.color}20`,
+                                    color: selectedCharacter.color,
+                                  }}
+                                >
+                                  {pair.priority}
+                                </span>
+                                <span className="text-cyan-400 shrink-0">IF</span>
+                                <span className="text-white font-medium truncate">{pair.trigger.name}</span>
+                                <span className="text-green-400 shrink-0">THEN</span>
+                                <span className="text-white font-medium truncate">{pair.action.name}</span>
+                              </div>
+                            </div>
+                          ))}
+                      </>
+                    )}
+
+                    {(!selectedCharacter.startingMovementPairs ||
+                      selectedCharacter.startingMovementPairs.length === 0) &&
+                      (!selectedCharacter.startingTacticalPairs ||
+                        selectedCharacter.startingTacticalPairs.length === 0) &&
+                      selectedCharacter.startingPairs
+                        .sort((a, b) => b.priority - a.priority)
+                        .map((pair, index) => (
+                          <div
+                            key={index}
+                            className="p-1.5 sm:p-3 rounded bg-black/60 border border-gray-700/50 hover:border-gray-600 transition-colors overflow-hidden"
+                          >
+                            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-sm overflow-x-auto">
+                              <span
+                                className="px-1 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0"
+                                style={{
+                                  backgroundColor: `${selectedCharacter.color}20`,
+                                  color: selectedCharacter.color,
+                                }}
+                              >
+                                {pair.priority}
+                              </span>
+                              <span className="text-cyan-400 shrink-0">IF</span>
+                              <span className="text-white font-medium truncate">{pair.trigger.name}</span>
+                              <span className="text-pink-400 shrink-0">THEN</span>
+                              <span className="text-white font-medium truncate">{pair.action.name}</span>
+                            </div>
+                          </div>
+                        ))}
                   </div>
                 </ScrollArea>
               </div>

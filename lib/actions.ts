@@ -9,6 +9,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 1500,
     damageType: DamageType.CORROSIVE,
     statusChance: 0.5,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -23,6 +24,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Area Heal",
     description: "Heal 5 HP per second for 4 seconds (20 HP total)",
     cooldown: 6000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "heal-over-time" as const,
@@ -36,6 +38,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Barrier",
     description: "Block the next incoming attack",
     cooldown: 4000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "barrier" as const,
@@ -48,6 +51,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Berserk",
     description: "Increase damage by 50% for 5 seconds",
     cooldown: 6000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "buff" as const,
@@ -64,6 +68,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3500,
     damageType: DamageType.GLACIAL,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -80,6 +85,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3500,
     damageType: DamageType.THERMAL,
     statusChance: 0.4,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -97,6 +103,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4500,
     damageType: DamageType.THERMAL,
     statusChance: 0.9,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "field" as const,
@@ -114,6 +121,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.THERMAL,
     statusChance: 1.0,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -130,6 +138,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4500,
     damageType: DamageType.THERMAL,
     statusChance: 0.85,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "spread" as const,
@@ -146,6 +155,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.5,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
@@ -162,6 +172,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Fire 5 rapid shots (4 damage each)",
     cooldown: 3000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -177,6 +188,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Heavy cannon blast (45 damage)",
     cooldown: 3500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -191,6 +203,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Devastating charged blast (40 damage)",
     cooldown: 3500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -206,6 +219,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4000,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.4,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "cluster" as const,
@@ -223,6 +237,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 2600,
     damageType: DamageType.CORROSIVE,
     statusChance: 0.6,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -239,6 +254,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 2800,
     damageType: DamageType.CORROSIVE,
     statusChance: 0.9,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -255,6 +271,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3400,
     damageType: DamageType.CORROSIVE,
     statusChance: 0.6,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -272,6 +289,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4000,
     damageType: DamageType.CORROSIVE,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "field" as const,
@@ -289,6 +307,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4000,
     damageType: DamageType.CORROSIVE,
     statusChance: 1.0,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -303,6 +322,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Counter",
     description: "Reflect 50% of next attack damage back",
     cooldown: 3500,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "counter" as const,
@@ -317,6 +337,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Rush forward while attacking (15 damage)",
     cooldown: 2000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical", // Reclassified from movement to tactical - primary purpose is dealing damage
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -340,7 +361,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "dodge",
     name: "Dodge",
     description: "Quickly move to a random adjacent tile",
-    cooldown: 600, // Reduced from 1500ms to 600ms for more evasive behavior
+    cooldown: 600,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const minX = context.isPlayer ? 0 : 3
       const maxX = context.isPlayer ? 2 : 5
@@ -373,6 +395,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Damage enemy and heal yourself (15 damage, 10 HP)",
     cooldown: 3000,
     damageType: DamageType.VIRAL,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "drain" as const,
@@ -389,6 +412,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 1400,
     damageType: DamageType.THERMAL,
     statusChance: 0.5,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -405,6 +429,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.6,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
@@ -420,6 +445,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Heal",
     description: "Restore 20 HP",
     cooldown: 5000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "heal" as const,
@@ -433,6 +459,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Tracks enemy position (20 damage)",
     cooldown: 2500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "homing" as const,
@@ -448,6 +475,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3200,
     damageType: DamageType.THERMAL,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -462,6 +490,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Invincibility",
     description: "Become invulnerable for 2 seconds",
     cooldown: 10000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "invincible" as const,
@@ -475,6 +504,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Ballistic projectile (12 damage, strong vs armor)",
     cooldown: 1200,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -490,6 +520,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 1200,
     damageType: DamageType.ENERGY,
     statusChance: 0.5,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -506,6 +537,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3200,
     damageType: DamageType.ENERGY,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "spread" as const,
@@ -522,6 +554,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3500,
     damageType: DamageType.ENERGY,
     statusChance: 1.0,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -538,6 +571,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3800,
     damageType: DamageType.ENERGY,
     statusChance: 0.6,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -555,6 +589,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4200,
     damageType: DamageType.ENERGY,
     statusChance: 0.85,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "field" as const,
@@ -570,6 +605,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Mega Heal",
     description: "Restore 40 HP",
     cooldown: 8000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "heal" as const,
@@ -581,7 +617,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-backward",
     name: "Move Backward",
     description: "Move one tile away from the enemy",
-    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
+    cooldown: 300,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -603,7 +640,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-down",
     name: "Move Down",
     description: "Move to the row below",
-    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
+    cooldown: 300,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -618,7 +656,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-forward",
     name: "Move Forward",
     description: "Move one tile toward the enemy",
-    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
+    cooldown: 300,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -640,7 +679,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-up",
     name: "Move Up",
     description: "Move to the row above (or toward enemy row)",
-    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
+    cooldown: 300,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -668,6 +708,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3500,
     damageType: DamageType.VIRAL,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
@@ -685,6 +726,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3600,
     damageType: DamageType.VIRAL,
     statusChance: 0.5,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -702,6 +744,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.VIRAL,
     statusChance: 0.85,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -718,6 +761,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3500,
     damageType: DamageType.VIRAL,
     statusChance: 0.7,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "drain" as const,
@@ -735,6 +779,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.ENERGY,
     statusChance: 0.7,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -750,6 +795,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Fire a powerful shot (25 damage)",
     cooldown: 2000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -764,6 +810,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Armor-piercing shot (28 damage, very strong vs armor)",
     cooldown: 2800,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -778,6 +825,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Fire 3 quick shots (5 damage each)",
     cooldown: 2500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -792,6 +840,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Regen",
     description: "Heal 3 HP per second for 5 seconds (15 HP total)",
     cooldown: 5000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "heal-over-time" as const,
@@ -806,6 +855,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Move back while shooting (12 damage)",
     cooldown: 1800,
     damageType: DamageType.KINETIC,
+    coreType: "tactical", // Reclassified from movement to tactical - primary purpose is attacking while repositioning
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -830,6 +880,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Shield",
     description: "Reduce incoming damage by 50% for 3 seconds",
     cooldown: 5000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shield" as const,
@@ -844,6 +895,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Ground wave that pierces (20 damage)",
     cooldown: 2200,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "piercing-shot" as const,
@@ -858,6 +910,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Fire a standard projectile (10 damage)",
     cooldown: 1000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -872,6 +925,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Precise long-range shot (30 damage)",
     cooldown: 2500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -885,6 +939,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Speed Boost",
     description: "Reduce all cooldowns by 30% for 4 seconds",
     cooldown: 7000,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "buff" as const,
@@ -900,6 +955,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Hits all 3 rows (12 damage each)",
     cooldown: 3000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "spread" as const,
@@ -914,6 +970,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Melee attack at close range (35 damage)",
     cooldown: 1500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "melee" as const,
@@ -928,6 +985,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Teleport",
     description: "Instantly move to a random position",
     cooldown: 3000,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const minX = context.isPlayer ? 0 : 3
       const maxX = context.isPlayer ? 2 : 5
@@ -946,6 +1004,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Fire 3 shots in different rows (15 damage each)",
     cooldown: 2800,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "triple-shot" as const,
@@ -961,6 +1020,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 1600,
     damageType: DamageType.VIRAL,
     statusChance: 0.6,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -976,6 +1036,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Rapid machine gun (8 shots, 3 damage each)",
     cooldown: 4000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -991,6 +1052,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Hits entire row (18 damage)",
     cooldown: 2500,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -1005,6 +1067,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Slash entire column at close range (30 damage)",
     cooldown: 2000,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wide-melee" as const,
@@ -1021,6 +1084,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3000,
     damageType: DamageType.GLACIAL,
     statusChance: 0.7,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "triple-shot" as const,
@@ -1037,6 +1101,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4000,
     damageType: DamageType.GLACIAL,
     statusChance: 1.0,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -1053,6 +1118,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 2800,
     damageType: DamageType.GLACIAL,
     statusChance: 0.75,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "piercing-shot" as const,
@@ -1068,6 +1134,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Freezing area (5 damage, heavy slow, long duration)",
     cooldown: 4000,
     damageType: DamageType.GLACIAL,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "field" as const,
@@ -1085,6 +1152,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 1600,
     damageType: DamageType.GLACIAL,
     statusChance: 0.7,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -1101,6 +1169,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 2800,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.7,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "wave" as const,
@@ -1117,6 +1186,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3200,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.85,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "melee" as const,
@@ -1134,6 +1204,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4500,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.9,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "spread" as const,
@@ -1150,6 +1221,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 3800,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.35,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "rapid-fire" as const,
@@ -1167,6 +1239,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     cooldown: 4200,
     damageType: DamageType.CONCUSSION,
     statusChance: 0.8,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "field" as const,
@@ -1182,6 +1255,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Strafe Left",
     description: "Quick sideways movement to avoid attacks",
     cooldown: 400,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -1198,6 +1272,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Strafe Right",
     description: "Quick sideways movement to reposition",
     cooldown: 400,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -1214,6 +1289,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Dash Forward",
     description: "Quickly close distance (moves 1 tile forward)",
     cooldown: 2500,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -1237,6 +1313,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     description: "Close-range devastating shot (32 damage at close range)",
     cooldown: 2200,
     damageType: DamageType.KINETIC,
+    coreType: "tactical",
     execute: (context: BattleContext) => {
       return {
         type: "shoot" as const,
@@ -1249,7 +1326,8 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "jump",
     name: "Jump",
     description: "Leap to align with enemy row",
-    cooldown: 500, // Reduced from 1500ms to 500ms for faster row alignment
+    cooldown: 500,
+    coreType: "movement",
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const enemyY = context.isPlayer ? context.enemyPos.y : context.playerPos.y

@@ -644,6 +644,14 @@ export function Codex({ isOpen, onClose }: CodexProps) {
     return ELEMENTAL_DATA.find((el) => el.type === damageType)
   }
 
+  const getCoreTypeInfo = (action: Action) => {
+    if (action.coreType === "movement") {
+      return { label: "MOVEMENT CORE", color: "#a855f7", bgColor: "#a855f710", borderColor: "#a855f730" }
+    } else {
+      return { label: "TACTICAL CORE", color: "#f97316", bgColor: "#f9731610", borderColor: "#f9731630" }
+    }
+  }
+
   const handleItemSelect = (item: typeof selectedItem) => {
     setSelectedItem(item)
     setShowMobileDetail(true)
@@ -756,6 +764,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
 
               const actionItem = !isDamageType ? (item as Action) : null
               const elementalData = actionItem?.damageType ? getElementalData(actionItem.damageType) : null
+              const coreTypeInfo = actionItem && "coreType" in actionItem ? getCoreTypeInfo(actionItem) : null
 
               return (
                 <button
@@ -807,6 +816,20 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           </span>
                         )}
                       </div>
+                      {coreTypeInfo && (
+                        <div className="flex items-center gap-1 mt-1 mb-1">
+                          <div
+                            className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded border font-bold tracking-wider"
+                            style={{
+                              backgroundColor: coreTypeInfo.bgColor,
+                              borderColor: coreTypeInfo.borderColor,
+                              color: coreTypeInfo.color,
+                            }}
+                          >
+                            {coreTypeInfo.label}
+                          </div>
+                        </div>
+                      )}
                       <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
                         {(item as Trigger | Action).description}
                       </div>
@@ -934,10 +957,28 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">
                             {activeTab === "triggers" ? "CONDITIONAL PROTOCOL" : "EXECUTION PROTOCOL"}
                           </div>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-wider">
                               {(selectedItem as Trigger | Action).name}
                             </h3>
+                            {"coreType" in selectedItem && (
+                              <div
+                                className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-[10px] sm:text-xs font-bold tracking-wider"
+                                style={{
+                                  backgroundColor: getCoreTypeInfo(selectedItem as Action).bgColor,
+                                  borderColor: getCoreTypeInfo(selectedItem as Action).borderColor,
+                                  color: getCoreTypeInfo(selectedItem as Action).color,
+                                }}
+                              >
+                                <div
+                                  className="w-1.5 h-1.5 rounded-full"
+                                  style={{
+                                    backgroundColor: getCoreTypeInfo(selectedItem as Action).color,
+                                  }}
+                                />
+                                {getCoreTypeInfo(selectedItem as Action).label}
+                              </div>
+                            )}
                             {"damageType" in selectedItem && (selectedItem as Action).damageType && (
                               <div
                                 className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-xs font-bold"
@@ -961,6 +1002,27 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                             {(selectedItem as Trigger | Action).description}
                           </p>
                         </div>
+
+                        {"coreType" in selectedItem && (
+                          <div
+                            className="p-3 sm:p-4 rounded border-2"
+                            style={{
+                              backgroundColor: getCoreTypeInfo(selectedItem as Action).bgColor,
+                              borderColor: getCoreTypeInfo(selectedItem as Action).borderColor,
+                            }}
+                          >
+                            <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
+                              <span style={{ color: getCoreTypeInfo(selectedItem as Action).color }}>
+                                [{getCoreTypeInfo(selectedItem as Action).label}]
+                              </span>
+                            </div>
+                            <div className="text-xs sm:text-sm text-foreground leading-relaxed">
+                              {(selectedItem as Action).coreType === "movement"
+                                ? "Movement Core protocols handle positioning, evasion, and spatial control. They execute first each tick, allowing your fighter to reposition before tactical actions. Movement actions never block tactical protocols from executing."
+                                : "Tactical Core protocols handle offensive and defensive combat actions including attacks, buffs, debuffs, healing, and status effects. They execute after Movement Core evaluation, ensuring tactical decisions are made from the correct position."}
+                            </div>
+                          </div>
+                        )}
 
                         {"damageType" in selectedItem && (selectedItem as Action).damageType && (
                           <div
@@ -1028,7 +1090,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
                             {activeTab === "triggers"
                               ? "Conditionals establish priority chains in your breach protocol. Higher priority conditionals override lower ones when multiple match simultaneously. Design protocols that adapt to dynamic combat scenarios."
-                              : "Executions define your breacher's combat capabilities. Manage cooldowns strategically - offensive protocols typically have shorter intervals while defensive systems require longer recovery periods. Coordinate execution timing with conditional triggers for optimal combat efficiency."}
+                              : "Executions define your breacher's combat capabilities. The dual-core architecture ensures movement and tactical actions are evaluated independently each tick—Movement Core executes first for positioning, then Tactical Core handles combat actions. This prevents fast-cooldown movement from blocking attacks."}
                           </div>
                         </div>
                       </div>

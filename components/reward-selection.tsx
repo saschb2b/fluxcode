@@ -129,6 +129,7 @@ export function RewardSelection({
               const action = !isTrigger ? (item as Action) : null
               const damageType = action?.damageType
               const colors = damageType ? DAMAGE_TYPE_COLORS[damageType] : null
+              const coreType = action?.coreType
 
               return (
                 <Card
@@ -146,7 +147,7 @@ export function RewardSelection({
                               ? "border-green-500/40 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/30 hover:bg-green-500/5"
                               : damageType === "corrosive"
                                 ? "border-lime-500/40 hover:border-lime-400 hover:shadow-lg hover:shadow-lime-500/30 hover:bg-lime-500/5"
-                                : damageType === "concussion" // Renamed from explosive
+                                : damageType === "concussion"
                                   ? "border-red-500/40 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/30 hover:bg-red-500/5"
                                   : damageType === "glacial"
                                     ? "border-cyan-500/40 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 hover:bg-cyan-500/5"
@@ -162,7 +163,7 @@ export function RewardSelection({
                 >
                   <div className="flex items-start justify-between gap-2 sm:gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span
                           className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${
                             isTrigger
@@ -172,6 +173,17 @@ export function RewardSelection({
                         >
                           {isTrigger ? "CONDITION" : "EXECUTION"}
                         </span>
+                        {!isTrigger && coreType && (
+                          <span
+                            className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${
+                              coreType === "movement"
+                                ? "bg-purple-500/20 text-purple-400 border-purple-500/50"
+                                : "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                            }`}
+                          >
+                            {coreType === "movement" ? "MOVEMENT" : "TACTICAL"}
+                          </span>
+                        )}
                         {damageType && (
                           <span
                             className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${colors!.bg} ${colors!.text} ${colors!.border}`}
