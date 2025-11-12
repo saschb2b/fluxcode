@@ -144,12 +144,14 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Bomb",
     description: "Throw bomb with delayed explosion (35 damage)",
     cooldown: 3000,
-    damageType: DamageType.EXPLOSIVE,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.5,
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
         damage: 35,
-        damageType: DamageType.EXPLOSIVE,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.5,
         delay: 1000,
       }
     },
@@ -202,12 +204,14 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Cluster Bomb",
     description: "Multiple explosions (25 damage x3)",
     cooldown: 4000,
-    damageType: DamageType.EXPLOSIVE,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.4,
     execute: (context: BattleContext) => {
       return {
         type: "cluster" as const,
         damage: 25,
-        damageType: DamageType.EXPLOSIVE,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.4,
         count: 3,
       }
     },
@@ -336,7 +340,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "dodge",
     name: "Dodge",
     description: "Quickly move to a random adjacent tile",
-    cooldown: 1500,
+    cooldown: 600, // Reduced from 1500ms to 600ms for more evasive behavior
     execute: (context: BattleContext) => {
       const minX = context.isPlayer ? 0 : 3
       const maxX = context.isPlayer ? 2 : 5
@@ -399,12 +403,14 @@ export const AVAILABLE_ACTIONS: Action[] = [
     name: "Frag Grenade",
     description: "Explosive grenade (40 damage, balanced vs all)",
     cooldown: 3000,
-    damageType: DamageType.EXPLOSIVE,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.6,
     execute: (context: BattleContext) => {
       return {
         type: "bomb" as const,
         damage: 40,
-        damageType: DamageType.EXPLOSIVE,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.6,
         delay: 800,
       }
     },
@@ -575,7 +581,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-backward",
     name: "Move Backward",
     description: "Move one tile away from the enemy",
-    cooldown: 800,
+    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -597,7 +603,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-down",
     name: "Move Down",
     description: "Move to the row below",
-    cooldown: 800,
+    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -612,7 +618,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-forward",
     name: "Move Forward",
     description: "Move one tile toward the enemy",
-    cooldown: 800,
+    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -634,7 +640,7 @@ export const AVAILABLE_ACTIONS: Action[] = [
     id: "move-up",
     name: "Move Up",
     description: "Move to the row above (or toward enemy row)",
-    cooldown: 800,
+    cooldown: 300, // Reduced from 800ms to 300ms for more responsive AI movement
     execute: (context: BattleContext) => {
       const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
       const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
@@ -1085,6 +1091,172 @@ export const AVAILABLE_ACTIONS: Action[] = [
         damage: 12,
         damageType: DamageType.GLACIAL,
         statusChance: 0.7,
+      }
+    },
+  },
+  {
+    id: "shockwave-blast",
+    name: "Shockwave Blast",
+    description: "Concussive force wave (28 damage, pushes enemy)",
+    cooldown: 2800,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.7,
+    execute: (context: BattleContext) => {
+      return {
+        type: "wave" as const,
+        damage: 28,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.7,
+      }
+    },
+  },
+  {
+    id: "impact-hammer",
+    name: "Impact Hammer",
+    description: "Heavy melee strike (45 damage, knockback)",
+    cooldown: 3200,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.85,
+    execute: (context: BattleContext) => {
+      return {
+        type: "melee" as const,
+        damage: 45,
+        range: 1,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.85,
+      }
+    },
+  },
+  {
+    id: "seismic-charge",
+    name: "Seismic Charge",
+    description: "Ground-shaking detonation (50 damage, displaces all rows)",
+    cooldown: 4500,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.9,
+    execute: (context: BattleContext) => {
+      return {
+        type: "spread" as const,
+        damage: 50,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.9,
+      }
+    },
+  },
+  {
+    id: "concussive-barrage",
+    name: "Concussive Barrage",
+    description: "Multiple pressure bursts (6 shots, 8 damage each)",
+    cooldown: 3800,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.35,
+    execute: (context: BattleContext) => {
+      return {
+        type: "rapid-fire" as const,
+        damage: 8,
+        count: 6,
+        damageType: DamageType.CONCUSSION,
+        statusChance: 0.35,
+      }
+    },
+  },
+  {
+    id: "resonance-field",
+    name: "Resonance Field",
+    description: "Disruptive force field (10 damage/sec, 4 seconds, displaces)",
+    cooldown: 4200,
+    damageType: DamageType.CONCUSSION,
+    statusChance: 0.8,
+    execute: (context: BattleContext) => {
+      return {
+        type: "field" as const,
+        damage: 10,
+        damageType: DamageType.CONCUSSION,
+        duration: 4000,
+        statusChance: 0.8,
+      }
+    },
+  },
+  {
+    id: "strafe-left",
+    name: "Strafe Left",
+    description: "Quick sideways movement to avoid attacks",
+    cooldown: 400,
+    execute: (context: BattleContext) => {
+      const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
+      const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
+      const newY = Math.max(currentY - 1, 0)
+
+      return {
+        type: "move" as const,
+        position: { x: currentX, y: newY } as Position,
+      }
+    },
+  },
+  {
+    id: "strafe-right",
+    name: "Strafe Right",
+    description: "Quick sideways movement to reposition",
+    cooldown: 400,
+    execute: (context: BattleContext) => {
+      const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
+      const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
+      const newY = Math.min(currentY + 1, 2)
+
+      return {
+        type: "move" as const,
+        position: { x: currentX, y: newY } as Position,
+      }
+    },
+  },
+  {
+    id: "dash-forward",
+    name: "Dash Forward",
+    description: "Quickly close distance (moves 1 tile forward)",
+    cooldown: 2500,
+    execute: (context: BattleContext) => {
+      const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
+      const currentY = context.isPlayer ? context.playerPos.y : context.enemyPos.y
+
+      let newX: number
+      if (context.isPlayer) {
+        newX = Math.min(currentX + 1, 2)
+      } else {
+        newX = Math.max(currentX - 1, 3)
+      }
+
+      return {
+        type: "move" as const,
+        position: { x: newX, y: currentY } as Position,
+      }
+    },
+  },
+  {
+    id: "shotgun-blast",
+    name: "Shotgun Blast",
+    description: "Close-range devastating shot (32 damage at close range)",
+    cooldown: 2200,
+    damageType: DamageType.KINETIC,
+    execute: (context: BattleContext) => {
+      return {
+        type: "shoot" as const,
+        damage: 32,
+        damageType: DamageType.KINETIC,
+      }
+    },
+  },
+  {
+    id: "jump",
+    name: "Jump",
+    description: "Leap to align with enemy row",
+    cooldown: 500, // Reduced from 1500ms to 500ms for faster row alignment
+    execute: (context: BattleContext) => {
+      const currentX = context.isPlayer ? context.playerPos.x : context.enemyPos.x
+      const enemyY = context.isPlayer ? context.enemyPos.y : context.playerPos.y
+
+      return {
+        type: "move" as const,
+        position: { x: currentX, y: enemyY } as Position,
       }
     },
   },

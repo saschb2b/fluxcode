@@ -27,7 +27,7 @@ const DAMAGE_TYPE_COLORS: Record<DamageType, { bg: string; text: string; border:
   },
   viral: { bg: "bg-green-500/20", text: "text-green-300", border: "border-green-500/50", glow: "shadow-green-500/20" },
   corrosive: { bg: "bg-lime-500/20", text: "text-lime-300", border: "border-lime-500/50", glow: "shadow-lime-500/20" },
-  explosive: { bg: "bg-red-500/20", text: "text-red-300", border: "border-red-500/50", glow: "shadow-red-500/20" },
+  concussion: { bg: "bg-red-500/20", text: "text-red-300", border: "border-red-500/50", glow: "shadow-red-500/20" }, // Renamed from explosive
   glacial: { bg: "bg-cyan-500/20", text: "text-cyan-300", border: "border-cyan-500/50", glow: "shadow-cyan-500/20" },
 }
 
@@ -146,7 +146,7 @@ export function RewardSelection({
                               ? "border-green-500/40 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/30 hover:bg-green-500/5"
                               : damageType === "corrosive"
                                 ? "border-lime-500/40 hover:border-lime-400 hover:shadow-lg hover:shadow-lime-500/30 hover:bg-lime-500/5"
-                                : damageType === "explosive"
+                                : damageType === "concussion" // Renamed from explosive
                                   ? "border-red-500/40 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/30 hover:bg-red-500/5"
                                   : damageType === "glacial"
                                     ? "border-cyan-500/40 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/30 hover:bg-cyan-500/5"

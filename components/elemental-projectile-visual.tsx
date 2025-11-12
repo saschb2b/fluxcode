@@ -36,6 +36,8 @@ export function ElementalProjectileVisual({ damageType, scale = 0.3 }: Elemental
         return "#ef4444"
       case DamageType.GLACIAL:
         return "#06b6d4"
+      case DamageType.CONCUSSION:
+        return "#ff0000" // Placeholder color for Concussion
       default:
         return "#ffff00"
     }
@@ -152,6 +154,20 @@ export function ElementalProjectileVisual({ damageType, scale = 0.3 }: Elemental
               <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
             </mesh>
           ))}
+        </>
+      )}
+
+      {/* Concussion - Dodecahedron with outer wireframe shockwave */}
+      {damageType === DamageType.CONCUSSION && (
+        <>
+          <mesh>
+            <dodecahedronGeometry args={[0.7, 0]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
+          </mesh>
+          <mesh>
+            <icosahedronGeometry args={[1.1, 0]} />
+            <meshBasicMaterial color={color} transparent opacity={0.3} wireframe />
+          </mesh>
         </>
       )}
 

@@ -302,6 +302,7 @@ export default function Home() {
               gameState={gameState}
               fighterCustomization={fighterCustomization}
               enemyCustomization={gameState.enemyCustomization}
+              enemyCustomizations={gameState.enemyCustomizations} // Pass enemyCustomizations array
             />
           </div>
 

@@ -9,12 +9,23 @@ export enum DamageType {
   THERMAL = "thermal",
   VIRAL = "viral",
   CORROSIVE = "corrosive",
-  EXPLOSIVE = "explosive",
+  CONCUSSION = "concussion",
   GLACIAL = "glacial",
 }
 
 export interface StatusEffect {
-  type: "arc" | "disable" | "degrade" | "slow" | "burn" | "stagger" | "viral_infection" | "emp" | "stun" | "lag" // Added "lag" status effect
+  type:
+    | "arc"
+    | "disable"
+    | "degrade"
+    | "slow"
+    | "burn"
+    | "stagger"
+    | "viral_infection"
+    | "emp"
+    | "stun"
+    | "lag"
+    | "displace"
   duration: number // milliseconds remaining
   stacks?: number // for stackable effects like slow/degrade
   value?: number // damage per tick for burn, or percentage for degrade
@@ -36,11 +47,18 @@ export interface DefenseLayers {
 }
 
 export interface Fighter {
+  id?: string // Added id to identify individual enemies
   position: Position
   hp: number
   maxHp: number
-  defense?: DefenseLayers // Optional for now
+  shields?: number // Moved from defense object to top level
+  maxShields?: number
+  armor?: number
+  maxArmor?: number
+  defense?: DefenseLayers // Optional for backwards compatibility
   statusEffects?: StatusEffect[] // Optional for now
+  resistances?: Partial<Record<DamageType, number>> // Added resistances
+  isPawn?: boolean // Added flag for guardian pawns
 }
 
 export interface Projectile {
@@ -132,7 +150,8 @@ export interface GameState {
   battleState: "idle" | "fighting" | "victory" | "defeat"
   wave: number
   player: Fighter
-  enemy: Fighter
+  enemy: Fighter // Keep for backwards compatibility, but will use enemies array
+  enemies: Fighter[] // Added enemies array for multi-enemy support
   projectiles: Projectile[]
   triggerActionPairs: TriggerActionPair[]
   unlockedTriggers: Trigger[]
@@ -143,7 +162,7 @@ export interface GameState {
   addTriggerActionPair: (trigger: Trigger, action: Action) => void
   removeTriggerActionPair: (index: number) => void
   updatePairPriority: (index: number, priority: number) => void
-  togglePair: (index: number, enabled: boolean) => void // Added togglePair function to enable/disable protocols
+  togglePair: (index: number, enabled: boolean) => void
   showRewardSelection: boolean
   availableRewardTriggers: Trigger[]
   availableRewardActions: Action[]
@@ -156,6 +175,7 @@ export interface GameState {
   fighterCustomization: FighterCustomization | null
   setCustomization: (customization: FighterCustomization) => void
   enemyCustomization: FighterCustomization
+  enemyCustomizations: FighterCustomization[] // Added array for multiple enemy customizations
   battleHistory: BattleHistoryPoint[]
   showEnemyIntro: boolean
   continueAfterIntro: () => void
@@ -165,6 +185,6 @@ export interface GameState {
   currentLayerIndex: number
   currentNodeIndex: number
   isGuardianBattle: boolean
-  extractFromBreach: () => void // Added extract function
-  justEarnedReward: { type: "trigger" | "action"; name: string } | null // Added justEarnedReward to track newly acquired protocols
+  extractFromBreach: () => void
+  justEarnedReward: { type: "trigger" | "action"; name: string } | null
 }

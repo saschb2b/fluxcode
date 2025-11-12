@@ -25,6 +25,7 @@ import {
   shouldRefreshContracts,
   checkContractProgress,
 } from "@/lib/network-contracts"
+import { generateEnemyName, generateGuardianPawnName } from "@/lib/enemy-names"
 
 export function useGameState(): GameState {
   const [battleState, setBattleState] = useState<"idle" | "fighting" | "victory" | "defeat">("idle")
@@ -62,10 +63,17 @@ export function useGameState(): GameState {
   const hpBonus = getTotalStatBonus(playerProgress, "hp")
   const playerMaxHp = baseMaxHp + hpBonus
 
+  const shieldBonus = getTotalStatBonus(playerProgress, "shield_capacity")
+  const armorBonus = getTotalStatBonus(playerProgress, "armor_rating")
+
   const [player, setPlayer] = useState({
     position: { x: 1, y: 1 } as Position,
     hp: playerMaxHp,
     maxHp: playerMaxHp,
+    shields: shieldBonus,
+    maxShields: shieldBonus,
+    armor: armorBonus,
+    maxArmor: armorBonus,
   })
 
   const isGuardianBattle =
@@ -73,18 +81,7 @@ export function useGameState(): GameState {
     networkLayers[currentLayerIndex] &&
     networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
 
-  const [enemy, setEnemy] = useState({
-    position: { x: 4, y: 1 } as Position,
-    hp: 40,
-    maxHp: 40,
-    shields: 0,
-    maxShields: 0,
-    armor: 0,
-    maxArmor: 0,
-    resistances: {} as Partial<Record<DamageType, number>>,
-    statusEffects: [] as string[],
-  })
-
+  const [enemies, setEnemies] = useState<any[]>([])
   const [projectiles, setProjectiles] = useState<any[]>([])
   const [triggerActionPairs, setTriggerActionPairs] = useState<TriggerActionPair[]>([])
   const [unlockedTriggers, setUnlockedTriggers] = useState<Trigger[]>([])
@@ -96,6 +93,10 @@ export function useGameState(): GameState {
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterPreset | null>(null)
   const [fighterCustomization, setFighterCustomization] = useState<FighterCustomization | null>(null)
   const [enemyCustomization, setEnemyCustomization] = useState<FighterCustomization>(generateRandomCustomization())
+  const [enemyCustomizations, setEnemyCustomizations] = useState<FighterCustomization[]>([
+    generateRandomCustomization(),
+  ])
+  const [enemy, setEnemy] = useState<any>(null)
 
   const battleEngineRef = useRef<BattleEngine | null>(null)
   const animationFrameRef = useRef<number>()
@@ -140,10 +141,28 @@ export function useGameState(): GameState {
 
       if (update.playerPos) setPlayer((p) => ({ ...p, position: update.playerPos! }))
       if (update.playerHP !== undefined) setPlayer((p) => ({ ...p, hp: update.playerHP! }))
-      if (update.enemyPos) setEnemy((e) => ({ ...e, position: update.enemyPos! }))
-      if (update.enemyHP !== undefined) setEnemy((e) => ({ ...e, hp: update.enemyHP! }))
-      if (update.enemyShields !== undefined) setEnemy((e) => ({ ...e, shields: update.enemyShields! }))
-      if (update.enemyArmor !== undefined) setEnemy((e) => ({ ...e, armor: update.enemyArmor! }))
+      // Update player shields and armor from battle engine
+      if (update.playerShields !== undefined) setPlayer((p) => ({ ...p, shields: update.playerShields! }))
+      if (update.playerArmor !== undefined) setPlayer((p) => ({ ...p, armor: update.playerArmor! }))
+
+      if (update.enemyHP !== undefined || update.enemyShields !== undefined || update.enemyArmor !== undefined) {
+        const engineState = battleEngineRef.current!.getState()
+        setEnemies((prevEnemies) =>
+          prevEnemies.map((prevEnemy, index) => {
+            const engineEnemy = engineState.enemies[index]
+            if (!engineEnemy) return prevEnemy
+
+            return {
+              ...prevEnemy,
+              hp: engineEnemy.hp,
+              shields: engineEnemy.shields,
+              armor: engineEnemy.armor,
+              position: engineEnemy.position,
+            }
+          }),
+        )
+      }
+
       if (update.projectiles) setProjectiles(update.projectiles)
 
       if (update.battleOver) {
@@ -152,6 +171,8 @@ export function useGameState(): GameState {
 
           if (update.playerWon) {
             const healthRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerHP || 0
+            const shieldsRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerShields || 0
+            const armorRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerArmor || 0
 
             if (playerProgress.contractProgress) {
               const totalDamageDealt = Object.values(update.damageByType || {}).reduce((sum, val) => sum + val, 0)
@@ -265,6 +286,8 @@ export function useGameState(): GameState {
     isGuardianBattle,
     triggerActionPairs,
     player.maxHp,
+    player.maxShields, // Added player.maxShields to dependency array
+    player.maxArmor, // Added player.maxArmor to dependency array
   ])
 
   const startBattle = useCallback(() => {
@@ -276,32 +299,47 @@ export function useGameState(): GameState {
       "[v0] triggerActionPairs details:",
       enabledPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
     )
+    console.log("[v0] startBattle - enemies array length:", enemies.length)
+    console.log(
+      "[v0] startBattle - enemies details:",
+      enemies.map(
+        (e, i) =>
+          `Enemy ${i}: HP=${e.hp}/${e.maxHp} at (${e.position?.x},${e.position?.y}) isPawn=${e.isPawn} name=${e.name}`,
+      ),
+    )
+    console.log("[v0] startBattle - player shields:", player.shields, "armor:", player.armor)
     setJustEarnedReward(null)
 
-    const baseEnemyProtocols = [
-      { triggerId: "just-took-damage", actionId: "strafe-left", priority: 6 },
-      { triggerId: "same-row", actionId: "shoot", priority: 5 },
-      { triggerId: "different-row", actionId: wave >= 3 ? "jump" : "move-up", priority: 4 },
-      { triggerId: "enemy-close", actionId: "shotgun-blast", priority: 3 },
-      { triggerId: "enemy-at-min-distance", actionId: "move-forward", priority: 2 },
-      { triggerId: "in-range", actionId: "shoot", priority: 1 },
-    ]
+    const baseEnemyProtocols = []
 
+    // High priority: Survival/positioning tactics
     if (wave >= 2) {
-      baseEnemyProtocols.push({ triggerId: "low-hp", actionId: "heal", priority: 7 })
+      baseEnemyProtocols.push({ triggerId: "critical-hp", actionId: "heal", priority: 10 })
+      baseEnemyProtocols.push({ triggerId: "just-took-damage", actionId: "dodge", priority: 9 })
     }
+
+    // Medium-high priority: Tactical positioning
+    baseEnemyProtocols.push({ triggerId: "enemy-far", actionId: "move-forward", priority: 8 })
+    baseEnemyProtocols.push({ triggerId: "enemy-close", actionId: "move-backward", priority: 7 })
+    baseEnemyProtocols.push({ triggerId: "different-row", actionId: "move-up", priority: 6 })
 
     if (wave >= 3) {
-      baseEnemyProtocols.push({ triggerId: "high-hp", actionId: "power-shot", priority: 8 })
+      baseEnemyProtocols.push({ triggerId: "at-front", actionId: "move-backward", priority: 5 })
     }
+
+    // Medium priority: Combat actions
+    baseEnemyProtocols.push({ triggerId: "enemy-close", actionId: "shotgun-blast", priority: 4 })
 
     if (wave >= 4) {
-      baseEnemyProtocols.push({ triggerId: "enemy-far", actionId: "dash-forward", priority: 9 })
+      baseEnemyProtocols.push({ triggerId: "enemy-exposed", actionId: "power-shot", priority: 3 })
     }
 
-    if (wave >= 5) {
-      baseEnemyProtocols.push({ triggerId: "shields-up", actionId: "charge-shot", priority: 10 })
-    }
+    baseEnemyProtocols.push({ triggerId: "same-row", actionId: "shoot", priority: 2 })
+
+    // Low priority: Default fallback
+    baseEnemyProtocols.push({ triggerId: "always", actionId: "shoot", priority: 1 })
+
+    console.log("[v0] Enemy protocol config:", baseEnemyProtocols)
 
     const enemyPairs = baseEnemyProtocols
       .map((config) => {
@@ -321,29 +359,68 @@ export function useGameState(): GameState {
       })
       .filter((pair): pair is TriggerActionPair => pair !== null)
 
-    console.log("[v0] Enemy pairs:", enemyPairs)
+    console.log("[v0] Enemy pairs created:", enemyPairs.length)
+    console.log(
+      "[v0] Enemy pairs details:",
+      enemyPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
+    )
+
+    const enemiesForBattle = enemies.map((e, index) => ({
+      id: `enemy-${index}`,
+      position: e.position, // Fixed: was "pos", now "position"
+      hp: e.hp,
+      maxHp: e.maxHp,
+      shields: e.shields || 0,
+      maxShields: e.maxShields || 0,
+      armor: e.armor || 0,
+      maxArmor: e.maxArmor || 0,
+      burnStacks: [],
+      viralStacks: [],
+      empStacks: [],
+      lagStacks: [],
+      displaceStacks: [],
+      shieldRegenDisabled: false,
+      isPawn: e.isPawn || false,
+    }))
+
+    console.log("[v0] startBattle - enemiesForBattle array length:", enemiesForBattle.length)
+    console.log(
+      "[v0] startBattle - enemiesForBattle details:",
+      enemiesForBattle.map(
+        (e) => `${e.id}: HP=${e.hp}/${e.maxHp} at (${e.position?.x},${e.position?.y}) isPawn=${e.isPawn}`,
+      ),
+    )
 
     battleEngineRef.current = new BattleEngine(
       {
         playerPos: player.position,
         playerHP: player.hp,
-        enemyPos: enemy.position,
-        enemyHP: enemy.hp,
-        enemyShields: enemy.shields,
-        enemyArmor: enemy.armor,
+        playerShields: player.shields || 0, // Pass player shields to battle engine
+        playerArmor: player.armor || 0, // Pass player armor to battle engine
+        enemyPos: enemies[0]?.position || { x: 4, y: 1 }, // Added fallback and provide backward-compatible single enemyPos
+        enemyHP: enemies[0]?.hp || 0, // Added fallback
+        enemies: enemiesForBattle,
+        enemyShields: enemies[0]?.shields || 0, // Added backward compatibility
+        enemyArmor: enemies[0]?.armor || 0, // Added backward compatibility
+        enemyBurnStacks: [], // Initialize empty arrays for backward compatibility
+        enemyViralStacks: [],
+        enemyEMPStacks: [],
+        enemyLagStacks: [],
+        enemyDisplaceStacks: [],
         projectiles: [],
         justTookDamage: false,
+        shieldRegenDisabled: false,
       },
       enabledPairs,
       enemyPairs,
       fighterCustomization,
-      enemyCustomization,
+      enemyCustomizations,
     )
 
-    console.log("[v0] Battle engine created, starting animation loop")
+    console.log("[v0] Battle engine created with", enemies.length, "enemies, starting animation loop")
     lastTimeRef.current = 0
     setBattleState("fighting")
-  }, [player, enemy, triggerActionPairs, wave, fighterCustomization, enemyCustomization])
+  }, [player, enemies, triggerActionPairs, wave, fighterCustomization, enemyCustomizations])
 
   const getRandomRewards = useCallback((allTriggers: Trigger[], allActions: Action[]) => {
     const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
@@ -442,9 +519,9 @@ export function useGameState(): GameState {
     let baseHp: number
 
     if (nextWave <= 3) {
-      baseHp = 30 + nextWave * 10 // 40, 50, 60
+      baseHp = 30 + nextWave * 10
     } else if (nextWave <= 6) {
-      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+      baseHp = 40 + nextWave * 10
     } else if (nextWave <= 15) {
       baseHp = 40 + nextWave * 10
     } else {
@@ -470,64 +547,163 @@ export function useGameState(): GameState {
       (currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length
         ? networkLayers[currentLayerIndex].nodes[currentNodeIndex + 1]?.type === "guardian"
         : false)
-    const enemyMaxHp = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    let shields = 0
-    let armor = 0
-    let resistances: Partial<Record<DamageType, number>> = {}
-
-    const currentLayerData = networkLayers[currentLayerIndex]
-    if (currentLayerData) {
-      switch (currentLayerData.id) {
-        case "data-stream":
-          shields = 0
-          armor = 0
-          resistances = {}
-          break
-        case "firewall":
-          armor = Math.floor(enemyMaxHp * 0.25)
-          resistances = {
-            kinetic: 0.3,
-            corrosive: -0.2,
-          }
-          break
-        case "archive":
-          shields = Math.floor(enemyMaxHp * 0.3)
-          armor = 0
-          resistances = {
-            energy: 0.25,
-            viral: -0.15,
-          }
-          break
-        case "core-approach":
-          shields = Math.floor(enemyMaxHp * 0.25)
-          armor = Math.floor(enemyMaxHp * 0.2)
-          resistances = {
-            energy: 0.2,
-            kinetic: 0.2,
-            thermal: -0.1,
-          }
-          break
-      }
-
-      if (nextNodeIsGuardian) {
-        shields = Math.floor(shields * 1.3)
-        armor = Math.floor(armor * 1.3)
+    let enemyCount = 1
+    if (nextNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
       }
     }
 
-    setEnemy({
-      position: { x: 4, y: 1 },
-      hp: enemyMaxHp,
-      maxHp: enemyMaxHp,
-      shields,
-      maxShields: shields,
-      armor,
-      maxArmor: armor,
-      resistances,
-      statusEffects: [],
-    })
-    setEnemyCustomization(generateRandomCustomization())
+    const totalHpBudget = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
+    const enemiesArray: Array<any> = []
+
+    if (nextNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
+
+      enemiesArray.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: generateEnemyName(currentLayerIndex, true),
+      })
+
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: generateGuardianPawnName(),
+        })
+      }
+    } else {
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: generateEnemyName(currentLayerIndex, nextNodeIsGuardian && i === 0),
+        })
+      }
+    }
+
+    const currentLayerData = networkLayers[currentLayerIndex]
+    if (currentLayerData) {
+      enemiesArray.forEach((enemy, index) => {
+        const isGuardian = nextNodeIsGuardian && index === 0
+        let shields = 0
+        let armor = 0
+        let resistances: Partial<Record<DamageType, number>> = {}
+
+        switch (currentLayerData.id) {
+          case "data-stream":
+            shields = 0
+            armor = 0
+            resistances = {}
+            break
+          case "firewall":
+            armor = Math.floor(enemy.maxHp * 0.25)
+            resistances = {
+              kinetic: 0.3,
+              corrosive: -0.2,
+            }
+            break
+          case "archive":
+            shields = Math.floor(enemy.maxHp * 0.3)
+            armor = 0
+            resistances = {
+              energy: 0.25,
+              viral: -0.15,
+            }
+            break
+          case "core-approach":
+            shields = Math.floor(enemy.maxHp * 0.25)
+            armor = Math.floor(enemy.maxHp * 0.2)
+            resistances = {
+              energy: 0.2,
+              kinetic: 0.2,
+              thermal: -0.1,
+            }
+            break
+        }
+
+        if (isGuardian) {
+          shields = Math.floor(shields * 1.3)
+          armor = Math.floor(armor * 1.3)
+        }
+
+        enemy.shields = shields
+        enemy.maxShields = shields
+        enemy.armor = armor
+        enemy.maxArmor = armor
+        enemy.resistances = resistances
+      })
+    }
+
+    console.log("[v0] Generated", enemyCount, "enemies with total HP budget:", totalHpBudget)
+    console.log(
+      "[v0] Enemy details:",
+      enemiesArray.map((e) => `${e.name}: ${e.hp} HP at (${e.position.x},${e.position.y})`),
+    )
+
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      const isGuardian = nextNodeIsGuardian && i === 0
+      const isPawn = nextNodeIsGuardian && i > 0
+
+      const customization = generateRandomCustomization()
+
+      // Modify customization for visual variety
+      if (isPawn) {
+        enemiesArray[i].isPawn = true
+      }
+
+      customizationsArray.push(customization)
+    }
+
+    console.log("[v0] prepareNextWave - Setting enemies array with length:", enemiesArray.length)
+    console.log("[v0] prepareNextWave - Setting customizations array with length:", customizationsArray.length)
+
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setShowEnemyIntro(true)
   }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
@@ -540,9 +716,9 @@ export function useGameState(): GameState {
     let baseHp: number
 
     if (nextWave <= 3) {
-      baseHp = 30 + nextWave * 10 // 40, 50, 60
+      baseHp = 30 + nextWave * 10
     } else if (nextWave <= 6) {
-      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+      baseHp = 40 + nextWave * 10
     } else if (nextWave <= 15) {
       baseHp = 40 + nextWave * 10
     } else {
@@ -561,48 +737,146 @@ export function useGameState(): GameState {
       networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
     const enemyMaxHp = currentNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    let shields = 0
-    let armor = 0
-    let resistances: Partial<Record<DamageType, number>> = {}
+    let enemyCount = 1
+    if (currentNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
+      }
+    }
+
+    const totalHpBudget = currentNodeIsGuardian ? Math.floor(enemyMaxHp * 1.5) : enemyMaxHp
+    const enemiesArray: Array<any> = []
+
+    if (currentNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
+
+      enemiesArray.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: generateEnemyName(currentLayerIndex, true),
+      })
+
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: generateGuardianPawnName(),
+        })
+      }
+    } else {
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: generateEnemyName(currentLayerIndex, currentNodeIsGuardian && i === 0),
+        })
+      }
+    }
 
     const currentLayerData = networkLayers[currentLayerIndex]
     if (currentLayerData) {
-      switch (currentLayerData.id) {
-        case "data-stream":
-          shields = 0
-          armor = 0
-          resistances = {}
-          break
-        case "firewall":
-          armor = Math.floor(enemyMaxHp * 0.25)
-          resistances = {
-            kinetic: 0.3,
-            corrosive: -0.2,
-          }
-          break
-        case "archive":
-          shields = Math.floor(enemyMaxHp * 0.3)
-          armor = 0
-          resistances = {
-            energy: 0.25,
-            viral: -0.15,
-          }
-          break
-        case "core-approach":
-          shields = Math.floor(enemyMaxHp * 0.25)
-          armor = Math.floor(enemyMaxHp * 0.2)
-          resistances = {
-            energy: 0.2,
-            kinetic: 0.2,
-            thermal: -0.1,
-          }
-          break
+      enemiesArray.forEach((enemy, index) => {
+        const isGuardian = currentNodeIsGuardian && index === 0
+        let shields = 0
+        let armor = 0
+        let resistances: Partial<Record<DamageType, number>> = {}
+
+        switch (currentLayerData.id) {
+          case "data-stream":
+            shields = 0
+            armor = 0
+            resistances = {}
+            break
+          case "firewall":
+            armor = Math.floor(enemy.maxHp * 0.25)
+            resistances = {
+              kinetic: 0.3,
+              corrosive: -0.2,
+            }
+            break
+          case "archive":
+            shields = Math.floor(enemy.maxHp * 0.3)
+            armor = 0
+            resistances = {
+              energy: 0.25,
+              viral: -0.15,
+            }
+            break
+          case "core-approach":
+            shields = Math.floor(enemy.maxHp * 0.25)
+            armor = Math.floor(enemy.maxHp * 0.2)
+            resistances = {
+              energy: 0.2,
+              kinetic: 0.2,
+              thermal: -0.1,
+            }
+            break
+        }
+
+        if (isGuardian) {
+          shields = Math.floor(shields * 1.3)
+          armor = Math.floor(armor * 1.3)
+        }
+
+        enemy.shields = shields
+        enemy.maxShields = shields
+        enemy.armor = armor
+        enemy.maxArmor = armor
+        enemy.resistances = resistances
+      })
+    }
+
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      const isGuardian = currentNodeIsGuardian && i === 0
+      const isPawn = currentNodeIsGuardian && i > 0
+
+      const customization = generateRandomCustomization()
+
+      if (isPawn) {
+        enemiesArray[i].isPawn = true
       }
 
-      if (currentNodeIsGuardian) {
-        shields = Math.floor(shields * 1.3)
-        armor = Math.floor(armor * 1.3)
-      }
+      customizationsArray.push(customization)
     }
 
     setPlayer((prev) => ({
@@ -611,21 +885,12 @@ export function useGameState(): GameState {
       hp: prev.maxHp,
     }))
 
-    setEnemy({
-      position: { x: 4, y: 1 },
-      hp: enemyMaxHp,
-      maxHp: enemyMaxHp,
-      shields,
-      maxShields: shields,
-      armor,
-      maxArmor: armor,
-      resistances,
-      statusEffects: [],
-    })
-    console.log("[v0] Enemy HP set to:", enemyMaxHp, "shields:", shields, "armor:", armor)
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
     setProjectiles([])
     setBattleHistory([])
-    setEnemyCustomization(generateRandomCustomization())
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setBattleState("idle")
     setShowRewardSelection(false)
   }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
@@ -638,9 +903,36 @@ export function useGameState(): GameState {
     setNetworkLayers(initializeRun())
     setCurrentLayerIndex(0)
     setCurrentNodeIndex(0)
+
     const hpBonus = getTotalStatBonus(latestProgress, "hp")
     const maxHp = baseMaxHp + hpBonus
-    setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
+    const shieldBonus = getTotalStatBonus(latestProgress, "shield_capacity")
+    const armorBonus = getTotalStatBonus(latestProgress, "armor_rating")
+
+    setPlayer({
+      position: { x: 1, y: 1 },
+      hp: maxHp,
+      maxHp,
+      shields: shieldBonus,
+      maxShields: shieldBonus,
+      armor: armorBonus,
+      maxArmor: armorBonus,
+    })
+
+    setEnemies([
+      {
+        position: { x: 4, y: 1 },
+        hp: 40,
+        maxHp: 40,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: generateEnemyName(0, false),
+      },
+    ])
     setEnemy({
       position: { x: 4, y: 1 },
       hp: 40,
@@ -651,6 +943,7 @@ export function useGameState(): GameState {
       maxArmor: 0,
       resistances: {},
       statusEffects: [],
+      name: generateEnemyName(0, false),
     })
     setProjectiles([])
     if (selectedCharacter) {
@@ -712,6 +1005,7 @@ export function useGameState(): GameState {
       setUnlockedActions([])
     }
     setEnemyCustomization(generateRandomCustomization())
+    setEnemyCustomizations([generateRandomCustomization()])
     setBattleHistory([])
     setBattleState("idle")
     setShowRewardSelection(false)
@@ -770,7 +1064,6 @@ export function useGameState(): GameState {
           prev?.map((t) => t.id),
         )
         const existing = prev || []
-        // Avoid duplicates
         if (existing.some((t) => t.id === trigger.id)) {
           return existing
         }
@@ -797,7 +1090,6 @@ export function useGameState(): GameState {
           prev?.map((a) => a.id),
         )
         const existing = prev || []
-        // Avoid duplicates
         if (existing.some((a) => a.id === action.id)) {
           return existing
         }
@@ -863,7 +1155,6 @@ export function useGameState(): GameState {
       const customClass = customClasses.find((c) => c.id === character.id)
 
       if (customClass && customClass.startingPairs.length > 0) {
-        // Build TriggerActionPairs from the custom class protocols
         const pairs: TriggerActionPair[] = customClass.startingPairs
           .map((pair) => {
             const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
@@ -905,7 +1196,6 @@ export function useGameState(): GameState {
         setUnlockedTriggers(uniqueTriggers)
         setUnlockedActions(uniqueActions)
       } else {
-        // Use default preset protocols
         console.log("[v0] Loading default preset protocols")
         setTriggerActionPairs(character.startingPairs.map((pair) => ({ ...pair, enabled: true })))
 
@@ -949,7 +1239,18 @@ export function useGameState(): GameState {
 
     const hpBonus = getTotalStatBonus(progress, "hp")
     const maxHp = baseMaxHp + hpBonus
-    setPlayer((prev) => ({ ...prev, maxHp, hp: Math.min(prev.hp, maxHp) }))
+    const shieldBonus = getTotalStatBonus(progress, "shield_capacity")
+    const armorBonus = getTotalStatBonus(progress, "armor_rating")
+
+    setPlayer((prev) => ({
+      ...prev,
+      maxHp,
+      hp: Math.min(prev.hp, maxHp),
+      maxShields: shieldBonus,
+      shields: Math.min(prev.shields || 0, shieldBonus),
+      maxArmor: armorBonus,
+      armor: Math.min(prev.armor || 0, armorBonus),
+    }))
   }, [])
 
   const extractFromBreach = useCallback(() => {
@@ -983,7 +1284,7 @@ export function useGameState(): GameState {
     battleState,
     wave,
     player,
-    enemy,
+    enemies,
     projectiles,
     triggerActionPairs,
     unlockedTriggers,
@@ -1010,6 +1311,7 @@ export function useGameState(): GameState {
     fighterCustomization,
     setCustomization,
     enemyCustomization,
+    enemyCustomizations,
     battleHistory,
     showEnemyIntro,
     playerProgress,
@@ -1020,5 +1322,6 @@ export function useGameState(): GameState {
     isGuardianBattle,
     extractFromBreach,
     justEarnedReward,
+    enemy,
   }
 }

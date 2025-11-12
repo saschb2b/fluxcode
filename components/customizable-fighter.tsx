@@ -21,6 +21,11 @@ interface CustomizableFighterProps {
   burnStacks?: number
   viralStacks?: number
   empStacks?: number
+  lagStacks?: number
+  corrosiveStacks?: number
+  displaceStacks?: number
+  isPawn?: boolean // Added isPawn prop to identify guardian pawns
+  isGuardian?: boolean // Added isGuardian prop for size scaling
 }
 
 function PartMesh({ part, color }: { part: FighterPart; color: string }) {
@@ -89,7 +94,17 @@ export function CustomizableFighter({
   burnStacks = 0,
   viralStacks = 0,
   empStacks = 0,
+  lagStacks = 0,
+  corrosiveStacks = 0,
+  displaceStacks = 0,
+  isPawn = false, // Default to false
+  isGuardian = false, // Default to false
 }: CustomizableFighterProps) {
+  if (!position) {
+    console.error("[v0] CustomizableFighter received undefined position, using fallback")
+    position = { x: 0, y: 0 }
+  }
+
   const meshRef = useRef<Mesh>(null)
   const groupRef = useRef<Group>(null)
   const currentPosRef = useRef<[number, number, number]>([0, 0.6, 0])
@@ -171,9 +186,16 @@ export function CustomizableFighter({
 
   const chassisModifier = useMemo(() => getChassisModifier(customization?.chassis), [customization?.chassis])
 
+  const sizeScale = useMemo(() => {
+    if (isPlayer) return 1.0
+    if (isGuardian) return 1.4 // Guardians are 40% larger
+    if (isPawn) return 0.7 // Pawns are 30% smaller
+    return 1.0
+  }, [isPlayer, isGuardian, isPawn])
+
   return (
     <group ref={groupRef}>
-      <group ref={meshRef}>
+      <group ref={meshRef} scale={[sizeScale, sizeScale, sizeScale]}>
         {burnStacks > 0 && (
           <pointLight position={[0, 0, 0]} intensity={burnStacks * 0.5} distance={2} color="#ff4500" decay={2} />
         )}

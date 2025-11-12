@@ -349,4 +349,37 @@ export const AVAILABLE_TRIGGERS: Trigger[] = [
       return !myShield || myShield <= 0
     },
   },
+  {
+    id: "enemy-at-min-distance",
+    name: "Enemy at Minimum Distance",
+    description: "Triggers when enemy is at closest position (1 tile away)",
+    check: (context: BattleContext) => {
+      return Math.abs(context.playerPos.x - context.enemyPos.x) === 1
+    },
+  },
+  {
+    id: "in-range",
+    name: "In Attack Range",
+    description: "Triggers when within 2 tiles of enemy",
+    check: (context: BattleContext) => {
+      return Math.abs(context.playerPos.x - context.enemyPos.x) <= 2
+    },
+  },
+  {
+    id: "shields-up",
+    name: "Shields Active",
+    description: "Triggers when you have shields active",
+    check: (context: BattleContext) => {
+      const myShield = context.isPlayer ? context.playerShield : context.enemyShield
+      return !!myShield && myShield > 0
+    },
+  },
+  {
+    id: "just-took-damage",
+    name: "Just Damaged",
+    description: "Triggers right after taking damage",
+    check: (context: BattleContext) => {
+      return context.justTookDamage
+    },
+  },
 ]
