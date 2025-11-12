@@ -177,6 +177,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       enemyImmuneToStatus: immuneToStatus,
       enemies: [
         {
+          id: "enemy-0", // Added enemy ID
           position: { x: 5, y: 1 },
           hp: 999999,
           maxHp: 999999,
@@ -191,9 +192,8 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           lagStacks: [],
           displaceStacks: [],
           corrosiveStacks: [],
-          movementPairs: enemyMovementPairs,
-          tacticalPairs: enemyTacticalPairs,
-          triggerActionPairs: [], // Legacy field, kept for compatibility
+          shieldRegenDisabled: false,
+          triggerActionPairs: [...enemyMovementPairs, ...enemyTacticalPairs],
         },
       ],
     }
@@ -202,6 +202,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       initialState,
       playerMovementPairs,
       playerTacticalPairs,
+      [], // Empty enemy pairs - protocols are embedded in enemy.triggerActionPairs
       customization,
       undefined,
     )
