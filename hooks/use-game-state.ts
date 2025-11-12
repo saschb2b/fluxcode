@@ -402,24 +402,161 @@ export function useGameState(): GameState {
   ])
 
   const prepareNextWave = useCallback(() => {
-    // ... existing prepareNextWave implementation ...
     const nextWave = wave + 1
     setWave(nextWave)
-    // ... rest of implementation (enemy generation, etc.)
-  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex])
+
+    const currentNode = networkLayers[currentLayerIndex]?.nodes[currentNodeIndex]
+    const isGuardian = currentNode?.type === "guardian"
+
+    // Calculate difficulty multiplier
+    const diffMultiplier = calculateDifficultyMultiplier(nextWave)
+
+    // Generate enemy HP based on wave
+    let baseHp = 40
+    if (nextWave <= 3) {
+      baseHp = 40 + (nextWave - 1) * 10 // 40, 50, 60
+    } else if (nextWave <= 6) {
+      baseHp = 70 + (nextWave - 3) * 10 // 80, 90, 100
+    } else if (nextWave <= 15) {
+      baseHp = 40 + nextWave * 10
+    } else {
+      baseHp = 40 + 15 * 10 + Math.pow(nextWave - 15, 1.5) * 15
+    }
+
+    let finalMultiplier = 1.0
+    if (nextWave >= 6) {
+      finalMultiplier = diffMultiplier
+    } else if (nextWave === 5) {
+      finalMultiplier = 1.0 + (diffMultiplier - 1.0) * 0.5
+    }
+
+    const finalHp = Math.round(baseHp * finalMultiplier)
+
+    if (isGuardian) {
+      // Guardian battle with pawns
+      const guardianHp = finalHp * 1.5
+      const pawnCount = Math.min(Math.floor(nextWave / 5) + 1, 3)
+      const pawnHp = Math.round(finalHp * 0.6)
+
+      const newEnemies = []
+
+      // Add guardian
+      newEnemies.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: Math.round(guardianHp * 0.3),
+        maxShields: Math.round(guardianHp * 0.3),
+        armor: Math.round(guardianHp * 0.2),
+        maxArmor: Math.round(guardianHp * 0.2),
+        isPawn: false,
+      })
+
+      // Add pawns
+      for (let i = 0; i < pawnCount; i++) {
+        newEnemies.push({
+          position: { x: 3 + i, y: i % 3 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: Math.round(pawnHp * 0.2),
+          maxShields: Math.round(pawnHp * 0.2),
+          armor: 0,
+          maxArmor: 0,
+          isPawn: true,
+        })
+      }
+
+      setEnemies(newEnemies)
+      setEnemyCustomizations(newEnemies.map(() => generateRandomCustomization()))
+    } else {
+      // Regular battle
+      setEnemies([
+        {
+          position: { x: 4, y: 1 },
+          hp: finalHp,
+          maxHp: finalHp,
+          shields: Math.round(finalHp * 0.2),
+          maxShields: Math.round(finalHp * 0.2),
+          armor: Math.round(finalHp * 0.1),
+          maxArmor: Math.round(finalHp * 0.1),
+          isPawn: false,
+        },
+      ])
+      setEnemyCustomizations([generateRandomCustomization()])
+    }
+
+    setShowEnemyIntro(true)
+  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, performanceHistory])
 
   const continueToNextWave = useCallback(() => {
-    // ... existing continueToNextWave implementation ...
+    setPlayer((prev) => ({
+      ...prev,
+      position: { x: 1, y: 1 },
+      hp: prev.maxHp,
+      shields: prev.maxShields,
+      armor: prev.maxArmor,
+    }))
+
+    setProjectiles([])
     setShowEnemyIntro(false)
-    // ... rest of implementation
-  }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex])
+    setBattleState("idle")
+  }, [])
 
   const resetGame = useCallback(() => {
-    // ... existing resetGame implementation ...
     const latestProgress = loadProgress()
     setPlayerProgress(latestProgress)
-    // ... rest of implementation
-  }, [selectedCharacter])
+
+    setWave(1)
+    setCurrentLayerIndex(0)
+    setCurrentNodeIndex(0)
+    setNetworkLayers(initializeRun())
+
+    const hpBonus = getTotalStatBonus(latestProgress, "hp")
+    const shieldBonus = getTotalStatBonus(latestProgress, "shield_capacity")
+    const armorBonus = getTotalStatBonus(latestProgress, "armor_rating")
+
+    const maxHp = (selectedConstruct?.baseHp || baseMaxHp) + hpBonus
+    const maxShields = (selectedConstruct?.baseShields || 0) + shieldBonus
+    const maxArmor = (selectedConstruct?.baseArmor || 0) + armorBonus
+
+    setPlayer({
+      position: { x: 1, y: 1 },
+      hp: maxHp,
+      maxHp,
+      shields: maxShields,
+      maxShields,
+      armor: maxArmor,
+      maxArmor,
+    })
+
+    // Spawn initial enemy for wave 1
+    const initialHp = 40
+    setEnemies([
+      {
+        position: { x: 4, y: 1 },
+        hp: initialHp,
+        maxHp: initialHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        isPawn: false,
+      },
+    ])
+
+    setEnemyCustomization(generateRandomCustomization())
+    setEnemyCustomizations([generateRandomCustomization()])
+    setProjectiles([])
+    setBattleState("idle")
+    setShowRewardSelection(false)
+    setShowEnemyIntro(false)
+    setBattleHistory([])
+    setPerformanceHistory({
+      recentVictories: [],
+      avgTimeToWin: 30,
+      avgHealthRemaining: 60,
+    })
+  }, [selectedConstruct, baseMaxHp])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
     setTriggerActionPairs((prev) => [
@@ -510,7 +647,7 @@ export function useGameState(): GameState {
 
   const calculateDifficultyMultiplier = useCallback(
     (waveNumber: number) => {
-      // ... existing calculateDifficultyMultiplier implementation ...
+      // Existing calculateDifficultyMultiplier implementation
       return 1.0
     },
     [performanceHistory],
@@ -588,7 +725,7 @@ export function useGameState(): GameState {
   const setCharacter = useCallback(
     (character: CharacterPreset) => {
       setSelectedCharacter(character)
-      // ... existing setCharacter implementation ...
+      // Existing setCharacter implementation
     },
     [playerProgress],
   )
