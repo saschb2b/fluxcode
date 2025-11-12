@@ -191,6 +191,24 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
   const movementActions = AVAILABLE_ACTIONS.filter((a) => a.coreType === "movement")
   const tacticalActions = AVAILABLE_ACTIONS.filter((a) => a.coreType === "tactical")
 
+  const sortedTriggers = [...AVAILABLE_TRIGGERS].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedMovementActions = [...movementActions].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedTacticalActions = [...tacticalActions].sort((a, b) => a.name.localeCompare(b.name))
+
+  const getElementColor = (damageType?: string) => {
+    const elementColors: Record<string, string> = {
+      kinetic: "#94a3b8",
+      energy: "#22d3ee",
+      thermal: "#f97316",
+      viral: "#a855f7",
+      corrosive: "#84cc16",
+      explosive: "#ef4444",
+      concussion: "#ef4444",
+      glacial: "#06b6d4",
+    }
+    return damageType ? elementColors[damageType.toLowerCase()] || "#ffffff" : null
+  }
+
   const loadoutTabs = [
     { id: "head" as const, label: "CORE", icon: Cpu },
     { id: "chassis" as const, label: "CHASSIS", icon: Shield },
@@ -390,9 +408,11 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                       <SelectValue placeholder="Select trigger..." />
                                     </SelectTrigger>
                                     <SelectContent className="z-[150]">
-                                      {AVAILABLE_TRIGGERS.map((t) => (
-                                        <SelectItem key={t.id} value={t.id}>
-                                          {t.name}
+                                      {sortedTriggers.map((t) => (
+                                        <SelectItem key={t.id} value={t.id} className="font-mono">
+                                          <div className="flex items-center justify-between gap-3 w-full">
+                                            <span className="font-bold text-xs tracking-wide uppercase">{t.name}</span>
+                                          </div>
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -419,11 +439,29 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                       <SelectValue placeholder="Select action..." />
                                     </SelectTrigger>
                                     <SelectContent className="z-[150]">
-                                      {movementActions.map((a) => (
-                                        <SelectItem key={a.id} value={a.id}>
-                                          {a.name}
-                                        </SelectItem>
-                                      ))}
+                                      {sortedMovementActions.map((a) => {
+                                        const elementColor = getElementColor(a.damageType)
+                                        return (
+                                          <SelectItem key={a.id} value={a.id} className="font-mono">
+                                            <div className="flex items-center justify-between gap-3 w-full">
+                                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                {elementColor && (
+                                                  <div
+                                                    className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
+                                                    style={{ backgroundColor: elementColor }}
+                                                  />
+                                                )}
+                                                <span className="font-bold text-xs tracking-wide uppercase truncate">
+                                                  {a.name}
+                                                </span>
+                                              </div>
+                                              <span className="text-[10px] text-cyan-400 shrink-0 ml-2">
+                                                {a.cooldown}ms
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                        )
+                                      })}
                                     </SelectContent>
                                   </Select>
                                   <p className="text-xs sm:text-sm text-purple-300/50 mt-1">
@@ -540,9 +578,11 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                       <SelectValue placeholder="Select trigger..." />
                                     </SelectTrigger>
                                     <SelectContent className="z-[150]">
-                                      {AVAILABLE_TRIGGERS.map((t) => (
-                                        <SelectItem key={t.id} value={t.id}>
-                                          {t.name}
+                                      {sortedTriggers.map((t) => (
+                                        <SelectItem key={t.id} value={t.id} className="font-mono">
+                                          <div className="flex items-center justify-between gap-3 w-full">
+                                            <span className="font-bold text-xs tracking-wide uppercase">{t.name}</span>
+                                          </div>
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -569,11 +609,29 @@ export function FighterClassEditor({ classData, onSave, onCancel }: FighterClass
                                       <SelectValue placeholder="Select action..." />
                                     </SelectTrigger>
                                     <SelectContent className="z-[150]">
-                                      {tacticalActions.map((a) => (
-                                        <SelectItem key={a.id} value={a.id}>
-                                          {a.name}
-                                        </SelectItem>
-                                      ))}
+                                      {sortedTacticalActions.map((a) => {
+                                        const elementColor = getElementColor(a.damageType)
+                                        return (
+                                          <SelectItem key={a.id} value={a.id} className="font-mono">
+                                            <div className="flex items-center justify-between gap-3 w-full">
+                                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                {elementColor && (
+                                                  <div
+                                                    className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
+                                                    style={{ backgroundColor: elementColor }}
+                                                  />
+                                                )}
+                                                <span className="font-bold text-xs tracking-wide uppercase truncate">
+                                                  {a.name}
+                                                </span>
+                                              </div>
+                                              <span className="text-[10px] text-cyan-400 shrink-0 ml-2">
+                                                {a.cooldown}ms
+                                              </span>
+                                            </div>
+                                          </SelectItem>
+                                        )
+                                      })}
                                     </SelectContent>
                                   </Select>
                                   <p className="text-xs sm:text-sm text-orange-300/50 mt-1">
