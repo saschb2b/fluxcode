@@ -70,6 +70,8 @@ export const AVAILABLE_CONSTRUCTS: Construct[] = [
   },
 ]
 
+export const CONSTRUCTS = AVAILABLE_CONSTRUCTS
+
 export function getConstructById(id: string): Construct | undefined {
   return AVAILABLE_CONSTRUCTS.find((c) => c.id === id)
 }

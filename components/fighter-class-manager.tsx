@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { X, Edit2 } from "lucide-react"
-import { CHARACTER_PRESETS } from "@/lib/character-presets"
+import { CONSTRUCTS } from "@/lib/constructs"
 import type { CustomFighterClass } from "@/lib/meta-progression"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
@@ -31,26 +31,14 @@ export function FighterClassManager({
     if (customClasses.length > 0) {
       return customClasses
     }
-    return CHARACTER_PRESETS.map((preset) => ({
-      id: preset.id,
-      name: preset.name,
-      color: preset.color,
-      startingPairs: preset.startingPairs.map((pair) => ({
-        triggerId: pair.trigger.id,
-        actionId: pair.action.id,
-        priority: pair.priority,
-      })),
-      startingMovementPairs: preset.startingMovementPairs.map((pair) => ({
-        triggerId: pair.trigger.id,
-        actionId: pair.action.id,
-        priority: pair.priority,
-      })),
-      startingTacticalPairs: preset.startingTacticalPairs.map((pair) => ({
-        triggerId: pair.trigger.id,
-        actionId: pair.action.id,
-        priority: pair.priority,
-      })),
-      customization: preset.customization,
+    return CONSTRUCTS.map((construct) => ({
+      id: construct.id,
+      name: construct.name,
+      color: construct.color,
+      startingPairs: [],
+      startingMovementPairs: [],
+      startingTacticalPairs: [],
+      customization: undefined,
     }))
   }, [customClasses])
 
@@ -78,9 +66,9 @@ export function FighterClassManager({
         <div className="sticky top-0 bg-gradient-to-r from-cyan-950/95 to-black/95 backdrop-blur-md border-b border-cyan-500/30 p-6 flex items-center justify-between z-10">
           <div>
             <h2 className="text-3xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
-              FIGHTERS
+              CONSTRUCTS
             </h2>
-            <p className="text-sm text-cyan-300/70 mt-1">Select and customize your combat style</p>
+            <p className="text-sm text-cyan-300/70 mt-1">Deploy and program your combat frames</p>
           </div>
           <Button
             variant="ghost"
@@ -186,7 +174,6 @@ export function FighterClassManager({
                             )}
                           </>
                         ) : (
-                          // Fallback to old startingPairs display if dual-core data is not available
                           <>
                             <div className="text-xs text-cyan-300/70 mb-2">
                               STARTING PROTOCOLS ({classItem.startingPairs.length})

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import type React from "react"
 import { Card } from "@/components/ui/card"
 import { Play, User, ShoppingCart, BookOpen, Coins, Trophy, Target, Zap, FileText } from "lucide-react"
-import type { CharacterPreset } from "@/lib/character-presets"
+import type { Construct } from "@/types/game"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { PlayerProgress } from "@/lib/meta-progression"
 import { META_UPGRADES, canAffordUpgrade } from "@/lib/meta-progression"
@@ -11,11 +11,11 @@ import { Hub3DScene } from "./hub-3d-scene"
 import { useState, useMemo } from "react"
 
 interface HubProps {
-  selectedCharacter: CharacterPreset | null
+  selectedConstruct: Construct | null
   fighterCustomization: FighterCustomizationType
   playerProgress: PlayerProgress
   onStartRun: () => void
-  onSelectCharacter: () => void
+  onSelectConstruct: () => void
   onCustomizeFighter: () => void
   onOpenShop: () => void
   onOpenCodex: () => void
@@ -26,11 +26,11 @@ interface HubProps {
 }
 
 export function Hub({
-  selectedCharacter,
+  selectedConstruct,
   fighterCustomization,
   playerProgress,
   onStartRun,
-  onSelectCharacter,
+  onSelectConstruct,
   onCustomizeFighter,
   onOpenShop,
   onOpenCodex,
@@ -99,7 +99,7 @@ export function Hub({
           backgroundSize: "50px 50px",
         }}
       />
-      <Hub3DScene fighterCustomization={fighterCustomization} hasCharacter={!!selectedCharacter} />
+      <Hub3DScene fighterCustomization={fighterCustomization} hasCharacter={!!selectedConstruct} />
       <div className="relative z-10 min-h-full flex flex-col lg:grid lg:grid-cols-[1fr_2fr_1fr] lg:gap-6 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-6">
         <div className="hidden lg:flex flex-col gap-6">
           <div className="backdrop-blur-sm bg-black/30 px-6 py-4 rounded-lg border border-cyan-500/30">
@@ -107,13 +107,13 @@ export function Hub({
               HUB
             </h1>
           </div>
-          {selectedCharacter && (
+          {selectedConstruct && (
             <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,255,0.2)] hover:shadow-[0_0_25px_rgba(0,255,255,0.4)] transition-all">
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Fighter Class</div>
-                  <div className="text-3xl font-bold mb-4" style={{ color: selectedCharacter.color }}>
-                    {selectedCharacter.name}
+                  <div className="text-sm text-muted-foreground mb-1">Active Construct</div>
+                  <div className="text-3xl font-bold mb-4" style={{ color: selectedConstruct.color }}>
+                    {selectedConstruct.name}
                   </div>
                 </div>
                 <Button
@@ -123,23 +123,23 @@ export function Hub({
                   className="w-full border-cyan-500/50 hover:bg-cyan-500/20 active:scale-95 bg-transparent"
                 >
                   <User className="w-5 h-5 mr-2" />
-                  Manage Classes
+                  Manage Constructs
                 </Button>
               </div>
             </Card>
           )}
-          {!selectedCharacter && (
+          {!selectedConstruct && (
             <Card className="bg-card/90 backdrop-blur-md border-2 border-cyan-500/50 p-6 shadow-[0_0_15px_rgba(0,255,0,0.2)]">
               <div className="text-center">
                 <User className="w-16 h-16 text-muted-foreground mx-auto mb-3" />
-                <p className="text-base text-muted-foreground mb-4">No fighter selected</p>
+                <p className="text-base text-muted-foreground mb-4">No construct deployed</p>
                 <Button
                   onClick={onOpenClassManager}
                   size="lg"
                   className="bg-cyan-500 hover:bg-cyan-400 text-black active:scale-95 w-full"
                 >
                   <User className="w-5 h-5 mr-2" />
-                  Select Class
+                  Deploy Construct
                 </Button>
               </div>
             </Card>
@@ -211,7 +211,7 @@ export function Hub({
           <div className="h-80 sm:h-96 lg:hidden" />
           <Button
             onClick={handleBreach}
-            disabled={!selectedCharacter}
+            disabled={!selectedConstruct}
             className="hidden lg:flex h-20 text-2xl font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-black border-2 border-green-300 shadow-[0_0_20px_rgba(0,255,0,0.5)] hover:shadow-[0_0_30px_rgba(0,255,0,0.8)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
             style={{ fontFamily: "monospace" }}
           >
@@ -429,22 +429,22 @@ export function Hub({
               </div>
             </Card>
           )}
-          {selectedCharacter && (
+          {selectedConstruct && (
             <div className="text-center mb-1 pointer-events-auto">
               <div className="text-xs text-cyan-400/60 mb-0.5" style={{ fontFamily: "monospace" }}>
-                ACTIVE FIGHTER
+                ACTIVE CONSTRUCT
               </div>
               <div
                 className="text-lg font-bold tracking-wider"
-                style={{ color: selectedCharacter.color, fontFamily: "monospace" }}
+                style={{ color: selectedConstruct.color, fontFamily: "monospace" }}
               >
-                {selectedCharacter.name.toUpperCase()}
+                {selectedConstruct.name.toUpperCase()}
               </div>
             </div>
           )}
           <Button
             onClick={handleBreach}
-            disabled={!selectedCharacter}
+            disabled={!selectedConstruct}
             className="w-full h-16 text-xl font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-black border-2 border-green-300 shadow-[0_0_25px_rgba(0,255,0,0.6)] hover:shadow-[0_0_35px_rgba(0,255,0,0.9)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all pointer-events-auto"
             style={{ fontFamily: "monospace" }}
           >

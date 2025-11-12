@@ -5,7 +5,7 @@ import { BattleArena } from "@/components/battle-arena"
 import { GameUI } from "@/components/game-ui"
 import { StartScreen } from "@/components/start-screen"
 import { Hub } from "@/components/hub"
-import { CharacterSelection } from "@/components/character-selection"
+import { ConstructSelection } from "@/components/construct-selection"
 import { FighterCustomization } from "@/components/fighter-customization"
 import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
@@ -14,15 +14,15 @@ import { FighterClassManager } from "@/components/fighter-class-manager"
 import { WelcomeDialog } from "@/components/welcome-dialog"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
-import { CHARACTER_PRESETS } from "@/lib/character-presets"
+import { CONSTRUCTS } from "@/lib/constructs"
 import { claimContractReward, forceRefreshContracts } from "@/lib/network-contracts"
-import type { CharacterPreset } from "@/lib/character-presets"
+import type { Construct } from "@/types/game"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { CustomFighterClass } from "@/lib/meta-progression"
 
 export default function Home() {
   const gameState = useGameState()
-  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "class-manager" | "character-select" | "game">("start")
+  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "class-manager" | "construct-select" | "game">("start")
   const [fighterCustomization, setFighterCustomization] = useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION)
   const [showCustomization, setShowCustomization] = useState(false)
   const [showMetaShop, setShowMetaShop] = useState(false)
@@ -65,16 +65,15 @@ export default function Home() {
 
   useEffect(() => {
     if (gamePhase === "hub") {
-      if (gameState.playerProgress.selectedCharacterId) {
-        const persistedCharacter = CHARACTER_PRESETS.find(
-          (char) => char.id === gameState.playerProgress.selectedCharacterId,
+      if (gameState.playerProgress.selectedConstructId) {
+        const persistedConstruct = CONSTRUCTS.find(
+          (construct) => construct.id === gameState.playerProgress.selectedConstructId,
         )
-        if (persistedCharacter && !gameState.selectedCharacter) {
-          gameState.setCharacter(persistedCharacter)
+        if (persistedConstruct && !gameState.selectedConstruct) {
+          gameState.setConstruct(persistedConstruct)
         }
       }
 
-      // Use a small timeout to ensure character is loaded before showing UI
       const timer = setTimeout(() => {
         setIsInitialLoadComplete(true)
       }, 50)
@@ -92,8 +91,8 @@ export default function Home() {
     setGamePhase("hub")
   }
 
-  const handleCharacterSelect = (character: CharacterPreset) => {
-    gameState.setCharacter(character)
+  const handleConstructSelect = (construct: Construct, slotIndex: number) => {
+    gameState.setConstruct(construct, slotIndex)
     setGamePhase("hub")
   }
 
@@ -117,14 +116,14 @@ export default function Home() {
   }
 
   const handleStartRun = () => {
-    if (gameState.selectedCharacter) {
+    if (gameState.selectedConstruct) {
       gameState.resetGame()
       setGamePhase("game")
     }
   }
 
-  const handleOpenCharacterSelect = () => {
-    setGamePhase("character-select")
+  const handleOpenConstructSelect = () => {
+    setGamePhase("construct-select")
   }
 
   const handleOpenCustomization = () => {
@@ -171,28 +170,24 @@ export default function Home() {
     const allClasses =
       customClasses.length > 0
         ? customClasses
-        : CHARACTER_PRESETS.map((preset) => ({
-            id: preset.id,
-            name: preset.name,
-            color: preset.color,
-            startingPairs: preset.startingPairs.map((pair) => ({
-              triggerId: pair.trigger.id,
-              actionId: pair.action.id,
-              priority: pair.priority,
-            })),
-            customization: DEFAULT_CUSTOMIZATION, // Default customization for presets
+        : CONSTRUCTS.map((construct) => ({
+            id: construct.id,
+            name: construct.name,
+            color: construct.color,
+            startingPairs: [],
+            customization: DEFAULT_CUSTOMIZATION,
           }))
 
     const selectedClass = allClasses.find((c) => c.id === classId)
     if (selectedClass) {
-      const preset = CHARACTER_PRESETS.find((p) => p.id === selectedClass.id)
-      if (preset) {
-        const characterPreset: CharacterPreset = {
-          ...preset,
+      const construct = CONSTRUCTS.find((p) => p.id === selectedClass.id)
+      if (construct) {
+        const constructData: Construct = {
+          ...construct,
           name: selectedClass.name,
           color: selectedClass.color,
         }
-        gameState.setCharacter(characterPreset)
+        gameState.setConstruct(constructData)
 
         if (selectedClass.customization) {
           setFighterCustomization(selectedClass.customization)
@@ -255,15 +250,15 @@ export default function Home() {
 
       {gamePhase === "hub" && isInitialLoadComplete && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
-          {!gameState.selectedCharacter && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
+          {!gameState.selectedConstruct && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
 
           <Hub
-            selectedCharacter={gameState.selectedCharacter}
+            selectedConstruct={gameState.selectedConstruct}
             fighterCustomization={fighterCustomization}
             playerProgress={gameState.playerProgress}
             playerMaxHp={gameState.player.maxHp}
             onStartRun={handleStartRun}
-            onSelectCharacter={handleOpenCharacterSelect}
+            onSelectConstruct={handleOpenConstructSelect}
             onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
@@ -275,9 +270,13 @@ export default function Home() {
         </main>
       )}
 
-      {gamePhase === "character-select" && (
+      {gamePhase === "construct-select" && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
-          <CharacterSelection onSelect={handleCharacterSelect} onBack={handleBackToHub} />
+          <ConstructSelection
+            onSelect={handleConstructSelect}
+            onBack={handleBackToHub}
+            playerProgress={gameState.playerProgress}
+          />
         </main>
       )}
 
@@ -285,7 +284,7 @@ export default function Home() {
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <FighterClassManager
             customClasses={gameState.playerProgress.customFighterClasses || []}
-            selectedClassId={gameState.playerProgress.selectedCharacterId}
+            selectedClassId={gameState.playerProgress.selectedConstructId}
             onSaveClasses={handleSaveCustomClasses}
             onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
@@ -302,7 +301,7 @@ export default function Home() {
               gameState={gameState}
               fighterCustomization={fighterCustomization}
               enemyCustomization={gameState.enemyCustomization}
-              enemyCustomizations={gameState.enemyCustomizations} // Pass enemyCustomizations array
+              enemyCustomizations={gameState.enemyCustomizations}
             />
           </div>
 
