@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge" // Added Badge import
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Added Select imports
 import type { Trigger, Action, TriggerActionPair } from "@/types/game"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
-import { X, Plus, ChevronUp, ChevronDown, Trash2, Edit2, Check } from "lucide-react"
+import { X, Plus, Trash2, Check, MoveUp, MoveDown } from "lucide-react" // Added MoveUp, MoveDown
 
 interface ProgrammingPanelProps {
   pairs: TriggerActionPair[]
@@ -53,122 +54,162 @@ export function ProgrammingPanel({
     return actionDef?.coreType === "tactical"
   })
 
-  const [selectedTrigger, setSelectedTrigger] = useState<Trigger | null>(null)
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null)
-  const [selectedCoreType, setSelectedCoreType] = useState<"movement" | "tactical" | null>(null)
+  const [editingMovementProtocols, setEditingMovementProtocols] = useState<
+    Array<{ triggerId: string; actionId: string }>
+  >([])
+  const [editingTacticalProtocols, setEditingTacticalProtocols] = useState<
+    Array<{ triggerId: string; actionId: string }>
+  >([])
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [editTrigger, setEditTrigger] = useState<Trigger | null>(null)
-  const [editAction, setEditAction] = useState<Action | null>(null)
-  const [formStep, setFormStep] = useState<"select-core" | "select-trigger" | "select-action" | "confirm">(
-    "select-core",
-  )
 
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const MAX_MOVEMENT_PROTOCOLS = 6
+  const MAX_TACTICAL_PROTOCOLS = 6
 
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 640)
-    checkDesktop()
-    window.addEventListener("resize", checkDesktop)
-    return () => window.removeEventListener("resize", checkDesktop)
-  }, [])
+    setEditingMovementProtocols(
+      movementPairs.map((p) => ({
+        triggerId: p.trigger.id,
+        actionId: p.action.id,
+      })),
+    )
+    setEditingTacticalProtocols(
+      tacticalPairs.map((p) => ({
+        triggerId: p.trigger.id,
+        actionId: p.action.id,
+      })),
+    )
+  }, [pairs.length])
 
-  const handleAddPair = () => {
-    if (selectedTrigger && selectedAction) {
-      onAddPair(selectedTrigger, selectedAction)
-      setSelectedTrigger(null)
-      setSelectedAction(null)
-      setSelectedCoreType(null)
-      setFormStep("select-core")
-      setShowAddForm(false)
+  const addMovementProtocol = () => {
+    if (editingMovementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) return
+    setEditingMovementProtocols([...editingMovementProtocols, { triggerId: "", actionId: "" }])
+  }
+
+  const addTacticalProtocol = () => {
+    if (editingTacticalProtocols.length >= MAX_TACTICAL_PROTOCOLS) return
+    setEditingTacticalProtocols([...editingTacticalProtocols, { triggerId: "", actionId: "" }])
+  }
+
+  const removeMovementProtocol = (index: number) => {
+    setEditingMovementProtocols(editingMovementProtocols.filter((_, i) => i !== index))
+    // Also remove from actual pairs
+    const movementPairIndex = pairs.findIndex((p, i) => {
+      const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === p.action.id)
+      return actionDef?.coreType === "movement" && movementPairs.indexOf(p) === index
+    })
+    if (movementPairIndex !== -1) {
+      onRemovePair(movementPairIndex)
     }
   }
 
-  const handleSaveEdit = (originalIndex: number) => {
-    if (editTrigger && editAction) {
-      const oldPriority = pairs[originalIndex].priority
-      onRemovePair(originalIndex)
-      onAddPair(editTrigger, editAction)
-      const newIndex = pairs.length - 1
-      onUpdatePriority(newIndex, oldPriority)
-
-      setEditingIndex(null)
-      setEditTrigger(null)
-      setEditAction(null)
-      setExpandedIndex(null)
+  const removeTacticalProtocol = (index: number) => {
+    setEditingTacticalProtocols(editingTacticalProtocols.filter((_, i) => i !== index))
+    // Also remove from actual pairs
+    const tacticalPairIndex = pairs.findIndex((p, i) => {
+      const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === p.action.id)
+      return actionDef?.coreType === "tactical" && tacticalPairs.indexOf(p) === index
+    })
+    if (tacticalPairIndex !== -1) {
+      onRemovePair(tacticalPairIndex)
     }
   }
 
-  const handleStartEdit = (originalIndex: number) => {
-    const pair = pairs[originalIndex]
-    setEditingIndex(originalIndex)
-    setEditTrigger(pair.trigger)
-    setEditAction(pair.action)
+  const updateMovementProtocolTrigger = (index: number, triggerId: string) => {
+    const updated = [...editingMovementProtocols]
+    updated[index] = { ...updated[index], triggerId }
+    setEditingMovementProtocols(updated)
   }
 
-  const handleCancelEdit = () => {
-    setEditingIndex(null)
-    setEditTrigger(null)
-    setEditAction(null)
+  const updateMovementProtocolAction = (index: number, actionId: string) => {
+    const updated = [...editingMovementProtocols]
+    updated[index] = { ...updated[index], actionId }
+    setEditingMovementProtocols(updated)
   }
 
-  const handleResetForm = () => {
-    setSelectedTrigger(null)
-    setSelectedAction(null)
-    setSelectedCoreType(null)
-    setFormStep("select-core")
-    setShowAddForm(false)
+  const updateTacticalProtocolTrigger = (index: number, triggerId: string) => {
+    const updated = [...editingTacticalProtocols]
+    updated[index] = { ...updated[index], triggerId }
+    setEditingTacticalProtocols(updated)
   }
 
-  const sortedPairsWithIndices = pairs
-    .map((pair, originalIndex) => ({ pair, originalIndex }))
-    .sort((a, b) => b.pair.priority - a.pair.priority)
+  const updateTacticalProtocolAction = (index: number, actionId: string) => {
+    const updated = [...editingTacticalProtocols]
+    updated[index] = { ...updated[index], actionId }
+    setEditingTacticalProtocols(updated)
+  }
 
-  const movePairUp = (displayIndex: number) => {
-    if (displayIndex > 0) {
-      const currentItem = sortedPairsWithIndices[displayIndex]
-      const aboveItem = sortedPairsWithIndices[displayIndex - 1]
+  const moveMovementProtocol = (index: number, direction: "up" | "down") => {
+    if ((direction === "up" && index === 0) || (direction === "down" && index === editingMovementProtocols.length - 1))
+      return
 
-      const tempPriority = currentItem.pair.priority
-      onUpdatePriority(currentItem.originalIndex, aboveItem.pair.priority)
-      onUpdatePriority(aboveItem.originalIndex, tempPriority)
+    const updated = [...editingMovementProtocols]
+    const swapIndex = direction === "up" ? index - 1 : index + 1
+    ;[updated[index], updated[swapIndex]] = [updated[swapIndex], updated[index]]
+    setEditingMovementProtocols(updated)
+  }
+
+  const moveTacticalProtocol = (index: number, direction: "up" | "down") => {
+    if ((direction === "up" && index === 0) || (direction === "down" && index === editingTacticalProtocols.length - 1))
+      return
+
+    const updated = [...editingTacticalProtocols]
+    const swapIndex = direction === "up" ? index - 1 : index + 1
+    ;[updated[index], updated[swapIndex]] = [updated[swapIndex], updated[index]]
+    setEditingTacticalProtocols(updated)
+  }
+
+  const handleSave = () => {
+    // Validate all protocols are complete
+    const hasIncompleteMovement = editingMovementProtocols.some((p) => !p.triggerId || !p.actionId)
+    const hasIncompleteTactical = editingTacticalProtocols.some((p) => !p.triggerId || !p.actionId)
+
+    if (hasIncompleteMovement || hasIncompleteTactical) {
+      alert("Please complete all protocols before saving. Each protocol must have both a trigger and an action.")
+      return
     }
-  }
 
-  const movePairDown = (displayIndex: number) => {
-    if (displayIndex < sortedPairsWithIndices.length - 1) {
-      const currentItem = sortedPairsWithIndices[displayIndex]
-      const belowItem = sortedPairsWithIndices[displayIndex + 1]
-
-      const tempPriority = currentItem.pair.priority
-      onUpdatePriority(currentItem.originalIndex, belowItem.pair.priority)
-      onUpdatePriority(belowItem.originalIndex, tempPriority)
+    // Clear existing pairs
+    for (let i = pairs.length - 1; i >= 0; i--) {
+      onRemovePair(i)
     }
-  }
 
-  const toggleEnabled = (index: number) => {
-    if (onTogglePair) {
-      const currentEnabled = pairs[index].enabled ?? true
-      onTogglePair(index, !currentEnabled)
-    }
-  }
-
-  const getCoreTypeBadge = (coreType: "movement" | "tactical") => {
-    if (coreType === "movement") {
-      return {
-        bg: "bg-purple-500/20",
-        border: "border-purple-500/50",
-        text: "text-purple-300",
-        label: "MOVEMENT",
+    // Add movement protocols
+    editingMovementProtocols.forEach((protocol) => {
+      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+      const action = safeActions.find((a) => a.id === protocol.actionId)
+      if (trigger && action) {
+        onAddPair(trigger, action)
       }
+    })
+
+    // Add tactical protocols
+    editingTacticalProtocols.forEach((protocol) => {
+      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+      const action = safeActions.find((a) => a.id === protocol.actionId)
+      if (trigger && action) {
+        onAddPair(trigger, action)
+      }
+    })
+
+    onClose()
+  }
+
+  const sortedTriggers = [...safeTriggers].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedMovementActions = [...movementActions].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedTacticalActions = [...tacticalActions].sort((a, b) => a.name.localeCompare(b.name))
+
+  const getElementColor = (damageType?: string) => {
+    const elementColors: Record<string, string> = {
+      kinetic: "#94a3b8",
+      energy: "#22d3ee",
+      thermal: "#f97316",
+      viral: "#a855f7",
+      corrosive: "#84cc16",
+      explosive: "#ef4444",
+      concussion: "#ef4444",
+      glacial: "#06b6d4",
     }
-    return {
-      bg: "bg-orange-500/20",
-      border: "border-orange-500/50",
-      text: "text-orange-300",
-      label: "TACTICAL",
-    }
+    return damageType ? elementColors[damageType.toLowerCase()] || "#ffffff" : null
   }
 
   if (!isOpen) return null
@@ -178,23 +219,20 @@ export function ProgrammingPanel({
       <div className="fixed inset-0 z-[100] bg-black/98 backdrop-blur-sm flex items-start justify-center overflow-y-auto">
         <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 my-4 sm:my-6">
           <div className="bg-gradient-to-br from-black/90 to-gray-900/90 border-2 border-cyan-500/50 shadow-[0_0_50px_rgba(0,255,255,0.4)]">
+            {/* Header */}
             <div className="sticky top-0 z-10 bg-gradient-to-r from-cyan-950/95 to-black/95 border-b border-cyan-500/30 p-3 sm:p-6">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-lg sm:text-2xl font-bold border-2 border-cyan-500/50">
-                    P1
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2
-                      className="text-xl sm:text-3xl font-bold text-cyan-400 truncate"
-                      style={{ fontFamily: "monospace" }}
-                    >
-                      BATTLE PROTOCOLS
-                    </h2>
-                    <p className="text-xs sm:text-sm text-cyan-300/70 mt-1 hidden sm:block">
-                      Configure your fighter's AI behavior
-                    </p>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <h2
+                    className="text-xl sm:text-3xl font-bold text-cyan-400 truncate"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    BATTLE PROTOCOLS
+                  </h2>
+                  <p className="text-xs sm:text-sm text-cyan-300/70 mt-1">
+                    {editingMovementProtocols.length}/{MAX_MOVEMENT_PROTOCOLS} Movement •{" "}
+                    {editingTacticalProtocols.length}/{MAX_TACTICAL_PROTOCOLS} Tactical
+                  </p>
                 </div>
                 <Button
                   variant="ghost"
@@ -207,732 +245,359 @@ export function ProgrammingPanel({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row min-h-0">
-              {/* Left Panel - Add Protocol Section */}
-              <div className="sm:w-96 border-b sm:border-b-0 sm:border-r border-cyan-500/30 bg-black/40 shrink-0 p-3 sm:p-6">
-                {!showAddForm && !isDesktop && (
-                  <Button
-                    onClick={() => setShowAddForm(true)}
-                    className="w-full h-14 bg-cyan-500 hover:bg-cyan-400 text-black font-bold"
-                  >
-                    <Plus className="w-5 h-5 mr-3" />
-                    <div className="text-left">
-                      <div className="text-sm">Add Protocol</div>
-                      <div className="text-xs opacity-70">Condition → Action</div>
+            {/* Content */}
+            <div className="p-3 sm:p-6 space-y-8">
+              {/* Movement Core Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl sm:text-2xl font-bold text-purple-400" style={{ fontFamily: "monospace" }}>
+                        // MOVEMENT CORE DIRECTIVES
+                      </h3>
+                      <Badge variant="outline" className="bg-purple-950/50 border-purple-500/50 text-purple-300">
+                        POSITIONING
+                      </Badge>
                     </div>
+                    <p className="text-xs sm:text-sm text-purple-300/70 mt-1">
+                      Controls movement, evasion, and positioning actions
+                    </p>
+                  </div>
+                  <Button
+                    onClick={addMovementProtocol}
+                    className="bg-purple-500 hover:bg-purple-400 text-black disabled:opacity-50"
+                    size="sm"
+                    disabled={editingMovementProtocols.length >= MAX_MOVEMENT_PROTOCOLS}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Movement
                   </Button>
+                </div>
+
+                {editingMovementProtocols.length >= MAX_MOVEMENT_PROTOCOLS && (
+                  <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-sm text-yellow-300">
+                    ⚠ Maximum movement protocols reached.
+                  </div>
                 )}
 
-                {(showAddForm || isDesktop) && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xl sm:text-2xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
-                        ADD PROTOCOL
-                      </h3>
-                      {!isDesktop && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAddForm(false)}
-                          className="text-xs text-cyan-300 hover:text-cyan-100"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
+                {editingMovementProtocols.length === 0 ? (
+                  <Card className="p-8 border-2 border-dashed border-purple-500/30 bg-black/20 text-center">
+                    <p className="text-purple-300/50">No movement protocols configured.</p>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {editingMovementProtocols.map((protocol, index) => {
+                      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+                      const action = safeActions.find((a) => a.id === protocol.actionId)
 
-                    <p className="text-xs sm:text-sm text-cyan-300/70">
-                      Create a new protocol by selecting core type, condition, and action:
-                    </p>
-
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`flex-1 h-1 rounded ${formStep !== "select-core" ? "bg-cyan-500" : "bg-gray-700"}`}
-                      />
-                      <div className={`flex-1 h-1 rounded ${selectedTrigger ? "bg-cyan-500" : "bg-gray-700"}`} />
-                      <div
-                        className={`flex-1 h-1 rounded ${selectedTrigger && selectedAction ? "bg-cyan-500" : "bg-gray-700"}`}
-                      />
-                    </div>
-
-                    {formStep === "select-core" && (
-                      <div className="space-y-3">
-                        <div className="text-xs text-cyan-300/70">Select protocol type:</div>
-                        <Button
-                          className="w-full h-20 bg-purple-500/20 hover:bg-purple-500/30 border-2 border-purple-500/50 text-purple-200 font-bold justify-start px-4"
-                          onClick={() => {
-                            setSelectedCoreType("movement")
-                            setFormStep("select-trigger")
-                          }}
-                        >
-                          <div className="text-left">
-                            <div className="text-base">Movement Core</div>
-                            <div className="text-xs opacity-70 font-normal mt-1">
-                              Positioning, evasion, tactical movement
-                            </div>
-                            <div className="text-xs text-purple-400 mt-1">
-                              {movementActions.length} actions available
-                            </div>
-                          </div>
-                        </Button>
-                        <Button
-                          className="w-full h-20 bg-orange-500/20 hover:bg-orange-500/30 border-2 border-orange-500/50 text-orange-200 font-bold justify-start px-4"
-                          onClick={() => {
-                            setSelectedCoreType("tactical")
-                            setFormStep("select-trigger")
-                          }}
-                        >
-                          <div className="text-left">
-                            <div className="text-base">Tactical Core</div>
-                            <div className="text-xs opacity-70 font-normal mt-1">
-                              Attacks, buffs, debuffs, healing, status effects
-                            </div>
-                            <div className="text-xs text-orange-400 mt-1">
-                              {tacticalActions.length} actions available
-                            </div>
-                          </div>
-                        </Button>
-                      </div>
-                    )}
-
-                    {formStep === "select-trigger" && selectedCoreType && (
-                      <div className="space-y-2">
+                      return (
                         <Card
-                          className={`p-2 ${getCoreTypeBadge(selectedCoreType).bg} border ${getCoreTypeBadge(selectedCoreType).border}`}
+                          key={index}
+                          className="p-4 border-2 border-purple-500/30 bg-purple-950/10 hover:border-purple-500/50 transition-all"
                         >
-                          <div className={`text-xs ${getCoreTypeBadge(selectedCoreType).text} font-bold`}>
-                            {getCoreTypeBadge(selectedCoreType).label} CORE
-                          </div>
-                        </Card>
-                        <div className="text-xs text-cyan-300/70">
-                          Select a condition ({safeTriggers.length} available):
-                        </div>
-                        <div className="h-[200px] sm:h-[300px]">
-                          <ScrollArea className="h-full">
-                            <div className="space-y-2 pr-2">
-                              {safeTriggers.map((trigger) => (
-                                <Button
-                                  key={trigger.id}
-                                  onClick={() => {
-                                    setSelectedTrigger(trigger)
-                                    setFormStep("select-action")
-                                  }}
-                                  variant="outline"
-                                  className="w-full h-auto p-3 bg-black/50 border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-left justify-start"
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => moveMovementProtocol(index, "up")}
+                                disabled={index === 0}
+                              >
+                                <MoveUp className="w-3 h-3" />
+                              </Button>
+                              <span className="text-xs sm:text-sm text-purple-300/70 text-center">#{index + 1}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => moveMovementProtocol(index, "down")}
+                                disabled={index === editingMovementProtocols.length - 1}
+                              >
+                                <MoveDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-xs sm:text-sm text-purple-300/70 mb-2 block">
+                                  <span className="text-purple-400 font-bold">IF</span> Trigger
+                                  {!protocol.triggerId && (
+                                    <span className="ml-2 text-yellow-400 text-xs">⚠ Required</span>
+                                  )}
+                                </label>
+                                <Select
+                                  value={protocol.triggerId}
+                                  onValueChange={(value) => updateMovementProtocolTrigger(index, value)}
                                 >
-                                  <div>
-                                    <div className="font-medium text-sm text-cyan-200">{trigger.name}</div>
-                                    <div className="text-xs text-cyan-300/50 mt-1">{trigger.description}</div>
-                                  </div>
-                                </Button>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleResetForm}
-                          className="w-full bg-black/50 border-cyan-500/30"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
+                                  <SelectTrigger
+                                    className={`w-full bg-black/50 ${!protocol.triggerId ? "border-yellow-500/70" : "border-purple-500/50"}`}
+                                  >
+                                    <SelectValue placeholder="Select trigger..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[150]">
+                                    {sortedTriggers.map((t) => (
+                                      <SelectItem key={t.id} value={t.id} className="font-mono">
+                                        <div className="flex items-center justify-between gap-3 w-full">
+                                          <span className="font-bold text-xs tracking-wide uppercase">{t.name}</span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-xs sm:text-sm text-purple-300/50 mt-1">
+                                  {trigger?.description || "Choose when this protocol activates"}
+                                </p>
+                              </div>
 
-                    {formStep === "select-action" && selectedTrigger && selectedCoreType && (
-                      <div className="space-y-2">
-                        <Card
-                          className={`p-2 ${getCoreTypeBadge(selectedCoreType).bg} border ${getCoreTypeBadge(selectedCoreType).border}`}
-                        >
-                          <div className={`text-xs ${getCoreTypeBadge(selectedCoreType).text} font-bold`}>
-                            {getCoreTypeBadge(selectedCoreType).label} CORE
-                          </div>
-                        </Card>
-                        <Card className="p-3 bg-cyan-500/10 border border-cyan-500/30">
-                          <div className="text-xs text-cyan-400 mb-1">Condition:</div>
-                          <div className="text-sm text-cyan-200 font-medium">{selectedTrigger.name}</div>
-                        </Card>
-                        <div className="text-xs text-cyan-300/70">
-                          Select a {selectedCoreType} action (
-                          {selectedCoreType === "movement" ? movementActions.length : tacticalActions.length}{" "}
-                          available):
-                        </div>
-                        <div className="h-[200px] sm:h-[250px]">
-                          <ScrollArea className="h-full">
-                            <div className="space-y-2 pr-2">
-                              {(selectedCoreType === "movement" ? movementActions : tacticalActions).map((action) => (
-                                <Button
-                                  key={action.id}
-                                  onClick={() => {
-                                    setSelectedAction(action)
-                                    setFormStep("confirm")
-                                  }}
-                                  variant="outline"
-                                  className="w-full h-auto p-3 bg-black/50 border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-left justify-start"
+                              <div>
+                                <label className="text-xs sm:text-sm text-purple-300/70 mb-2 block">
+                                  <span className="text-green-400 font-bold">THEN</span> Action
+                                  {!protocol.actionId && (
+                                    <span className="ml-2 text-yellow-400 text-xs">⚠ Required</span>
+                                  )}
+                                </label>
+                                <Select
+                                  value={protocol.actionId}
+                                  onValueChange={(value) => updateMovementProtocolAction(index, value)}
                                 >
-                                  <div className="w-full">
-                                    <div className="flex items-start justify-between gap-2 mb-1">
-                                      <div className="font-medium text-sm text-cyan-200">{action.name}</div>
-                                      <div className="text-xs text-cyan-400 shrink-0">{action.cooldown}ms</div>
-                                    </div>
-                                    <div className="text-xs text-cyan-300/50">{action.description}</div>
-                                  </div>
-                                </Button>
-                              ))}
+                                  <SelectTrigger
+                                    className={`w-full bg-black/50 ${!protocol.actionId ? "border-yellow-500/70" : "border-purple-500/50"}`}
+                                  >
+                                    <SelectValue placeholder="Select action..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[150]">
+                                    {sortedMovementActions.map((a) => {
+                                      const elementColor = getElementColor(a.damageType)
+                                      return (
+                                        <SelectItem key={a.id} value={a.id} className="font-mono">
+                                          <div className="flex items-center justify-between gap-3 w-full">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                              {elementColor && (
+                                                <div
+                                                  className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
+                                                  style={{ backgroundColor: elementColor }}
+                                                />
+                                              )}
+                                              <span className="font-bold text-xs tracking-wide uppercase truncate">
+                                                {a.name}
+                                              </span>
+                                            </div>
+                                            <span className="text-[10px] text-cyan-400 shrink-0 ml-2">
+                                              {a.cooldown}ms
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      )
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-xs sm:text-sm text-purple-300/50 mt-1">
+                                  {action?.description || "Choose movement action"}
+                                </p>
+                              </div>
                             </div>
-                          </ScrollArea>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleResetForm}
-                          className="w-full bg-black/50 border-cyan-500/30"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
 
-                    {formStep === "confirm" && selectedTrigger && selectedAction && selectedCoreType && (
-                      <div className="space-y-3">
-                        <div className="text-xs text-cyan-300/70">Review your protocol:</div>
-
-                        <Card
-                          className={`p-2 ${getCoreTypeBadge(selectedCoreType).bg} border ${getCoreTypeBadge(selectedCoreType).border}`}
-                        >
-                          <div className={`text-xs ${getCoreTypeBadge(selectedCoreType).text} font-bold`}>
-                            {getCoreTypeBadge(selectedCoreType).label} CORE PROTOCOL
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeMovementProtocol(index)}
+                              className="hover:bg-red-500/20 hover:border-red-500 border border-transparent"
+                            >
+                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                            </Button>
                           </div>
                         </Card>
-
-                        <Card className="p-3 bg-cyan-500/10 border border-cyan-500/30">
-                          <div className="text-xs text-cyan-400 mb-1">
-                            <span className="font-bold">IF</span> Condition:
-                          </div>
-                          <div className="text-sm text-cyan-200 font-medium mb-1">{selectedTrigger.name}</div>
-                          <div className="text-xs text-cyan-300/50">{selectedTrigger.description}</div>
-                        </Card>
-
-                        <div className="flex justify-center">
-                          <div className="text-cyan-400 text-2xl">↓</div>
-                        </div>
-
-                        <Card className="p-3 bg-green-500/10 border border-green-500/30">
-                          <div className="text-xs text-green-400 mb-1">
-                            <span className="font-bold">THEN</span> Action:
-                          </div>
-                          <div className="text-sm text-green-200 font-medium mb-1">{selectedAction.name}</div>
-                          <div className="text-xs text-green-300/50 mb-2">{selectedAction.description}</div>
-                          <div className="text-xs text-cyan-400">Cooldown: {selectedAction.cooldown}ms</div>
-                        </Card>
-
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            variant="outline"
-                            className="flex-1 h-11 border-red-500/50 hover:bg-red-500/20 bg-transparent text-red-300"
-                            onClick={handleResetForm}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            className="flex-1 h-11 bg-green-500 hover:bg-green-400 text-black font-bold"
-                            onClick={handleAddPair}
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4 pt-4 border-t border-cyan-500/30 hidden sm:block">
-                      <div className="text-xs text-cyan-300/50 space-y-1">
-                        <p>• Movement Core executes first each tick</p>
-                        <p>• Tactical Core executes if no movement</p>
-                        <p>• First matching condition wins per core</p>
-                      </div>
-                    </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Right Panel - Active Protocols */}
-              <div className="flex-1 flex flex-col p-3 sm:p-6 min-h-0 overflow-hidden">
-                <div className="flex items-center justify-between mb-4 shrink-0">
+              {/* Tactical Core Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-cyan-400" style={{ fontFamily: "monospace" }}>
-                      ACTIVE PROTOCOLS
-                    </h3>
-                    <p className="text-xs sm:text-sm text-cyan-300/70 mt-1">
-                      {movementPairs.length}/6 Movement • {tacticalPairs.length}/6 Tactical
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl sm:text-2xl font-bold text-orange-400" style={{ fontFamily: "monospace" }}>
+                        // TACTICAL CORE DIRECTIVES
+                      </h3>
+                      <Badge variant="outline" className="bg-orange-950/50 border-orange-500/50 text-orange-300">
+                        COMBAT
+                      </Badge>
+                    </div>
+                    <p className="text-xs sm:text-sm text-orange-300/70 mt-1">
+                      Controls attacks, buffs, debuffs, and healing
                     </p>
                   </div>
-                  <div className="text-xs text-cyan-300/50 hidden sm:block">
-                    {safeTriggers.length} conditions • {safeActions.length} actions
+                  <Button
+                    onClick={addTacticalProtocol}
+                    className="bg-orange-500 hover:bg-orange-400 text-black disabled:opacity-50"
+                    size="sm"
+                    disabled={editingTacticalProtocols.length >= MAX_TACTICAL_PROTOCOLS}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Tactical
+                  </Button>
+                </div>
+
+                {editingTacticalProtocols.length >= MAX_TACTICAL_PROTOCOLS && (
+                  <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-sm text-yellow-300">
+                    ⚠ Maximum tactical protocols reached.
                   </div>
-                </div>
+                )}
 
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <ScrollArea className="h-full pr-2">
-                    {sortedPairsWithIndices.length === 0 ? (
-                      <Card className="p-8 border-2 border-dashed border-cyan-500/30 bg-black/20 text-center">
-                        <p className="text-cyan-300/50">No protocols configured. Add one to get started.</p>
-                      </Card>
-                    ) : (
-                      <div className="space-y-6">
-                        {movementPairs.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="text-sm font-bold text-purple-400 px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded">
-                                MOVEMENT CORE DIRECTIVES ({movementPairs.length})
+                {editingTacticalProtocols.length === 0 ? (
+                  <Card className="p-8 border-2 border-dashed border-orange-500/30 bg-black/20 text-center">
+                    <p className="text-orange-300/50">No tactical protocols configured.</p>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {editingTacticalProtocols.map((protocol, index) => {
+                      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+                      const action = safeActions.find((a) => a.id === protocol.actionId)
+
+                      return (
+                        <Card
+                          key={index}
+                          className="p-4 border-2 border-orange-500/30 bg-orange-950/10 hover:border-orange-500/50 transition-all"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => moveTacticalProtocol(index, "up")}
+                                disabled={index === 0}
+                              >
+                                <MoveUp className="w-3 h-3" />
+                              </Button>
+                              <span className="text-xs sm:text-sm text-orange-300/70 text-center">#{index + 1}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => moveTacticalProtocol(index, "down")}
+                                disabled={index === editingTacticalProtocols.length - 1}
+                              >
+                                <MoveDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-xs sm:text-sm text-orange-300/70 mb-2 block">
+                                  <span className="text-orange-400 font-bold">IF</span> Trigger
+                                  {!protocol.triggerId && (
+                                    <span className="ml-2 text-yellow-400 text-xs">⚠ Required</span>
+                                  )}
+                                </label>
+                                <Select
+                                  value={protocol.triggerId}
+                                  onValueChange={(value) => updateTacticalProtocolTrigger(index, value)}
+                                >
+                                  <SelectTrigger
+                                    className={`w-full bg-black/50 ${!protocol.triggerId ? "border-yellow-500/70" : "border-orange-500/50"}`}
+                                  >
+                                    <SelectValue placeholder="Select trigger..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[150]">
+                                    {sortedTriggers.map((t) => (
+                                      <SelectItem key={t.id} value={t.id} className="font-mono">
+                                        <div className="flex items-center justify-between gap-3 w-full">
+                                          <span className="font-bold text-xs tracking-wide uppercase">{t.name}</span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-xs sm:text-sm text-orange-300/50 mt-1">
+                                  {trigger?.description || "Choose when this protocol activates"}
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="text-xs sm:text-sm text-orange-300/70 mb-2 block">
+                                  <span className="text-green-400 font-bold">THEN</span> Action
+                                  {!protocol.actionId && (
+                                    <span className="ml-2 text-yellow-400 text-xs">⚠ Required</span>
+                                  )}
+                                </label>
+                                <Select
+                                  value={protocol.actionId}
+                                  onValueChange={(value) => updateTacticalProtocolAction(index, value)}
+                                >
+                                  <SelectTrigger
+                                    className={`w-full bg-black/50 ${!protocol.actionId ? "border-yellow-500/70" : "border-orange-500/50"}`}
+                                  >
+                                    <SelectValue placeholder="Select action..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[150]">
+                                    {sortedTacticalActions.map((a) => {
+                                      const elementColor = getElementColor(a.damageType)
+                                      return (
+                                        <SelectItem key={a.id} value={a.id} className="font-mono">
+                                          <div className="flex items-center justify-between gap-3 w-full">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                              {elementColor && (
+                                                <div
+                                                  className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse"
+                                                  style={{ backgroundColor: elementColor }}
+                                                />
+                                              )}
+                                              <span className="font-bold text-xs tracking-wide uppercase truncate">
+                                                {a.name}
+                                              </span>
+                                            </div>
+                                            <span className="text-[10px] text-cyan-400 shrink-0 ml-2">
+                                              {a.cooldown}ms
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      )
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-xs sm:text-sm text-orange-300/50 mt-1">
+                                  {action?.description || "Choose tactical action"}
+                                </p>
                               </div>
                             </div>
-                            <div className="space-y-3">
-                              {sortedPairsWithIndices
-                                .filter(({ pair }) => {
-                                  const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
-                                  return actionDef?.coreType === "movement"
-                                })
-                                .map(({ pair, originalIndex }, displayIndex) => {
-                                  const isEnabled = pair.enabled ?? true
-                                  const isExpanded = expandedIndex === originalIndex
-                                  const isEditing = editingIndex === originalIndex
 
-                                  return (
-                                    <Card
-                                      key={originalIndex}
-                                      className={`p-4 border-2 border-purple-500/50 bg-black/40 hover:border-purple-500/70 transition-all ${!isEnabled ? "opacity-40" : ""}`}
-                                    >
-                                      <div className="flex items-center gap-4">
-                                        <button
-                                          onClick={() => toggleEnabled(originalIndex)}
-                                          className={`shrink-0 w-10 h-6 sm:w-12 sm:h-7 rounded-full transition-colors ${
-                                            isEnabled ? "bg-purple-500" : "bg-gray-700"
-                                          } relative`}
-                                        >
-                                          <div
-                                            className={`absolute top-0.5 ${isEnabled ? "right-0.5" : "left-0.5"} w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white transition-all shadow-lg`}
-                                          />
-                                        </button>
-
-                                        <span className="text-xs sm:text-sm text-purple-300/70 font-bold">
-                                          #{displayIndex + 1}
-                                        </span>
-
-                                        <button
-                                          onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
-                                          className="flex-1 text-left text-sm text-purple-100 font-medium min-w-0"
-                                        >
-                                          <span className="truncate block">
-                                            {pair.trigger.name} <span className="text-purple-400 mx-2">→</span>{" "}
-                                            {pair.action.name}
-                                          </span>
-                                        </button>
-
-                                        <button
-                                          onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
-                                          className="shrink-0 text-purple-400 hover:text-purple-300"
-                                        >
-                                          {isExpanded ? (
-                                            <ChevronUp className="w-5 h-5" />
-                                          ) : (
-                                            <ChevronDown className="w-5 h-5" />
-                                          )}
-                                        </button>
-                                      </div>
-
-                                      {isExpanded && (
-                                        <div className="border-t border-purple-500/30 mt-4 pt-4 space-y-3">
-                                          {!isEditing ? (
-                                            <>
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                  <label className="text-xs text-purple-300/70 mb-2 block">
-                                                    <span className="text-purple-400 font-bold">IF</span> Trigger
-                                                  </label>
-                                                  <Card className="p-3 bg-purple-500/10 border border-purple-500/30">
-                                                    <div className="text-sm text-purple-200 font-medium mb-1">
-                                                      {pair.trigger.name}
-                                                    </div>
-                                                    <div className="text-xs text-purple-300/50">
-                                                      {pair.trigger.description}
-                                                    </div>
-                                                  </Card>
-                                                </div>
-                                                <div>
-                                                  <label className="text-xs text-purple-300/70 mb-2 block">
-                                                    <span className="text-green-400 font-bold">THEN</span> Action
-                                                  </label>
-                                                  <Card className="p-3 bg-green-500/10 border border-green-500/30">
-                                                    <div className="text-sm text-green-200 font-medium mb-1">
-                                                      {pair.action.name}
-                                                    </div>
-                                                    <div className="text-xs text-green-300/50">
-                                                      {pair.action.description}
-                                                    </div>
-                                                    <div className="text-xs text-purple-400 mt-2">
-                                                      Cooldown: {pair.action.cooldown}
-                                                      ms
-                                                    </div>
-                                                  </Card>
-                                                </div>
-                                              </div>
-
-                                              <div className="grid grid-cols-4 gap-2">
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-purple-500/30 hover:bg-purple-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => movePairUp(displayIndex)}
-                                                  disabled={displayIndex === 0}
-                                                >
-                                                  <ChevronUp className="w-5 h-5" />
-                                                  <span className="text-[10px]">Up</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-purple-500/30 hover:bg-purple-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => movePairDown(displayIndex)}
-                                                  disabled={displayIndex === sortedPairsWithIndices.length - 1}
-                                                >
-                                                  <ChevronDown className="w-5 h-5" />
-                                                  <span className="text-[10px]">Down</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => handleStartEdit(originalIndex)}
-                                                >
-                                                  <Edit2 className="w-5 h-5" />
-                                                  <span className="text-[10px]">Edit</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-red-500/30 text-red-400 hover:bg-red-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => {
-                                                    onRemovePair(originalIndex)
-                                                    setExpandedIndex(null)
-                                                  }}
-                                                >
-                                                  <Trash2 className="w-5 h-5" />
-                                                  <span className="text-[10px]">Delete</span>
-                                                </Button>
-                                              </div>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <div className="space-y-3">
-                                                <div className="text-xs text-purple-400 font-semibold">
-                                                  EDIT MOVEMENT PROTOCOL
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                  <div className="text-xs text-purple-300/70">Condition:</div>
-                                                  <ScrollArea className="h-32 rounded border border-purple-500/30 bg-black/50">
-                                                    <div className="p-2 space-y-1">
-                                                      {safeTriggers.map((trigger) => (
-                                                        <button
-                                                          key={trigger.id}
-                                                          onClick={() => setEditTrigger(trigger)}
-                                                          className={`w-full p-2 rounded text-left text-xs transition-all ${
-                                                            editTrigger?.id === trigger.id
-                                                              ? "bg-purple-500/30 border border-purple-500"
-                                                              : "bg-black/60 hover:bg-purple-500/10 border border-transparent"
-                                                          }`}
-                                                        >
-                                                          <div className="font-medium text-purple-200">
-                                                            {trigger.name}
-                                                          </div>
-                                                        </button>
-                                                      ))}
-                                                    </div>
-                                                  </ScrollArea>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                  <div className="text-xs text-purple-300/70">Action:</div>
-                                                  <ScrollArea className="h-32 rounded border border-green-500/30 bg-black/50">
-                                                    <div className="p-2 space-y-1">
-                                                      {movementActions.map((action) => (
-                                                        <button
-                                                          key={action.id}
-                                                          onClick={() => setEditAction(action)}
-                                                          className={`w-full p-2 rounded text-left text-xs transition-all ${
-                                                            editAction?.id === action.id
-                                                              ? "bg-green-500/30 border border-green-500"
-                                                              : "bg-black/60 hover:bg-green-500/10 border border-transparent"
-                                                          }`}
-                                                        >
-                                                          <div className="font-medium text-green-200">
-                                                            {action.name}
-                                                          </div>
-                                                        </button>
-                                                      ))}
-                                                    </div>
-                                                  </ScrollArea>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-2 pt-2">
-                                                  <Button
-                                                    variant="outline"
-                                                    className="h-11 border-red-500/50 text-red-300 hover:bg-red-500/20 bg-transparent"
-                                                    onClick={handleCancelEdit}
-                                                  >
-                                                    Cancel
-                                                  </Button>
-                                                  <Button
-                                                    className="h-11 bg-green-500 hover:bg-green-400 text-black font-bold"
-                                                    onClick={() => handleSaveEdit(originalIndex)}
-                                                    disabled={!editTrigger || !editAction}
-                                                  >
-                                                    <Check className="w-4 h-4 mr-2" />
-                                                    Save
-                                                  </Button>
-                                                </div>
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
-                                      )}
-                                    </Card>
-                                  )
-                                })}
-                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeTacticalProtocol(index)}
+                              className="hover:bg-red-500/20 hover:border-red-500 border border-transparent"
+                            >
+                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                            </Button>
                           </div>
-                        )}
-
-                        {tacticalPairs.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="text-sm font-bold text-orange-400 px-3 py-1 bg-orange-500/20 border border-orange-500/50 rounded">
-                                TACTICAL CORE DIRECTIVES ({tacticalPairs.length})
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              {sortedPairsWithIndices
-                                .filter(({ pair }) => {
-                                  const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
-                                  return actionDef?.coreType === "tactical"
-                                })
-                                .map(({ pair, originalIndex }, displayIndex) => {
-                                  const isEnabled = pair.enabled ?? true
-                                  const isExpanded = expandedIndex === originalIndex
-                                  const isEditing = editingIndex === originalIndex
-
-                                  return (
-                                    <Card
-                                      key={originalIndex}
-                                      className={`p-4 border-2 border-orange-500/50 bg-black/40 hover:border-orange-500/70 transition-all ${!isEnabled ? "opacity-40" : ""}`}
-                                    >
-                                      <div className="flex items-center gap-4">
-                                        <button
-                                          onClick={() => toggleEnabled(originalIndex)}
-                                          className={`shrink-0 w-10 h-6 sm:w-12 sm:h-7 rounded-full transition-colors ${
-                                            isEnabled ? "bg-orange-500" : "bg-gray-700"
-                                          } relative`}
-                                        >
-                                          <div
-                                            className={`absolute top-0.5 ${isEnabled ? "right-0.5" : "left-0.5"} w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white transition-all shadow-lg`}
-                                          />
-                                        </button>
-
-                                        <span className="text-xs sm:text-sm text-orange-300/70 font-bold">
-                                          #{displayIndex + 1}
-                                        </span>
-
-                                        <button
-                                          onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
-                                          className="flex-1 text-left text-sm text-orange-100 font-medium min-w-0"
-                                        >
-                                          <span className="truncate block">
-                                            {pair.trigger.name} <span className="text-orange-400 mx-2">→</span>{" "}
-                                            {pair.action.name}
-                                          </span>
-                                        </button>
-
-                                        <button
-                                          onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
-                                          className="shrink-0 text-orange-400 hover:text-orange-300"
-                                        >
-                                          {isExpanded ? (
-                                            <ChevronUp className="w-5 h-5" />
-                                          ) : (
-                                            <ChevronDown className="w-5 h-5" />
-                                          )}
-                                        </button>
-                                      </div>
-
-                                      {isExpanded && (
-                                        <div className="border-t border-orange-500/30 mt-4 pt-4 space-y-3">
-                                          {!isEditing ? (
-                                            <>
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                  <label className="text-xs text-orange-300/70 mb-2 block">
-                                                    <span className="text-orange-400 font-bold">IF</span> Trigger
-                                                  </label>
-                                                  <Card className="p-3 bg-orange-500/10 border border-orange-500/30">
-                                                    <div className="text-sm text-orange-200 font-medium mb-1">
-                                                      {pair.trigger.name}
-                                                    </div>
-                                                    <div className="text-xs text-orange-300/50">
-                                                      {pair.trigger.description}
-                                                    </div>
-                                                  </Card>
-                                                </div>
-                                                <div>
-                                                  <label className="text-xs text-orange-300/70 mb-2 block">
-                                                    <span className="text-green-400 font-bold">THEN</span> Action
-                                                  </label>
-                                                  <Card className="p-3 bg-green-500/10 border border-green-500/30">
-                                                    <div className="text-sm text-green-200 font-medium mb-1">
-                                                      {pair.action.name}
-                                                    </div>
-                                                    <div className="text-xs text-green-300/50">
-                                                      {pair.action.description}
-                                                    </div>
-                                                    <div className="text-xs text-orange-400 mt-2">
-                                                      Cooldown: {pair.action.cooldown}
-                                                      ms
-                                                    </div>
-                                                  </Card>
-                                                </div>
-                                              </div>
-
-                                              <div className="grid grid-cols-4 gap-2">
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-orange-500/30 hover:bg-orange-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => movePairUp(displayIndex)}
-                                                  disabled={displayIndex === 0}
-                                                >
-                                                  <ChevronUp className="w-5 h-5" />
-                                                  <span className="text-[10px]">Up</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-orange-500/30 hover:bg-orange-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => movePairDown(displayIndex)}
-                                                  disabled={displayIndex === sortedPairsWithIndices.length - 1}
-                                                >
-                                                  <ChevronDown className="w-5 h-5" />
-                                                  <span className="text-[10px]">Down</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => handleStartEdit(originalIndex)}
-                                                >
-                                                  <Edit2 className="w-5 h-5" />
-                                                  <span className="text-[10px]">Edit</span>
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  className="h-12 border-red-500/30 text-red-400 hover:bg-red-500/20 bg-transparent flex-col gap-1"
-                                                  onClick={() => {
-                                                    onRemovePair(originalIndex)
-                                                    setExpandedIndex(null)
-                                                  }}
-                                                >
-                                                  <Trash2 className="w-5 h-5" />
-                                                  <span className="text-[10px]">Delete</span>
-                                                </Button>
-                                              </div>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <div className="space-y-3">
-                                                <div className="text-xs text-orange-400 font-semibold">
-                                                  EDIT TACTICAL PROTOCOL
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                  <div className="text-xs text-orange-300/70">Condition:</div>
-                                                  <ScrollArea className="h-32 rounded border border-orange-500/30 bg-black/50">
-                                                    <div className="p-2 space-y-1">
-                                                      {safeTriggers.map((trigger) => (
-                                                        <button
-                                                          key={trigger.id}
-                                                          onClick={() => setEditTrigger(trigger)}
-                                                          className={`w-full p-2 rounded text-left text-xs transition-all ${
-                                                            editTrigger?.id === trigger.id
-                                                              ? "bg-orange-500/30 border border-orange-500"
-                                                              : "bg-black/60 hover:bg-orange-500/10 border border-transparent"
-                                                          }`}
-                                                        >
-                                                          <div className="font-medium text-orange-200">
-                                                            {trigger.name}
-                                                          </div>
-                                                        </button>
-                                                      ))}
-                                                    </div>
-                                                  </ScrollArea>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                  <div className="text-xs text-orange-300/70">Action:</div>
-                                                  <ScrollArea className="h-32 rounded border border-green-500/30 bg-black/50">
-                                                    <div className="p-2 space-y-1">
-                                                      {tacticalActions.map((action) => (
-                                                        <button
-                                                          key={action.id}
-                                                          onClick={() => setEditAction(action)}
-                                                          className={`w-full p-2 rounded text-left text-xs transition-all ${
-                                                            editAction?.id === action.id
-                                                              ? "bg-green-500/30 border border-green-500"
-                                                              : "bg-black/60 hover:bg-green-500/10 border border-transparent"
-                                                          }`}
-                                                        >
-                                                          <div className="font-medium text-green-200">
-                                                            {action.name}
-                                                          </div>
-                                                        </button>
-                                                      ))}
-                                                    </div>
-                                                  </ScrollArea>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-2 pt-2">
-                                                  <Button
-                                                    variant="outline"
-                                                    className="h-11 border-red-500/50 text-red-300 hover:bg-red-500/20 bg-transparent"
-                                                    onClick={handleCancelEdit}
-                                                  >
-                                                    Cancel
-                                                  </Button>
-                                                  <Button
-                                                    className="h-11 bg-green-500 hover:bg-green-400 text-black font-bold"
-                                                    onClick={() => handleSaveEdit(originalIndex)}
-                                                    disabled={!editTrigger || !editAction}
-                                                  >
-                                                    <Check className="w-4 h-4 mr-2" />
-                                                    Save
-                                                  </Button>
-                                                </div>
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
-                                      )}
-                                    </Card>
-                                  )
-                                })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="sticky bottom-0 bg-gradient-to-t from-black/95 to-transparent border-t border-cyan-500/30 p-3 sm:p-6 flex justify-end">
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gradient-to-t from-black/95 to-transparent border-t border-cyan-500/30 p-3 sm:p-6 flex gap-2 sm:gap-3">
               <Button
                 onClick={onClose}
-                className="px-6 sm:px-8 h-10 sm:h-12 bg-green-500 hover:bg-green-400 text-black font-bold text-sm"
+                variant="outline"
+                className="flex-1 border-red-500/50 hover:bg-red-500/20 bg-transparent text-sm"
               >
-                Done
+                <X className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="flex-1 bg-green-500 hover:bg-green-400 text-black font-bold text-sm"
+              >
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                Save Changes
               </Button>
             </div>
           </div>
