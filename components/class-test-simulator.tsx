@@ -72,11 +72,14 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
     setDisplaceStacks(0)
     setCorrosiveStacks(0)
 
-    const playerPairs = buildTriggerActionPairs(classData.startingPairs)
+    const playerMovementPairs = buildTriggerActionPairs(classData.startingMovementPairs || [])
+    const playerTacticalPairs = buildTriggerActionPairs(classData.startingTacticalPairs || [])
 
-    const enemyPairs = []
+    const enemyMovementPairs = []
+    const enemyTacticalPairs = []
+
     if (enableMovement) {
-      enemyPairs.push(
+      enemyMovementPairs.push(
         ...buildTriggerActionPairs([
           // Constant repositioning - strafe every opportunity
           {
@@ -141,7 +144,7 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       )
     }
     if (enableAttacking) {
-      enemyPairs.push(
+      enemyTacticalPairs.push(
         ...buildTriggerActionPairs([
           {
             triggerId: "same-row",
@@ -152,7 +155,12 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
       )
     }
 
-    console.log("[v0] Simulacrum: Built enemy protocols:", enemyPairs.length)
+    console.log(
+      "[v0] Simulacrum: Built enemy protocols - Movement:",
+      enemyMovementPairs.length,
+      "Tactical:",
+      enemyTacticalPairs.length,
+    )
 
     const shieldAmount = enableShield ? 200 : 0
     const armorAmount = enableArmor ? 150 : 0
@@ -183,12 +191,20 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
           lagStacks: [],
           displaceStacks: [],
           corrosiveStacks: [],
-          triggerActionPairs: enemyPairs,
+          movementPairs: enemyMovementPairs,
+          tacticalPairs: enemyTacticalPairs,
+          triggerActionPairs: [], // Legacy field, kept for compatibility
         },
       ],
     }
 
-    battleEngineRef.current = new BattleEngine(initialState, playerPairs, [], customization, undefined)
+    battleEngineRef.current = new BattleEngine(
+      initialState,
+      playerMovementPairs,
+      playerTacticalPairs,
+      customization,
+      undefined,
+    )
 
     setGameState({
       player: { position: { x: 1, y: 1 }, hp: 100, maxHp: 100 },
@@ -580,7 +596,9 @@ export function ClassTestSimulator({ classData, customization, onClose }: ClassT
         <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-black/80 border border-cyan-500/50 px-2 py-1 md:px-3 md:py-2 rounded">
           <p className="text-xs text-cyan-300/50 font-mono">CLASS</p>
           <p className="text-sm md:text-base font-bold text-cyan-400 font-mono">{classData.name}</p>
-          <p className="text-xs text-cyan-300/50">{classData.startingPairs.length} protocols</p>
+          <p className="text-xs text-cyan-300/50">
+            {(classData.startingMovementPairs?.length || 0) + (classData.startingTacticalPairs?.length || 0)} protocols
+          </p>
         </div>
       </div>
 
