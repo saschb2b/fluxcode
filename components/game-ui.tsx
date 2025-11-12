@@ -80,7 +80,11 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
               size="lg"
               className="text-base sm:text-lg font-bold px-6 sm:px-8 py-5 sm:py-6 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
               onClick={gameState.startBattle}
-              disabled={gameState.triggerActionPairs.length === 0}
+              disabled={
+                (gameState.movementPairs?.length || 0) === 0 &&
+                (gameState.tacticalPairs?.length || 0) === 0 &&
+                gameState.triggerActionPairs.length === 0
+              }
             >
               START BATTLE
             </Button>
