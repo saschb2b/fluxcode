@@ -71,10 +71,10 @@ export function useGameState(): GameState {
     position: { x: 1, y: 1 } as Position,
     hp: playerMaxHp,
     maxHp: playerMaxHp,
-    shields: shieldBonus,
-    maxShields: shieldBonus,
-    armor: armorBonus,
-    maxArmor: armorBonus,
+    shields: 0,
+    maxShields: 0,
+    armor: 0,
+    maxArmor: 0,
   })
 
   const isGuardianBattle =
