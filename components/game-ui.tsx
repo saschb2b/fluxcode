@@ -188,12 +188,20 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
 
       <ProgrammingPanel
         pairs={gameState.triggerActionPairs}
+        movementPairs={gameState.movementPairs || []}
+        tacticalPairs={gameState.tacticalPairs || []}
+        maxMovementSlots={gameState.selectedConstruct?.maxMovementCores || 6}
+        maxTacticalSlots={gameState.selectedConstruct?.maxTacticalCores || 6}
         unlockedTriggers={gameState.unlockedTriggers}
         unlockedActions={gameState.unlockedActions}
         onAddPair={gameState.addTriggerActionPair}
         onRemovePair={gameState.removeTriggerActionPair}
         onUpdatePriority={gameState.updatePairPriority}
         onTogglePair={gameState.togglePair}
+        onAddMovementPair={gameState.addMovementPair}
+        onAddTacticalPair={gameState.addTacticalPair}
+        onRemoveMovementPair={gameState.removeMovementPair}
+        onRemoveTacticalPair={gameState.removeTacticalPair}
         isOpen={isProgrammingOpen}
         onClose={() => setIsProgrammingOpen(false)}
       />
