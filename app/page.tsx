@@ -401,22 +401,29 @@ export default function Home() {
           selectedClassId={gameState.selectedConstruct.id}
           skipSelection={true}
           onSaveClasses={(classes) => {
+            console.log("[v0] === CALIBRATION SAVE START ===")
+            console.log("[v0] Classes to save:", classes)
+
             const updatedClass = classes[0]
+            console.log("[v0] Updated class:", updatedClass)
 
             if (updatedClass && gameState.activeSlot) {
               const slotId = gameState.activeSlot.slotId
+              console.log("[v0] Slot ID:", slotId)
 
               const movementProtocols = (updatedClass.startingMovementPairs || []).map((p) => ({
                 triggerId: p.triggerId,
                 actionId: p.actionId,
                 priority: p.priority,
               }))
+              console.log("[v0] Movement protocols to save:", movementProtocols)
 
               const tacticalProtocols = (updatedClass.startingTacticalPairs || []).map((p) => ({
                 triggerId: p.triggerId,
                 actionId: p.actionId,
                 priority: p.priority,
               }))
+              console.log("[v0] Tactical protocols to save:", tacticalProtocols)
 
               const newSlots = {
                 ...(gameState.playerProgress.activeConstructSlots || {}),
@@ -426,20 +433,36 @@ export default function Home() {
                   tacticalProtocols,
                 },
               }
+              console.log("[v0] New slots object:", newSlots)
 
               const newProgress = {
                 ...gameState.playerProgress,
                 activeConstructSlots: newSlots,
               }
+              console.log("[v0] New progress object activeConstructSlots:", newProgress.activeConstructSlots)
 
               gameState.updatePlayerProgress(newProgress)
+              console.log("[v0] updatePlayerProgress called")
 
               latestPlayerProgressRef.current = newProgress
+              console.log("[v0] latestPlayerProgressRef updated")
+              console.log(
+                "[v0] latestPlayerProgressRef.current.activeConstructSlots:",
+                latestPlayerProgressRef.current.activeConstructSlots,
+              )
 
+              console.log("[v0] About to call setConstruct after 50ms delay")
               setTimeout(() => {
+                console.log("[v0] Calling setConstruct now")
+                console.log(
+                  "[v0] Current gameState.playerProgress.activeConstructSlots:",
+                  gameState.playerProgress.activeConstructSlots,
+                )
                 gameState.setConstruct(gameState.selectedConstruct!, slotId)
+                console.log("[v0] setConstruct completed")
               }, 50)
             }
+            console.log("[v0] === CALIBRATION SAVE END ===")
             handleCloseCalibration()
           }}
           onSelectClass={() => {}}
