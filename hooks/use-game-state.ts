@@ -1406,13 +1406,22 @@ export function useGameState(): GameState {
       console.log("[v0] Setting construct:", construct.id, "in slot:", slotId)
       setSelectedConstructState(construct)
 
+      console.log("[v0] playerProgress.activeConstructSlots:", playerProgress.activeConstructSlots)
+      console.log("[v0] Looking for slotData in slot:", slotId)
+
       // Load saved protocols for this construct from player progress
       const slotData = playerProgress.activeConstructSlots?.[slotId]
+
+      console.log("[v0] slotData found:", slotData)
 
       let movementProtocols: TriggerActionPair[] = []
       let tacticalProtocols: TriggerActionPair[] = []
 
       if (slotData && slotData.constructId === construct.id) {
+        console.log("[v0] Loading saved protocols from slot")
+        console.log("[v0] Movement protocols in slot:", slotData.movementProtocols)
+        console.log("[v0] Tactical protocols in slot:", slotData.tacticalProtocols)
+
         // Load saved protocols
         movementProtocols = slotData.movementProtocols
           .map((p) => {
@@ -1431,6 +1440,11 @@ export function useGameState(): GameState {
             return { trigger, action, priority: p.priority, enabled: true }
           })
           .filter((p): p is TriggerActionPair => p !== null)
+
+        console.log("[v0] Loaded movement protocols:", movementProtocols)
+        console.log("[v0] Loaded tactical protocols:", tacticalProtocols)
+      } else {
+        console.log("[v0] No matching slotData found, starting with empty protocols")
       }
 
       const newActiveSlot: ActiveConstructSlot = {
