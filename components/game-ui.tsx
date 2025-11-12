@@ -6,11 +6,9 @@ import { Card } from "@/components/ui/card"
 import { ProgrammingPanel } from "@/components/programming-panel"
 import { RewardSelection } from "@/components/reward-selection"
 import { Codex } from "@/components/codex"
-import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import { LayerProgressWidget } from "@/components/layer-progress-widget"
 import { NetworkMap } from "@/components/network-map"
-import { RunSummaryStats } from "@/components/run-summary-stats"
 import type { GameState } from "@/types/game"
 import { Coins, LogOut, Sparkles, Code } from "lucide-react"
 import { calculateCipherFragmentReward } from "@/lib/meta-progression"
@@ -122,20 +120,6 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                 )}
 
                 <div className="mb-4 sm:mb-6">
-                  {gameState.battleState === "defeat" ? (
-                    <RunSummaryStats
-                      wavesCompleted={gameState.wave - 1}
-                      layerReached={gameState.currentLayerIndex}
-                      nodeReached={gameState.currentNodeIndex}
-                      totalNodes={totalNodesCompleted}
-                    />
-                  ) : (
-                    gameState.battleHistory &&
-                    gameState.battleHistory.length > 0 && <BattleStatsChart history={gameState.battleHistory} />
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-3">
                   {gameState.battleState === "victory" ? (
                     <>
                       {gameState.wave > 1 && (
@@ -204,6 +188,7 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
         onRemoveTacticalPair={gameState.removeTacticalPair}
         isOpen={isProgrammingOpen}
         onClose={() => setIsProgrammingOpen(false)}
+        key={`programming-${gameState.selectedConstruct?.id}-${gameState.movementPairs?.length}-${gameState.tacticalPairs?.length}`}
       />
 
       <RewardSelection

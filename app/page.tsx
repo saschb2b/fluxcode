@@ -178,11 +178,19 @@ export default function Home() {
   }
 
   const handleSelectSlot = (slotId: string) => {
+    console.log("[v0] handleSelectSlot called with slotId:", slotId)
     const slotData = gameState.playerProgress.activeConstructSlots?.[slotId]
+    console.log("[v0] Slot data:", slotData)
+
     if (slotData) {
       const construct = CONSTRUCTS.find((c) => c.id === slotData.constructId)
+      console.log("[v0] Found construct:", construct)
+
       if (construct) {
         gameState.setConstruct(construct, slotId)
+        console.log("[v0] setConstruct completed - activeSlot:", gameState.activeSlot)
+        console.log("[v0] Movement pairs:", gameState.movementPairs?.length)
+        console.log("[v0] Tactical pairs:", gameState.tacticalPairs?.length)
         setShowSlotManager(false)
       }
     }

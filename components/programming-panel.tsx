@@ -107,7 +107,7 @@ export function ProgrammingPanel({
         actionId: p.action.id,
       })),
     )
-  }, [isOpen, currentMovementPairs.length, currentTacticalPairs.length])
+  }, [isOpen, movementPairs, tacticalPairs]) // Depend on the actual arrays, not just their lengths
 
   const addMovementProtocol = () => {
     if (editingMovementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) return
