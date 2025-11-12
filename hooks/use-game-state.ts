@@ -13,6 +13,7 @@ import type {
   PlayerProgress,
   Construct,
   ActiveConstructSlot,
+  DamageType,
 } from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
@@ -127,6 +128,56 @@ export function useGameState(): GameState {
   } | null>(null)
 
   const battleStartTimeRef = useRef<number>(0)
+
+  const calculateDifficultyMultiplier = useCallback(
+    (waveNumber: number) => {
+      const { recentVictories, avgTimeToWin, avgHealthRemaining } = performanceHistory
+
+      const winRate =
+        recentVictories.length > 0 ? recentVictories.reduce((a, b) => a + b, 0) / recentVictories.length : 0.5
+
+      let multiplier = 1.0
+
+      if (waveNumber === 4) {
+        multiplier = 1.0
+      } else if (waveNumber === 5) {
+        if (winRate > 0.8) {
+          multiplier += 0.15
+        } else if (winRate > 0.6) {
+          multiplier += 0.075
+        } else if (winRate < 0.3) {
+          multiplier -= 0.1
+        } else if (winRate < 0.5) {
+          multiplier -= 0.05
+        }
+      } else {
+        if (winRate > 0.8) {
+          multiplier += 0.3
+        } else if (winRate > 0.6) {
+          multiplier += 0.15
+        } else if (winRate < 0.3) {
+          multiplier -= 0.2
+        } else if (winRate < 0.5) {
+          multiplier -= 0.1
+        }
+
+        if (avgTimeToWin < 20 && winRate > 0.5) {
+          multiplier += 0.15
+        } else if (avgTimeToWin > 60) {
+          multiplier -= 0.1
+        }
+
+        if (avgHealthRemaining > 70 && winRate > 0.5) {
+          multiplier += 0.1
+        } else if (avgHealthRemaining < 30) {
+          multiplier -= 0.05
+        }
+      }
+
+      return Math.max(0.6, Math.min(1.5, multiplier))
+    },
+    [performanceHistory],
+  )
 
   useEffect(() => {
     if (battleState !== "fighting" || !battleEngineRef.current) {
@@ -402,93 +453,361 @@ export function useGameState(): GameState {
   ])
 
   const prepareNextWave = useCallback(() => {
+    if (networkLayers.length > 0) {
+      const updatedLayers = [...networkLayers]
+      const currentLayer = updatedLayers[currentLayerIndex]
+
+      if (currentLayer.nodes[currentNodeIndex]) {
+        currentLayer.nodes[currentNodeIndex].completed = true
+        currentLayer.nodes[currentNodeIndex].current = false
+      }
+
+      if (currentNodeIndex + 1 < currentLayer.nodes.length) {
+        const nextNodeIndex = currentNodeIndex + 1
+        currentLayer.nodes[nextNodeIndex].current = true
+        setCurrentNodeIndex(nextNodeIndex)
+      } else {
+        currentLayer.completed = true
+        if (currentLayerIndex + 1 < updatedLayers.length) {
+          setCurrentLayerIndex(currentLayerIndex + 1)
+          setCurrentNodeIndex(0)
+          updatedLayers[currentLayerIndex + 1].nodes[0].current = true
+        }
+      }
+
+      setNetworkLayers(updatedLayers)
+    }
+
     const nextWave = wave + 1
     setWave(nextWave)
 
-    const currentNode = networkLayers[currentLayerIndex]?.nodes[currentNodeIndex]
-    const isGuardian = currentNode?.type === "guardian"
+    let baseHp: number
 
-    // Calculate difficulty multiplier
-    const diffMultiplier = calculateDifficultyMultiplier(nextWave)
-
-    // Generate enemy HP based on wave
-    let baseHp = 40
     if (nextWave <= 3) {
-      baseHp = 40 + (nextWave - 1) * 10 // 40, 50, 60
+      baseHp = 30 + nextWave * 10
     } else if (nextWave <= 6) {
-      baseHp = 70 + (nextWave - 3) * 10 // 80, 90, 100
+      baseHp = 40 + nextWave * 10
     } else if (nextWave <= 15) {
       baseHp = 40 + nextWave * 10
     } else {
-      baseHp = 40 + 15 * 10 + Math.pow(nextWave - 15, 1.5) * 15
+      baseHp = 100 + Math.pow(nextWave - 15, 1.3) * 20
     }
 
-    let finalMultiplier = 1.0
-    if (nextWave >= 6) {
-      finalMultiplier = diffMultiplier
-    } else if (nextWave === 5) {
-      finalMultiplier = 1.0 + (diffMultiplier - 1.0) * 0.5
+    const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
+    baseHp = Math.floor(baseHp * difficultyMultiplier)
+
+    const nextNodeIsGuardian =
+      networkLayers.length > 0 &&
+      networkLayers[currentLayerIndex] &&
+      (currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length
+        ? networkLayers[currentLayerIndex].nodes[currentNodeIndex + 1]?.type === "guardian"
+        : false)
+
+    let enemyCount = 1
+    if (nextNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
+      }
     }
 
-    const finalHp = Math.round(baseHp * finalMultiplier)
+    const totalHpBudget = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
+    const enemiesArray: Array<any> = []
 
-    if (isGuardian) {
-      // Guardian battle with pawns
-      const guardianHp = finalHp * 1.5
-      const pawnCount = Math.min(Math.floor(nextWave / 5) + 1, 3)
-      const pawnHp = Math.round(finalHp * 0.6)
+    if (nextNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
 
-      const newEnemies = []
-
-      // Add guardian
-      newEnemies.push({
+      enemiesArray.push({
         position: { x: 4, y: 1 },
         hp: guardianHp,
         maxHp: guardianHp,
-        shields: Math.round(guardianHp * 0.3),
-        maxShields: Math.round(guardianHp * 0.3),
-        armor: Math.round(guardianHp * 0.2),
-        maxArmor: Math.round(guardianHp * 0.2),
-        isPawn: false,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: `Guardian-${currentLayerIndex}`,
       })
 
-      // Add pawns
-      for (let i = 0; i < pawnCount; i++) {
-        newEnemies.push({
-          position: { x: 3 + i, y: i % 3 },
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
           hp: pawnHp,
           maxHp: pawnHp,
-          shields: Math.round(pawnHp * 0.2),
-          maxShields: Math.round(pawnHp * 0.2),
+          shields: 0,
+          maxShields: 0,
           armor: 0,
           maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Pawn-${i}`,
           isPawn: true,
         })
       }
-
-      setEnemies(newEnemies)
-      setEnemyCustomizations(newEnemies.map(() => generateRandomCustomization()))
     } else {
-      // Regular battle
-      setEnemies([
-        {
-          position: { x: 4, y: 1 },
-          hp: finalHp,
-          maxHp: finalHp,
-          shields: Math.round(finalHp * 0.2),
-          maxShields: Math.round(finalHp * 0.2),
-          armor: Math.round(finalHp * 0.1),
-          maxArmor: Math.round(finalHp * 0.1),
-          isPawn: false,
-        },
-      ])
-      setEnemyCustomizations([generateRandomCustomization()])
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Enemy-${i}`,
+        })
+      }
     }
 
+    const nextLayerIndex =
+      currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length ? currentLayerIndex : currentLayerIndex + 1
+    const currentLayerData = networkLayers[nextLayerIndex]
+
+    if (currentLayerData) {
+      enemiesArray.forEach((enemy, index) => {
+        const isGuardian = nextNodeIsGuardian && index === 0
+        let shields = 0
+        let armor = 0
+        let resistances: Partial<Record<DamageType, number>> = {}
+
+        switch (currentLayerData.id) {
+          case "data-stream":
+            shields = 0
+            armor = 0
+            resistances = {}
+            break
+          case "firewall":
+            armor = Math.floor(enemy.maxHp * 0.25)
+            resistances = {
+              kinetic: 0.3,
+              corrosive: -0.2,
+            }
+            break
+          case "archive":
+            shields = Math.floor(enemy.maxHp * 0.3)
+            armor = 0
+            resistances = {
+              energy: 0.25,
+              viral: -0.15,
+            }
+            break
+          case "core-approach":
+            shields = Math.floor(enemy.maxHp * 0.25)
+            armor = Math.floor(enemy.maxHp * 0.2)
+            resistances = {
+              energy: 0.2,
+              kinetic: 0.2,
+              thermal: -0.1,
+            }
+            break
+        }
+
+        if (isGuardian) {
+          shields = Math.floor(shields * 1.3)
+          armor = Math.floor(armor * 1.3)
+        }
+
+        enemy.shields = shields
+        enemy.maxShields = shields
+        enemy.armor = armor
+        enemy.maxArmor = armor
+        enemy.resistances = resistances
+      })
+    }
+
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      customizationsArray.push(generateRandomCustomization())
+    }
+
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setShowEnemyIntro(true)
-  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, performanceHistory])
+  }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
   const continueToNextWave = useCallback(() => {
+    setShowEnemyIntro(false)
+
+    const nextWave = wave + 1
+    setWave(nextWave)
+
+    let baseHp: number
+
+    if (nextWave <= 3) {
+      baseHp = 30 + nextWave * 10
+    } else if (nextWave <= 6) {
+      baseHp = 40 + nextWave * 10
+    } else if (nextWave <= 15) {
+      baseHp = 40 + nextWave * 10
+    } else {
+      baseHp = 100 + Math.pow(nextWave - 15, 1.3) * 20
+    }
+
+    const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
+    baseHp = Math.floor(baseHp * difficultyMultiplier)
+
+    const currentNodeIsGuardian =
+      networkLayers.length > 0 &&
+      networkLayers[currentLayerIndex] &&
+      networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
+    const enemyMaxHp = currentNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
+
+    let enemyCount = 1
+    if (currentNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
+      }
+    }
+
+    const totalHpBudget = currentNodeIsGuardian ? Math.floor(enemyMaxHp * 1.5) : enemyMaxHp
+    const enemiesArray: Array<any> = []
+
+    if (currentNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
+
+      enemiesArray.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: `Guardian-${currentLayerIndex}`,
+      })
+
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Pawn-${i}`,
+          isPawn: true,
+        })
+      }
+    } else {
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Enemy-${i}`,
+        })
+      }
+    }
+
+    const currentLayerData = networkLayers[currentLayerIndex]
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      customizationsArray.push(generateRandomCustomization())
+    }
+
+    if (currentLayerData) {
+      enemiesArray.forEach((enemy, index) => {
+        const isGuardian = currentNodeIsGuardian && index === 0
+        let shields = 0
+        let armor = 0
+        let resistances: Partial<Record<DamageType, number>> = {}
+
+        switch (currentLayerData.id) {
+          case "data-stream":
+            shields = 0
+            armor = 0
+            resistances = {}
+            break
+          case "firewall":
+            armor = Math.floor(enemy.maxHp * 0.25)
+            resistances = {
+              kinetic: 0.3,
+              corrosive: -0.2,
+            }
+            break
+          case "archive":
+            shields = Math.floor(enemy.maxHp * 0.3)
+            armor = 0
+            resistances = {
+              energy: 0.25,
+              viral: -0.15,
+            }
+            break
+          case "core-approach":
+            shields = Math.floor(enemy.maxHp * 0.25)
+            armor = Math.floor(enemy.maxHp * 0.2)
+            resistances = {
+              energy: 0.2,
+              kinetic: 0.2,
+              thermal: -0.1,
+            }
+            break
+        }
+
+        if (isGuardian) {
+          shields = Math.floor(shields * 1.3)
+          armor = Math.floor(armor * 1.3)
+        }
+
+        enemy.shields = shields
+        enemy.maxShields = shields
+        enemy.armor = armor
+        enemy.maxArmor = armor
+        enemy.resistances = resistances
+      })
+    }
+
     setPlayer((prev) => ({
       ...prev,
       position: { x: 1, y: 1 },
@@ -497,10 +816,15 @@ export function useGameState(): GameState {
       armor: prev.maxArmor,
     }))
 
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
     setProjectiles([])
-    setShowEnemyIntro(false)
+    setBattleHistory([])
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setBattleState("idle")
-  }, [])
+    setShowRewardSelection(false)
+  }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
   const resetGame = useCallback(() => {
     const latestProgress = loadProgress()
@@ -644,14 +968,6 @@ export function useGameState(): GameState {
 
     return { triggers, actions }
   }, [])
-
-  const calculateDifficultyMultiplier = useCallback(
-    (waveNumber: number) => {
-      // Existing calculateDifficultyMultiplier implementation
-      return 1.0
-    },
-    [performanceHistory],
-  )
 
   const selectRewardTrigger = useCallback(
     (trigger: Trigger) => {
@@ -921,7 +1237,13 @@ export function useGameState(): GameState {
     extractFromBreach,
     justEarnedReward,
     enemy,
-    setMovementPairs,
-    setTacticalPairs,
+    addMovementPair,
+    addTacticalPair,
+    removeMovementPair,
+    removeTacticalPair,
+    updateMovementPriority,
+    updateTacticalPriority,
+    toggleMovementPair,
+    toggleTacticalPair,
   }
 }
