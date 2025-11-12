@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { ProgrammingPanel } from "@/components/programming-panel"
 import { RewardSelection } from "@/components/reward-selection"
 import { Codex } from "@/components/codex"
+import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import { LayerProgressWidget } from "@/components/layer-progress-widget"
 import { NetworkMap } from "@/components/network-map"
@@ -100,6 +101,12 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                     <span className="text-yellow-400">DATA EXTRACTED</span>
                   )}
                 </h2>
+
+                {gameState.battleHistory && gameState.battleHistory.length > 0 && (
+                  <div className="mb-4">
+                    <BattleStatsChart history={gameState.battleHistory} />
+                  </div>
+                )}
 
                 {fragmentsEarned > 0 && (
                   <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
