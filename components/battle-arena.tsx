@@ -35,7 +35,9 @@ export function BattleArena({
   const [animatingDefeats, setAnimatingDefeats] = useState<Map<string, [number, number, number]>>(new Map())
 
   useEffect(() => {
-    const newlyDefeated = enemies.filter((enemy) => enemy.hp <= 0 && !defeatedEnemies.has(enemy.id || "enemy-0"))
+    const newlyDefeated = enemies.filter(
+      (enemy) => enemy && enemy.hp <= 0 && !defeatedEnemies.has(enemy.id || "enemy-0"),
+    )
 
     newlyDefeated.forEach((enemy) => {
       const enemyId = enemy.id || "enemy-0"
@@ -57,8 +59,7 @@ export function BattleArena({
     })
   }
 
-  // Filter out defeated enemies for rendering
-  const aliveEnemies = enemies.filter((enemy) => enemy.hp > 0)
+  const aliveEnemies = enemies.filter((enemy) => enemy && enemy.hp > 0)
 
   return (
     <>

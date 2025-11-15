@@ -1,23 +1,26 @@
 # Battle Protocol
 
-A tactical combat game inspired by Megaman Battle Network and Final Fantasy XII's Gambit system. Program your fighter with custom AI protocols using trigger-action pairs, unlock new abilities, and battle through waves of increasingly difficult enemies in a cyberpunk 3D arena.
+A tactical combat game inspired by Megaman Battle Network and Final Fantasy XII's Gambit system. Program your **Constructs** (combat frames) with custom protocols using trigger-action pairs, unlock new abilities, and battle through waves of increasingly difficult enemies in a cyberpunk 3D arena.
 
 ## 🎮 Game Concept
 
-Battle Protocol combines strategic AI programming with real-time tactical combat. Instead of directly controlling your fighter, you create a set of "protocols" (IF-THEN rules) that determine how your fighter behaves in battle. The challenge lies in creating an optimal set of protocols that can handle various combat situations.
+Battle Protocol combines strategic protocol programming with real-time tactical combat. Instead of directly controlling a fighter, you deploy **Constructs** - specialized combat frames that come "naked" with NO pre-programmed behavior. You must manually assign protocols (IF-THEN rules) within the Construct's slot limits to define how it fights. The challenge lies in creating an optimal protocol configuration that maximizes your Construct's unique capabilities.
 
 ### Core Gameplay Loop
 
-1. **Character Selection** - Choose from 8 unique fighter classes
-2. **Protocol Programming** - Create trigger-action pairs that define AI behavior
-3. **Battle** - Watch your fighter execute protocols in real-time 3D combat
+1. **Construct Deployment** - Choose from specialized combat frames with unique stats and slot configurations
+2. **Protocol Programming** - Assign trigger-action pairs within Movement and Tactical core slot limits
+3. **Battle** - Watch your Construct execute protocols in real-time 3D combat
 4. **Progression** - Unlock new triggers and actions by defeating enemies
-5. **Wave Survival** - Battle through increasingly difficult waves
+5. **Wave Survival** - Battle through increasingly difficult waves with your programmed Construct
 
 ## ✨ Features
 
-- **Protocol System** - 23 triggers and 37 actions to create complex AI behaviors
-- **8 Character Classes** - Each with unique starting protocols and playstyles
+- **Construct System** - Deploy specialized combat frames with unique base stats and capabilities
+- **Naked Deployment** - Constructs start with ZERO protocols - you build everything from scratch
+- **Slot-Based Configuration** - Respect Movement Core and Tactical Core capacity limits
+- **Protocol System** - 23 triggers and 37 actions to create complex combat behaviors
+- **3 Starter Constructs** - Vanguard (balanced), Specter (agile), Breacher (offensive)
 - **3D Battle Arena** - Real-time combat with smooth animations
 - **Cyberpunk Aesthetic** - Neon colors, data streams, CRT effects
 - **Dynamic Difficulty** - Research-backed DDA system maintains optimal challenge
@@ -32,6 +35,42 @@ Battle Protocol combines strategic AI programming with real-time tactical combat
 - **Styling**: Tailwind CSS v4
 
 ## 🏗️ Architecture
+
+### Construct System
+
+The game uses a **Construct-based deployment model** inspired by Warframe's frame system:
+
+#### **What are Constructs?**
+Constructs are specialized combat frames that provide:
+- **Base Stats**: HP, Shields, Armor values unique to each frame
+- **Slot Configuration**: Maximum number of Movement and Tactical protocol slots
+- **Passive Abilities**: Optional unique effects (evasion boost, damage increase, etc.)
+- **Resistances**: Damage type modifiers specific to the frame
+
+#### **Available Constructs**
+- **VANGUARD CONSTRUCT** - Balanced defense platform
+  - 120 HP, 30 Shields, 20 Armor
+  - 4 Movement / 4 Tactical slots
+  - Passive: 5% damage reduction
+
+- **SPECTER CONSTRUCT** - High-mobility evasion frame
+  - 90 HP, 40 Shields, 10 Armor
+  - 6 Movement / 4 Tactical slots
+  - Passive: 10% evasion chance
+
+- **BREACHER CONSTRUCT** - Heavy offensive platform
+  - 100 HP, 20 Shields, 15 Armor
+  - 3 Movement / 6 Tactical slots
+  - Passive: 10% damage increase
+
+#### **Naked Deployment**
+Unlike preset characters, Constructs come with:
+- ❌ NO pre-programmed protocols
+- ❌ NO default behaviors
+- ✅ Only base stats and slot capacities
+- ✅ Complete customization freedom
+
+Players must manually assign ALL protocols before battle within the Construct's slot limits.
 
 ### Dual-Core Protocol System
 

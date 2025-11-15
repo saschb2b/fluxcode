@@ -12,24 +12,40 @@ import { X, Plus, Trash2, Check, MoveUp, MoveDown } from "lucide-react" // Added
 
 interface ProgrammingPanelProps {
   pairs: TriggerActionPair[]
+  movementPairs?: TriggerActionPair[]
+  tacticalPairs?: TriggerActionPair[]
+  maxMovementSlots?: number
+  maxTacticalSlots?: number
   unlockedTriggers: Trigger[]
   unlockedActions: Action[]
   onAddPair: (trigger: Trigger, action: Action) => void
   onRemovePair: (index: number) => void
   onUpdatePriority: (index: number, priority: number) => void
   onTogglePair?: (index: number, enabled: boolean) => void
+  onAddMovementPair?: (trigger: Trigger, action: Action) => void
+  onAddTacticalPair?: (trigger: Trigger, action: Action) => void
+  onRemoveMovementPair?: (index: number) => void
+  onRemoveTacticalPair?: (index: number) => void
   isOpen: boolean
   onClose: () => void
 }
 
 export function ProgrammingPanel({
   pairs,
+  movementPairs = [],
+  tacticalPairs = [],
+  maxMovementSlots = 6,
+  maxTacticalSlots = 6,
   unlockedTriggers,
   unlockedActions,
   onAddPair,
   onRemovePair,
   onUpdatePriority,
   onTogglePair,
+  onAddMovementPair,
+  onAddTacticalPair,
+  onRemoveMovementPair,
+  onRemoveTacticalPair,
   isOpen,
   onClose,
 }: ProgrammingPanelProps) {
@@ -45,14 +61,21 @@ export function ProgrammingPanel({
     return actionDef?.coreType === "tactical"
   })
 
-  const movementPairs = pairs.filter((pair) => {
-    const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
-    return actionDef?.coreType === "movement"
-  })
-  const tacticalPairs = pairs.filter((pair) => {
-    const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
-    return actionDef?.coreType === "tactical"
-  })
+  const currentMovementPairs =
+    movementPairs.length > 0
+      ? movementPairs
+      : pairs.filter((pair) => {
+          const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
+          return actionDef?.coreType === "movement"
+        })
+
+  const currentTacticalPairs =
+    tacticalPairs.length > 0
+      ? tacticalPairs
+      : pairs.filter((pair) => {
+          const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === pair.action.id)
+          return actionDef?.coreType === "tactical"
+        })
 
   const [editingMovementProtocols, setEditingMovementProtocols] = useState<
     Array<{ triggerId: string; actionId: string }>
@@ -62,23 +85,29 @@ export function ProgrammingPanel({
   >([])
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
-  const MAX_MOVEMENT_PROTOCOLS = 6
-  const MAX_TACTICAL_PROTOCOLS = 6
+  const MAX_MOVEMENT_PROTOCOLS = maxMovementSlots
+  const MAX_TACTICAL_PROTOCOLS = maxTacticalSlots
 
   useEffect(() => {
+    console.log(
+      "[v0] ProgrammingPanel initializing with movement pairs:",
+      currentMovementPairs.length,
+      "tactical pairs:",
+      currentTacticalPairs.length,
+    )
     setEditingMovementProtocols(
-      movementPairs.map((p) => ({
+      currentMovementPairs.map((p) => ({
         triggerId: p.trigger.id,
         actionId: p.action.id,
       })),
     )
     setEditingTacticalProtocols(
-      tacticalPairs.map((p) => ({
+      currentTacticalPairs.map((p) => ({
         triggerId: p.trigger.id,
         actionId: p.action.id,
       })),
     )
-  }, [pairs.length])
+  }, [isOpen, movementPairs, tacticalPairs]) // Depend on the actual arrays, not just their lengths
 
   const addMovementProtocol = () => {
     if (editingMovementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) return
@@ -95,7 +124,7 @@ export function ProgrammingPanel({
     // Also remove from actual pairs
     const movementPairIndex = pairs.findIndex((p, i) => {
       const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === p.action.id)
-      return actionDef?.coreType === "movement" && movementPairs.indexOf(p) === index
+      return actionDef?.coreType === "movement" && currentMovementPairs.indexOf(p) === index
     })
     if (movementPairIndex !== -1) {
       onRemovePair(movementPairIndex)
@@ -107,7 +136,7 @@ export function ProgrammingPanel({
     // Also remove from actual pairs
     const tacticalPairIndex = pairs.findIndex((p, i) => {
       const actionDef = AVAILABLE_ACTIONS.find((def) => def.id === p.action.id)
-      return actionDef?.coreType === "tactical" && tacticalPairs.indexOf(p) === index
+      return actionDef?.coreType === "tactical" && currentTacticalPairs.indexOf(p) === index
     })
     if (tacticalPairIndex !== -1) {
       onRemovePair(tacticalPairIndex)
@@ -168,28 +197,56 @@ export function ProgrammingPanel({
       return
     }
 
-    // Clear existing pairs
-    for (let i = pairs.length - 1; i >= 0; i--) {
-      onRemovePair(i)
+    if (onRemoveMovementPair && onRemoveTacticalPair && onAddMovementPair && onAddTacticalPair) {
+      // Clear existing movement pairs
+      for (let i = currentMovementPairs.length - 1; i >= 0; i--) {
+        onRemoveMovementPair(i)
+      }
+
+      // Clear existing tactical pairs
+      for (let i = currentTacticalPairs.length - 1; i >= 0; i--) {
+        onRemoveTacticalPair(i)
+      }
+
+      // Add new movement protocols
+      editingMovementProtocols.forEach((protocol) => {
+        const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+        const action = safeActions.find((a) => a.id === protocol.actionId)
+        if (trigger && action) {
+          onAddMovementPair(trigger, action)
+        }
+      })
+
+      // Add new tactical protocols
+      editingTacticalProtocols.forEach((protocol) => {
+        const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+        const action = safeActions.find((a) => a.id === protocol.actionId)
+        if (trigger && action) {
+          onAddTacticalPair(trigger, action)
+        }
+      })
+    } else {
+      // Legacy fallback
+      for (let i = pairs.length - 1; i >= 0; i--) {
+        onRemovePair(i)
+      }
+
+      editingMovementProtocols.forEach((protocol) => {
+        const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+        const action = safeActions.find((a) => a.id === protocol.actionId)
+        if (trigger && action) {
+          onAddPair(trigger, action)
+        }
+      })
+
+      editingTacticalProtocols.forEach((protocol) => {
+        const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
+        const action = safeActions.find((a) => a.id === protocol.actionId)
+        if (trigger && action) {
+          onAddPair(trigger, action)
+        }
+      })
     }
-
-    // Add movement protocols
-    editingMovementProtocols.forEach((protocol) => {
-      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
-      const action = safeActions.find((a) => a.id === protocol.actionId)
-      if (trigger && action) {
-        onAddPair(trigger, action)
-      }
-    })
-
-    // Add tactical protocols
-    editingTacticalProtocols.forEach((protocol) => {
-      const trigger = safeTriggers.find((t) => t.id === protocol.triggerId)
-      const action = safeActions.find((a) => a.id === protocol.actionId)
-      if (trigger && action) {
-        onAddPair(trigger, action)
-      }
-    })
 
     onClose()
   }

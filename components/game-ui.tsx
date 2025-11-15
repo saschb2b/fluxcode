@@ -10,7 +10,6 @@ import { BattleStatsChart } from "@/components/battle-stats-chart"
 import { EnemyIntroduction } from "@/components/enemy-introduction"
 import { LayerProgressWidget } from "@/components/layer-progress-widget"
 import { NetworkMap } from "@/components/network-map"
-import { RunSummaryStats } from "@/components/run-summary-stats"
 import type { GameState } from "@/types/game"
 import { Coins, LogOut, Sparkles, Code } from "lucide-react"
 import { calculateCipherFragmentReward } from "@/lib/meta-progression"
@@ -80,7 +79,11 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
               size="lg"
               className="text-base sm:text-lg font-bold px-6 sm:px-8 py-5 sm:py-6 bg-primary hover:bg-primary/80 border-2 border-primary-foreground shadow-lg active:scale-95 w-full sm:w-auto max-w-xs"
               onClick={gameState.startBattle}
-              disabled={gameState.triggerActionPairs.length === 0}
+              disabled={
+                (gameState.movementPairs?.length || 0) === 0 &&
+                (gameState.tacticalPairs?.length || 0) === 0 &&
+                gameState.triggerActionPairs.length === 0
+              }
             >
               START BATTLE
             </Button>
@@ -98,6 +101,12 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                     <span className="text-yellow-400">DATA EXTRACTED</span>
                   )}
                 </h2>
+
+                {gameState.battleHistory && gameState.battleHistory.length > 0 && (
+                  <div className="mb-4">
+                    <BattleStatsChart history={gameState.battleHistory} />
+                  </div>
+                )}
 
                 {fragmentsEarned > 0 && (
                   <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
@@ -118,20 +127,6 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
                 )}
 
                 <div className="mb-4 sm:mb-6">
-                  {gameState.battleState === "defeat" ? (
-                    <RunSummaryStats
-                      wavesCompleted={gameState.wave - 1}
-                      layerReached={gameState.currentLayerIndex}
-                      nodeReached={gameState.currentNodeIndex}
-                      totalNodes={totalNodesCompleted}
-                    />
-                  ) : (
-                    gameState.battleHistory &&
-                    gameState.battleHistory.length > 0 && <BattleStatsChart history={gameState.battleHistory} />
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-3">
                   {gameState.battleState === "victory" ? (
                     <>
                       {gameState.wave > 1 && (
@@ -166,7 +161,7 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
       </div>
 
       {/* Enemy Introduction Screen */}
-      {gameState.showEnemyIntro && (
+      {gameState.showEnemyIntro && gameState.enemy && (
         <EnemyIntroduction
           wave={gameState.wave}
           enemyCustomization={gameState.enemyCustomization}
@@ -184,14 +179,23 @@ export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
 
       <ProgrammingPanel
         pairs={gameState.triggerActionPairs}
+        movementPairs={gameState.movementPairs || []}
+        tacticalPairs={gameState.tacticalPairs || []}
+        maxMovementSlots={gameState.selectedConstruct?.maxMovementCores || 6}
+        maxTacticalSlots={gameState.selectedConstruct?.maxTacticalCores || 6}
         unlockedTriggers={gameState.unlockedTriggers}
         unlockedActions={gameState.unlockedActions}
         onAddPair={gameState.addTriggerActionPair}
         onRemovePair={gameState.removeTriggerActionPair}
         onUpdatePriority={gameState.updatePairPriority}
         onTogglePair={gameState.togglePair}
+        onAddMovementPair={gameState.addMovementPair}
+        onAddTacticalPair={gameState.addTacticalPair}
+        onRemoveMovementPair={gameState.removeMovementPair}
+        onRemoveTacticalPair={gameState.removeTacticalPair}
         isOpen={isProgrammingOpen}
         onClose={() => setIsProgrammingOpen(false)}
+        key={`programming-${gameState.selectedConstruct?.id}-${gameState.movementPairs?.length}-${gameState.tacticalPairs?.length}`}
       />
 
       <RewardSelection

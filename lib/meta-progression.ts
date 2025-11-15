@@ -50,6 +50,22 @@ export interface PlayerProgress {
   selectedCharacterId: string | null
   contractProgress?: ContractProgress
   customFighterClasses?: CustomFighterClass[]
+  activeConstructSlots?: {
+    [slotId: string]: {
+      constructId: string | null
+      movementProtocols: Array<{
+        triggerId: string
+        actionId: string
+        priority: number
+      }>
+      tacticalProtocols: Array<{
+        triggerId: string
+        actionId: string
+        priority: number
+      }>
+    }
+  }
+  selectedConstructSlot?: string // "slot-1", "slot-2", "slot-3"
 }
 
 export interface CustomFighterClass {
@@ -61,6 +77,23 @@ export interface CustomFighterClass {
     actionId: string
     priority: number
   }>
+  startingMovementPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  startingTacticalPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  constructStats?: {
+    maxHp: number
+    maxShields: number
+    maxArmor: number
+  }
   customization?: FighterCustomization
 }
 
@@ -1308,6 +1341,24 @@ export function getDefaultProgress(): PlayerProgress {
     selectedCharacterId: null,
     contractProgress: undefined, // Will be initialized when first accessed
     customFighterClasses: undefined,
+    activeConstructSlots: {
+      "slot-1": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+      "slot-2": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+      "slot-3": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+    },
+    selectedConstructSlot: "slot-1",
   }
 }
 
