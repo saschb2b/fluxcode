@@ -1,6 +1,6 @@
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
 import { AVAILABLE_ACTIONS } from "@/lib/actions"
-import type { EnemyDefinition } from "./enemy-types"
+import type { EnemyDefinition } from "./enemy-types.js"
 import { DamageType } from "@/types/game"
 
 // Helper to find triggers/actions by ID

@@ -297,10 +297,10 @@ export function EnemyCodex({ isOpen, onClose }: EnemyCodexProps) {
                   {/* Protocols */}
                   <div className="p-3 sm:p-4 rounded border-2 border-secondary/30 bg-secondary/5">
                     <div className="text-[10px] sm:text-xs font-bold tracking-wider text-secondary mb-2">
-                      [COMBAT PROTOCOLS: {selectedEnemy.protocols.filter(protocol => protocol.trigger && protocol.action).length}]
+                      [COMBAT PROTOCOLS: {selectedEnemy.protocols.filter(protocol => protocol?.trigger && protocol?.action).length}]
                     </div>
                     <div className="space-y-1 text-[10px] sm:text-xs text-muted-foreground">
-                      {selectedEnemy.protocols.filter(protocol => protocol.trigger && protocol.action).map((protocol, idx) => (
+                      {selectedEnemy.protocols.filter(protocol => protocol?.trigger && protocol?.action).map((protocol, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-secondary font-bold">•</span>
                           <span>{protocol.trigger.name} → {protocol.action.name}</span>

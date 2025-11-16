@@ -1,14 +1,14 @@
-import { BASIC_ENEMIES } from "./basic-enemies"
-import { ADVANCED_ENEMIES } from "./advanced-enemies"
-import { ELITE_ENEMIES } from "./elite-enemies"
-import { BOSS_ENEMIES } from "./boss-enemies"
-import type { EnemyDefinition, EnemyEncounter } from "./enemy-types"
+import { BASIC_ENEMIES } from "./basic-enemies.js"
+import { ADVANCED_ENEMIES } from "./advanced-enemies.js"
+import { ELITE_ENEMIES } from "./elite-enemies.js"
+import { BOSS_ENEMIES } from "./boss-enemies.js"
+import type { EnemyDefinition, EnemyEncounter } from "./enemy-types.js"
 
-export * from "./enemy-types"
-export * from "./basic-enemies"
-export * from "./advanced-enemies"
-export * from "./elite-enemies"
-export * from "./boss-enemies"
+export * from "./enemy-types.js"
+export * from "./basic-enemies.js"
+export * from "./advanced-enemies.js"
+export * from "./elite-enemies.js"
+export * from "./boss-enemies.js"
 
 // Combined enemy codex
 export const ALL_ENEMIES: EnemyDefinition[] = [
