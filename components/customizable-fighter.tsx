@@ -1,84 +1,100 @@
-"use client"
+"use client";
 
-import { useRef, useMemo, useEffect } from "react"
-import { useFrame } from "@react-three/fiber"
-import type { Mesh, Group } from "three"
-import { Html } from "@react-three/drei"
-import type { Position } from "@/types/game"
-import type { FighterCustomization, FighterPart } from "@/lib/fighter-parts"
-import { Shield, Crosshair } from "lucide-react"
+import { useRef, useMemo, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import type { Mesh, Group } from "three";
+import { Html } from "@react-three/drei";
+import type { Position } from "@/types/game";
+import type { FighterCustomization, FighterPart } from "@/lib/fighter-parts";
+import { Shield, Crosshair } from "lucide-react";
+import { UnifiedIntegrityBar } from "./unified-integrity-bar";
 
 interface CustomizableFighterProps {
-  position: Position
-  isPlayer: boolean
-  hp: number
-  maxHp: number
-  customization?: FighterCustomization
-  shields?: number
-  maxShields?: number
-  armor?: number
-  maxArmor?: number
-  burnStacks?: number
-  viralStacks?: number
-  empStacks?: number
-  lagStacks?: number
-  corrosiveStacks?: number
-  displaceStacks?: number
-  isPawn?: boolean // Added isPawn prop to identify guardian pawns
-  isGuardian?: boolean // Added isGuardian prop for size scaling
+  position: Position;
+  isPlayer: boolean;
+  hp: number;
+  maxHp: number;
+  customization?: FighterCustomization;
+  shields?: number;
+  maxShields?: number;
+  armor?: number;
+  maxArmor?: number;
+  burnStacks?: number;
+  viralStacks?: number;
+  empStacks?: number;
+  lagStacks?: number;
+  corrosiveStacks?: number;
+  displaceStacks?: number;
+  isPawn?: boolean; // Added isPawn prop to identify guardian pawns
+  isGuardian?: boolean; // Added isGuardian prop for size scaling
 }
 
 function PartMesh({ part, color }: { part: FighterPart; color: string }) {
   const geometry = useMemo(() => {
     switch (part.shape) {
       case "cube":
-        return <boxGeometry args={part.scale} />
+        return <boxGeometry args={part.scale} />;
       case "sphere":
-        return <sphereGeometry args={[part.scale[0], 16, 16]} />
+        return <sphereGeometry args={[part.scale[0], 16, 16]} />;
       case "cylinder":
-        return <cylinderGeometry args={[part.scale[0], part.scale[0], part.scale[1], 16]} />
+        return (
+          <cylinderGeometry
+            args={[part.scale[0], part.scale[0], part.scale[1], 16]}
+          />
+        );
       case "cone":
-        return <coneGeometry args={[part.scale[0], part.scale[1], 16]} />
+        return <coneGeometry args={[part.scale[0], part.scale[1], 16]} />;
       case "pyramid":
-        return <coneGeometry args={[part.scale[0], part.scale[1], 4]} />
+        return <coneGeometry args={[part.scale[0], part.scale[1], 4]} />;
       case "torus":
-        return <torusGeometry args={[part.scale[0], part.scale[2], 16, 32]} />
+        return <torusGeometry args={[part.scale[0], part.scale[2], 16, 32]} />;
       default:
-        return <boxGeometry args={part.scale} />
+        return <boxGeometry args={part.scale} />;
     }
-  }, [part.shape, part.scale])
+  }, [part.shape, part.scale]);
 
   return (
     <mesh position={part.position} rotation={part.rotation} castShadow>
       {geometry}
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={0.5}
+      />
     </mesh>
-  )
+  );
 }
 
-function getChassisModifier(chassis?: FighterPart): { scale: [number, number, number]; shape: string } {
-  if (!chassis) return { scale: [1, 1, 1], shape: "cube" }
+function getChassisModifier(chassis?: FighterPart): {
+  scale: [number, number, number];
+  shape: string;
+} {
+  if (!chassis) return { scale: [1, 1, 1], shape: "cube" };
 
-  const chassisId = chassis.id
+  const chassisId = chassis.id;
 
   // Map chassis types to visual modifications
-  if (chassisId.includes("stealth") || chassisId.includes("ghost") || chassisId.includes("recon")) {
-    return { scale: [0.8, 1.2, 0.4], shape: "cylinder" }
+  if (
+    chassisId.includes("stealth") ||
+    chassisId.includes("ghost") ||
+    chassisId.includes("recon")
+  ) {
+    return { scale: [0.8, 1.2, 0.4], shape: "cylinder" };
   }
   if (chassisId.includes("heavy") || chassisId.includes("fortress")) {
-    return { scale: [1.3, 1.5, 0.8], shape: "cube" }
+    return { scale: [1.3, 1.5, 0.8], shape: "cube" };
   }
   if (chassisId.includes("assault")) {
-    return { scale: [1.1, 1.3, 0.7], shape: "cube" }
+    return { scale: [1.1, 1.3, 0.7], shape: "cube" };
   }
   if (chassisId.includes("light") || chassisId.includes("scout")) {
-    return { scale: [0.85, 1, 0.45], shape: "cylinder" }
+    return { scale: [0.85, 1, 0.45], shape: "cylinder" };
   }
   if (chassisId.includes("support")) {
-    return { scale: [0.95, 1.1, 0.6], shape: "cylinder" }
+    return { scale: [0.95, 1.1, 0.6], shape: "cylinder" };
   }
 
-  return { scale: [1, 1, 1], shape: "cube" }
+  return { scale: [1, 1, 1], shape: "cube" };
 }
 
 export function CustomizableFighter({
@@ -101,111 +117,142 @@ export function CustomizableFighter({
   isGuardian = false, // Default to false
 }: CustomizableFighterProps) {
   if (!position) {
-    console.error("[v0] CustomizableFighter received undefined position, using fallback")
-    position = { x: 0, y: 0 }
+    console.error(
+      "[v0] CustomizableFighter received undefined position, using fallback",
+    );
+    position = { x: 0, y: 0 };
   }
 
-  const meshRef = useRef<Mesh>(null)
-  const groupRef = useRef<Group>(null)
-  const currentPosRef = useRef<[number, number, number]>([0, 0.6, 0])
-  const targetPosRef = useRef<[number, number, number]>([0, 0.6, 0])
-  const velocityRef = useRef<[number, number, number]>([0, 0, 0])
+  const meshRef = useRef<Mesh>(null);
+  const groupRef = useRef<Group>(null);
+  const currentPosRef = useRef<[number, number, number]>([0, 0.6, 0]);
+  const targetPosRef = useRef<[number, number, number]>([0, 0.6, 0]);
+  const velocityRef = useRef<[number, number, number]>([0, 0, 0]);
 
   const targetWorldPos = useMemo(() => {
-    const x = (position.x - 2.5) * 1.1
-    const z = (position.y - 1) * 1.1
-    return [x, 0.6, z] as [number, number, number]
-  }, [position.x, position.y])
+    const x = (position.x - 2.5) * 1.1;
+    const z = (position.y - 1) * 1.1;
+    return [x, 0.6, z] as [number, number, number];
+  }, [position.x, position.y]);
 
   useEffect(() => {
-    targetPosRef.current = targetWorldPos
-  }, [targetWorldPos])
+    targetPosRef.current = targetWorldPos;
+  }, [targetWorldPos]);
 
   useEffect(() => {
-    currentPosRef.current = targetWorldPos
-    velocityRef.current = [0, 0, 0]
+    currentPosRef.current = targetWorldPos;
+    velocityRef.current = [0, 0, 0];
     if (groupRef.current) {
-      groupRef.current.position.set(...targetWorldPos)
-      groupRef.current.rotation.z = 0
-      groupRef.current.rotation.x = 0
+      groupRef.current.position.set(...targetWorldPos);
+      groupRef.current.rotation.z = 0;
+      groupRef.current.rotation.x = 0;
     }
-  }, [targetWorldPos])
+  }, [targetWorldPos]);
 
   useFrame((state, delta) => {
-    if (!groupRef.current) return
+    if (!groupRef.current) return;
 
-    const current = currentPosRef.current
-    const target = targetPosRef.current
-    const velocity = velocityRef.current
+    const current = currentPosRef.current;
+    const target = targetPosRef.current;
+    const velocity = velocityRef.current;
 
-    const dx = target[0] - current[0]
-    const dz = target[2] - current[2]
-    const distance = Math.sqrt(dx * dx + dz * dz)
+    const dx = target[0] - current[0];
+    const dz = target[2] - current[2];
+    const distance = Math.sqrt(dx * dx + dz * dz);
 
     if (distance > 0.01) {
-      const speed = 8
-      const damping = 0.85
+      const speed = 8;
+      const damping = 0.85;
 
-      velocity[0] += dx * speed * delta
-      velocity[2] += dz * speed * delta
+      velocity[0] += dx * speed * delta;
+      velocity[2] += dz * speed * delta;
 
-      velocity[0] *= damping
-      velocity[2] *= damping
+      velocity[0] *= damping;
+      velocity[2] *= damping;
 
-      current[0] += velocity[0] * delta
-      current[2] += velocity[2] * delta
+      current[0] += velocity[0] * delta;
+      current[2] += velocity[2] * delta;
 
-      groupRef.current.position.set(current[0], current[1], current[2])
+      groupRef.current.position.set(current[0], current[1], current[2]);
 
-      const tiltAmount = Math.min(distance * 0.3, 0.3)
-      groupRef.current.rotation.z = -velocity[0] * tiltAmount
-      groupRef.current.rotation.x = velocity[2] * tiltAmount
+      const tiltAmount = Math.min(distance * 0.3, 0.3);
+      groupRef.current.rotation.z = -velocity[0] * tiltAmount;
+      groupRef.current.rotation.x = velocity[2] * tiltAmount;
     } else {
-      current[0] = target[0]
-      current[2] = target[2]
-      velocity[0] = 0
-      velocity[2] = 0
-      groupRef.current.position.set(current[0], current[1], current[2])
-      groupRef.current.rotation.z = 0
-      groupRef.current.rotation.x = 0
+      current[0] = target[0];
+      current[2] = target[2];
+      velocity[0] = 0;
+      velocity[2] = 0;
+      groupRef.current.position.set(current[0], current[1], current[2]);
+      groupRef.current.rotation.z = 0;
+      groupRef.current.rotation.x = 0;
     }
 
     if (meshRef.current) {
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.05
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.05;
     }
-  })
+  });
 
-  const defaultColor = isPlayer ? "#3b82f6" : "#ef4444"
-  const primaryColor = customization?.primaryColor || defaultColor
-  const secondaryColor = customization?.secondaryColor || defaultColor
-  const hpPercent = (hp / maxHp) * 100
-  const shieldPercent = maxShields > 0 ? (shields / maxShields) * 100 : 0
-  const armorPercent = maxArmor > 0 ? (armor / maxArmor) * 100 : 0
+  const defaultColor = isPlayer ? "#3b82f6" : "#ef4444";
+  const primaryColor = customization?.primaryColor || defaultColor;
+  const secondaryColor = customization?.secondaryColor || defaultColor;
+  const hpPercent = (hp / maxHp) * 100;
+  const shieldPercent = maxShields > 0 ? (shields / maxShields) * 100 : 0;
+  const armorPercent = maxArmor > 0 ? (armor / maxArmor) * 100 : 0;
 
-  const armorReduction = armor > 0 ? (armor / (armor + 300)) * 100 : 0
+  const armorReduction = armor > 0 ? (armor / (armor + 300)) * 100 : 0;
 
-  const chassisModifier = useMemo(() => getChassisModifier(customization?.chassis), [customization?.chassis])
+  const chassisModifier = useMemo(
+    () => getChassisModifier(customization?.chassis),
+    [customization?.chassis],
+  );
 
   const sizeScale = useMemo(() => {
-    if (isPlayer) return 1.0
-    if (isGuardian) return 1.4 // Guardians are 40% larger
-    if (isPawn) return 0.7 // Pawns are 30% smaller
-    return 1.0
-  }, [isPlayer, isGuardian, isPawn])
+    if (isPlayer) return 1.0;
+    if (isGuardian) return 1.4; // Guardians are 40% larger
+    if (isPawn) return 0.7; // Pawns are 30% smaller
+    return 1.0;
+  }, [isPlayer, isGuardian, isPawn]);
+
+  const showStatusEffects =
+    burnStacks > 0 ||
+    viralStacks > 0 ||
+    empStacks > 0 ||
+    lagStacks > 0 ||
+    displaceStacks > 0 ||
+    corrosiveStacks > 0;
 
   return (
     <group ref={groupRef}>
       <group ref={meshRef} scale={[sizeScale, sizeScale, sizeScale]}>
         {burnStacks > 0 && (
-          <pointLight position={[0, 0, 0]} intensity={burnStacks * 0.5} distance={2} color="#ff4500" decay={2} />
+          <pointLight
+            position={[0, 0, 0]}
+            intensity={burnStacks * 0.5}
+            distance={2}
+            color="#ff4500"
+            decay={2}
+          />
         )}
 
         {viralStacks > 0 && (
-          <pointLight position={[0, 0, 0]} intensity={viralStacks * 0.4} distance={2.5} color="#00ff00" decay={2} />
+          <pointLight
+            position={[0, 0, 0]}
+            intensity={viralStacks * 0.4}
+            distance={2.5}
+            color="#00ff00"
+            decay={2}
+          />
         )}
 
         {empStacks > 0 && (
-          <pointLight position={[0, 0, 0]} intensity={empStacks * 0.6} distance={3} color="#00ffff" decay={2} />
+          <pointLight
+            position={[0, 0, 0]}
+            intensity={empStacks * 0.6}
+            distance={3}
+            color="#00ffff"
+            decay={2}
+          />
         )}
 
         {customization?.body && (
@@ -235,7 +282,9 @@ export function CustomizableFighter({
           />
         )}
 
-        {customization?.head && <PartMesh part={customization.head} color={primaryColor} />}
+        {customization?.head && (
+          <PartMesh part={customization.head} color={primaryColor} />
+        )}
 
         {customization?.leftArm && (
           <PartMesh
@@ -263,67 +312,41 @@ export function CustomizableFighter({
 
         <mesh position={[0.1, 0.85, 0.21]}>
           <boxGeometry args={[0.08, 0.08, 0.02]} />
-          <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={2} />
+          <meshStandardMaterial
+            color="#00ffff"
+            emissive="#00ffff"
+            emissiveIntensity={2}
+          />
         </mesh>
         <mesh position={[-0.1, 0.85, 0.21]}>
           <boxGeometry args={[0.08, 0.08, 0.02]} />
-          <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={2} />
+          <meshStandardMaterial
+            color="#00ffff"
+            emissive="#00ffff"
+            emissiveIntensity={2}
+          />
         </mesh>
       </group>
 
       <Html position={[0, 1.5, 0]} center zIndexRange={[0, 0]}>
-        <div className="flex flex-col items-center gap-1 pointer-events-none">
-          <div className="text-xs font-bold text-foreground px-2 py-0.5 bg-card/80 rounded border border-border">
-            {isPlayer ? "PLAYER" : "ENEMY"}
-          </div>
-
-          <div className="flex flex-col gap-0.5 w-32">
-            {maxShields > 0 && (
-              <div className="flex items-center gap-1">
-                <Shield className="w-3 h-3 text-cyan-400" />
-                <div className="flex-1 h-1.5 bg-muted/50 rounded-sm border border-cyan-400/30 overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-300 bg-cyan-400"
-                    style={{ width: `${shieldPercent}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono text-cyan-400 w-8 text-right">{shields.toFixed(2)}</span>
-              </div>
-            )}
-
-            {maxArmor > 0 && (
-              <div className="flex items-center gap-1">
-                <Crosshair className="w-3 h-3 text-amber-400" />
-                <div className="flex-1 h-1.5 bg-muted/50 rounded-sm border border-amber-400/30 overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-300 bg-amber-400"
-                    style={{ width: `${armorPercent}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono text-amber-400 w-16 text-right">
-                  {armor.toFixed(2)} (-{armorReduction.toFixed(2)}%)
-                </span>
-              </div>
-            )}
-
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-red-500" />
-              </div>
-              <div className="flex-1 h-2 bg-muted rounded-sm border border-border overflow-hidden">
-                <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    width: `${hpPercent}%`,
-                    backgroundColor: hpPercent > 50 ? "#22c55e" : hpPercent > 25 ? "#eab308" : "#ef4444",
-                  }}
-                />
-              </div>
-              <span className="text-xs font-mono text-foreground w-8 text-right">{hp.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
+        <UnifiedIntegrityBar
+          entityName={isPlayer ? "PLAYER" : "ENEMY"}
+          isPlayer={isPlayer}
+          hp={hp}
+          maxHp={maxHp}
+          shields={shields}
+          maxShields={maxShields}
+          armor={armor}
+          maxArmor={maxArmor}
+          burnStacks={burnStacks}
+          viralStacks={viralStacks}
+          empStacks={empStacks}
+          lagStacks={lagStacks}
+          displaceStacks={displaceStacks}
+          corrosiveStacks={corrosiveStacks}
+          showStatusEffects={showStatusEffects}
+        />
       </Html>
     </group>
-  )
+  );
 }
