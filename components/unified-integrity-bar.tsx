@@ -67,36 +67,73 @@ export function UnifiedIntegrityBar({
     return multipliers[Math.min(viralStacks - 1, 4)];
   }, [viralStacks]);
 
-  // Determine which value to show (top layer)
-  const topLayerValue = shields > 0 ? shields : hp;
-  const topLayerMax = shields > 0 ? maxShields : maxHp;
+  const hasActiveShields = shields > 0 && maxShields > 0;
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num.toFixed(0);
+  };
+
+  console.log({ corrosiveStacks });
 
   return (
     <div className="flex flex-col items-center gap-1 pointer-events-none">
-      {/* Entity name label */}
-      <div className="text-xs font-bold text-foreground px-2 py-0.5 bg-card/80 rounded border border-border">
-        {entityName}
-      </div>
-
-      {/* Main integrity section */}
-      <div
-        className={`flex flex-col ${compact ? "gap-0.5 w-28" : "gap-1 w-32"}`}
-      >
-        {/* Armor indicator (only if armor exists) */}
-        {maxArmor > 0 && (
-          <div className="flex items-center gap-1">
+      {/* Entity name label with armor */}
+      <div className="flex items-center gap-2">
+        <div className="text-xs font-bold text-foreground px-2 py-0.5 bg-card/80 rounded border border-border">
+          {entityName}
+        </div>
+        {maxArmor > 0 && armorReduction > 0 && (
+          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-950/40 rounded border border-amber-500/30">
             <Shield className="w-3 h-3 text-amber-400" />
             <span className="text-[10px] font-mono text-amber-400">
               (-{armorReduction.toFixed(1)}%)
             </span>
           </div>
         )}
+      </div>
 
-        {/* Unified Integrity Bar (layered shields + HP) */}
+      <div
+        className={`flex flex-col ${compact ? "gap-0.5 w-36" : "gap-1 w-40"}`}
+      >
+        {/* Shield bar (only shown if entity has shields) */}
+        {maxShields > 0 && (
+          <div className="relative">
+            <div
+              className={`${compact ? "h-2" : "h-2.5"} bg-muted/30 rounded-sm border border-cyan-500/30 overflow-hidden`}
+            >
+              <div
+                className="h-full transition-all duration-300"
+                style={{
+                  width: `${shieldPercent}%`,
+                  backgroundColor: "#22d3ee",
+                  boxShadow:
+                    shields > 0 ? "0 0 6px rgba(34, 211, 238, 0.6)" : "none",
+                }}
+              />
+            </div>
+            {/* Shield value display */}
+            {hasActiveShields && (
+              <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                <span
+                  className={`${compact ? "text-[9px]" : "text-[10px]"} font-mono font-bold text-cyan-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]`}
+                >
+                  {formatNumber(shields)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* HP bar */}
         <div className="relative">
-          {/* HP bar (base layer) */}
           <div
-            className={`${compact ? "h-2" : "h-2.5"} bg-muted/50 rounded-sm border border-border overflow-hidden`}
+            className={`${compact ? "h-2.5" : "h-3"} bg-muted/30 rounded-sm border border-red-500/30 overflow-hidden`}
           >
             <div
               className="h-full transition-all duration-300"
@@ -106,23 +143,12 @@ export function UnifiedIntegrityBar({
               }}
             />
           </div>
-
-          {/* Shield bar (overlay layer) - only visible when shields exist */}
-          {maxShields > 0 && shields > 0 && (
-            <div
-              className={`absolute top-0 left-0 ${compact ? "h-2" : "h-2.5"} bg-cyan-400/90 rounded-sm transition-all duration-300`}
-              style={{
-                width: `${shieldPercent}%`,
-              }}
-            />
-          )}
-
-          {/* Numerical readout (always shows top layer) */}
+          {/* HP value display */}
           <div className="absolute right-1 top-1/2 -translate-y-1/2">
             <span
-              className={`${compact ? "text-[10px]" : "text-xs"} font-mono font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]`}
+              className={`${compact ? "text-[9px]" : "text-[10px]"} font-mono font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]`}
             >
-              {topLayerValue.toFixed(0)} / {topLayerMax}
+              {formatNumber(hp)}
             </span>
           </div>
         </div>
