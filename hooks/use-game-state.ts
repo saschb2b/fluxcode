@@ -11,6 +11,8 @@ import type {
   FighterCustomization,
   BattleHistoryPoint,
   PlayerProgress,
+  Construct,
+  ActiveConstructSlot,
   DamageType,
 } from "@/types/game"
 import { BattleEngine } from "@/lib/battle-engine"
@@ -56,16 +58,23 @@ export function useGameState(): GameState {
         saveProgress(newProgress)
       }
     }
-  }, []) // Run once on mount
+  }, [])
 
   const baseMaxHp = 100
   const hpBonus = getTotalStatBonus(playerProgress, "hp")
   const playerMaxHp = baseMaxHp + hpBonus
 
+  const shieldBonus = getTotalStatBonus(playerProgress, "shield_capacity")
+  const armorBonus = getTotalStatBonus(playerProgress, "armor_rating")
+
   const [player, setPlayer] = useState({
     position: { x: 1, y: 1 } as Position,
     hp: playerMaxHp,
     maxHp: playerMaxHp,
+    shields: 0,
+    maxShields: 0,
+    armor: 0,
+    maxArmor: 0,
   })
 
   const isGuardianBattle =
@@ -73,20 +82,11 @@ export function useGameState(): GameState {
     networkLayers[currentLayerIndex] &&
     networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
 
-  const [enemy, setEnemy] = useState({
-    position: { x: 4, y: 1 } as Position,
-    hp: 40,
-    maxHp: 40,
-    shields: 0,
-    maxShields: 0,
-    armor: 0,
-    maxArmor: 0,
-    resistances: {} as Partial<Record<DamageType, number>>,
-    statusEffects: [] as string[],
-  })
-
+  const [enemies, setEnemies] = useState<any[]>([])
   const [projectiles, setProjectiles] = useState<any[]>([])
   const [triggerActionPairs, setTriggerActionPairs] = useState<TriggerActionPair[]>([])
+  const [movementPairs, setMovementPairs] = useState<TriggerActionPair[]>([])
+  const [tacticalPairs, setTacticalPairs] = useState<TriggerActionPair[]>([])
   const [unlockedTriggers, setUnlockedTriggers] = useState<Trigger[]>([])
   const [unlockedActions, setUnlockedActions] = useState<Action[]>([])
   const [showRewardSelection, setShowRewardSelection] = useState(false)
@@ -96,6 +96,13 @@ export function useGameState(): GameState {
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterPreset | null>(null)
   const [fighterCustomization, setFighterCustomization] = useState<FighterCustomization | null>(null)
   const [enemyCustomization, setEnemyCustomization] = useState<FighterCustomization>(generateRandomCustomization())
+  const [enemyCustomizations, setEnemyCustomizations] = useState<FighterCustomization[]>([
+    generateRandomCustomization(),
+  ])
+  const [enemy, setEnemy] = useState<any>(null)
+
+  const [selectedConstruct, setSelectedConstructState] = useState<Construct | null>(null)
+  const [activeSlot, setActiveSlotState] = useState<ActiveConstructSlot | null>(null)
 
   const battleEngineRef = useRef<BattleEngine | null>(null)
   const animationFrameRef = useRef<number>()
@@ -121,260 +128,6 @@ export function useGameState(): GameState {
   } | null>(null)
 
   const battleStartTimeRef = useRef<number>(0)
-
-  useEffect(() => {
-    if (battleState !== "fighting" || !battleEngineRef.current) {
-      return
-    }
-
-    const animate = (time: number) => {
-      if (!lastTimeRef.current) {
-        lastTimeRef.current = time
-        battleStartTimeRef.current = time
-      }
-
-      const deltaTime = time - lastTimeRef.current
-      lastTimeRef.current = time
-
-      const update = battleEngineRef.current!.tick(deltaTime)
-
-      if (update.playerPos) setPlayer((p) => ({ ...p, position: update.playerPos! }))
-      if (update.playerHP !== undefined) setPlayer((p) => ({ ...p, hp: update.playerHP! }))
-      if (update.enemyPos) setEnemy((e) => ({ ...e, position: update.enemyPos! }))
-      if (update.enemyHP !== undefined) setEnemy((e) => ({ ...e, hp: update.enemyHP! }))
-      if (update.projectiles) setProjectiles(update.projectiles)
-
-      if (update.battleOver) {
-        if (update.battleHistory) {
-          setBattleHistory(update.battleHistory)
-
-          if (update.playerWon) {
-            const healthRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerHP || 0
-
-            if (playerProgress.contractProgress) {
-              const totalDamageDealt = Object.values(update.damageByType || {}).reduce((sum, val) => sum + val, 0)
-
-              const runStats = {
-                damageByType: update.damageByType || {},
-                triggersUsed: update.triggersUsed || [],
-                actionsUsed: update.actionsUsed || [],
-                pairsCount: triggerActionPairs.length,
-                guardianDefeated: isGuardianBattle,
-                damageTaken: player.maxHp - healthRemaining,
-                pairExecutions: update.pairExecutions || [],
-              }
-
-              console.log("[v0] Checking contracts with run stats:", runStats)
-              console.log("[v0] Total damage dealt this run:", totalDamageDealt)
-
-              const updatedDailyContracts = playerProgress.contractProgress.dailyContracts.map((contract) => {
-                if (contract.completed) return contract
-                const { progress, completed } = checkContractProgress(contract, runStats)
-                return { ...contract, progress, completed }
-              })
-
-              const updatedWeeklyContracts = playerProgress.contractProgress.weeklyContracts.map((contract) => {
-                if (contract.completed) return contract
-                const { progress, completed } = checkContractProgress(contract, runStats)
-                return { ...contract, progress, completed }
-              })
-
-              const updatedContractProgress = {
-                ...playerProgress.contractProgress,
-                dailyContracts: updatedDailyContracts,
-                weeklyContracts: updatedWeeklyContracts,
-              }
-
-              setPlayerProgress((prev) => ({
-                ...prev,
-                contractProgress: updatedContractProgress,
-              }))
-
-              saveProgress({
-                ...playerProgress,
-                contractProgress: updatedContractProgress,
-              })
-            }
-
-            setPerformanceHistory((prev) => {
-              const recentWins = [...prev.recentVictories, 1].slice(-5)
-              const battleDuration = (time - battleStartTimeRef.current) / 1000
-              const avgTime = prev.avgTimeToWin * 0.7 + battleDuration * 0.3
-              const avgHealth = prev.avgHealthRemaining * 0.7 + healthRemaining * 0.3
-
-              return {
-                recentVictories: recentWins,
-                avgTimeToWin: avgTime,
-                avgHealthRemaining: avgHealth,
-              }
-            })
-          } else {
-            const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
-            const currencyEarned = calculateCurrencyReward(currentTotalNodes)
-
-            console.log("[v0] Player defeated at layer", currentLayerIndex, "node", currentNodeIndex)
-            console.log("[v0] Total nodes completed:", currentTotalNodes)
-            console.log("[v0] Currency earned:", currencyEarned)
-
-            const newProgress: PlayerProgress = {
-              ...playerProgress,
-              cipherFragments: playerProgress.cipherFragments + currencyEarned,
-              totalNodesCompleted: playerProgress.totalNodesCompleted + currentTotalNodes,
-              totalRuns: playerProgress.totalRuns + 1,
-              bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
-              bestNodeInBestLayer:
-                currentLayerIndex > playerProgress.bestLayerReached
-                  ? currentNodeIndex
-                  : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
-            }
-
-            console.log("[v0] New cipher fragments total:", newProgress.cipherFragments)
-            setPlayerProgress(newProgress)
-            saveProgress(newProgress)
-
-            setPerformanceHistory((prev) => ({
-              ...prev,
-              recentVictories: [...prev.recentVictories, 0].slice(-5),
-            }))
-          }
-        }
-
-        setBattleState(update.playerWon ? "victory" : "defeat")
-        return
-      }
-
-      animationFrameRef.current = requestAnimationFrame(animate)
-    }
-
-    animationFrameRef.current = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
-    }
-  }, [
-    battleState,
-    wave,
-    playerProgress,
-    networkLayers,
-    currentLayerIndex,
-    currentNodeIndex,
-    isGuardianBattle,
-    triggerActionPairs,
-    player.maxHp,
-  ])
-
-  const startBattle = useCallback(() => {
-    console.log("[v0] Starting battle with player pairs:", triggerActionPairs)
-    console.log("[v0] triggerActionPairs count:", triggerActionPairs.length)
-    console.log(
-      "[v0] triggerActionPairs details:",
-      triggerActionPairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
-    )
-    setJustEarnedReward(null)
-
-    const enemyPairs: TriggerActionPair[] = [
-      {
-        trigger: AVAILABLE_TRIGGERS[11],
-        action: AVAILABLE_ACTIONS[10],
-        priority: 6,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[19],
-        action: AVAILABLE_ACTIONS[0],
-        priority: 5,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[20],
-        action: wave >= 3 ? AVAILABLE_ACTIONS[13] : AVAILABLE_ACTIONS[8],
-        priority: 4,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[1],
-        action: AVAILABLE_ACTIONS[3],
-        priority: 3,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[0],
-        action: AVAILABLE_ACTIONS[6],
-        priority: 2,
-      },
-      {
-        trigger: AVAILABLE_TRIGGERS[23],
-        action: AVAILABLE_ACTIONS[0],
-        priority: 1,
-      },
-    ]
-
-    if (wave >= 2) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[5],
-        action: AVAILABLE_ACTIONS[14],
-        priority: 7,
-      })
-    }
-
-    if (wave >= 3) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[4],
-        action: AVAILABLE_ACTIONS[1],
-        priority: 8,
-      })
-    }
-
-    if (wave >= 4) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[2],
-        action: AVAILABLE_ACTIONS[11],
-        priority: 9,
-      })
-    }
-
-    if (wave >= 5) {
-      enemyPairs.push({
-        trigger: AVAILABLE_TRIGGERS[6],
-        action: AVAILABLE_ACTIONS[2],
-        priority: 10,
-      })
-    }
-
-    console.log("[v0] Enemy pairs:", enemyPairs)
-
-    battleEngineRef.current = new BattleEngine(
-      {
-        playerPos: player.position,
-        playerHP: player.hp,
-        enemyPos: enemy.position,
-        enemyHP: enemy.hp,
-        projectiles: [],
-        justTookDamage: false,
-      },
-      triggerActionPairs,
-      enemyPairs,
-      fighterCustomization,
-      enemyCustomization,
-    )
-
-    console.log("[v0] Battle engine created, starting animation loop")
-    lastTimeRef.current = 0
-    setBattleState("fighting")
-  }, [player, enemy, triggerActionPairs, wave, fighterCustomization, enemyCustomization])
-
-  const getRandomRewards = useCallback((allTriggers: Trigger[], allActions: Action[]) => {
-    const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
-      ...allTriggers.map((t) => ({ type: "trigger" as const, item: t })),
-      ...allActions.map((a) => ({ type: "action" as const, item: a })),
-    ]
-
-    const shuffled = allRewards.sort(() => Math.random() - 0.5)
-    const selected = shuffled.slice(0, Math.min(3, shuffled.length))
-
-    const triggers = selected.filter((r) => r.type === "trigger").map((r) => r.item as Trigger)
-    const actions = selected.filter((r) => r.type === "action").map((r) => r.item as Action)
-
-    return { triggers, actions }
-  }, [])
 
   const calculateDifficultyMultiplier = useCallback(
     (waveNumber: number) => {
@@ -426,6 +179,279 @@ export function useGameState(): GameState {
     [performanceHistory],
   )
 
+  useEffect(() => {
+    if (battleState !== "fighting" || !battleEngineRef.current) {
+      return
+    }
+
+    const animate = (time: number) => {
+      if (!lastTimeRef.current) {
+        lastTimeRef.current = time
+        battleStartTimeRef.current = time
+      }
+
+      const deltaTime = time - lastTimeRef.current
+      lastTimeRef.current = time
+
+      const update = battleEngineRef.current!.tick(deltaTime)
+
+      if (update.playerPos) setPlayer((p) => ({ ...p, position: update.playerPos! }))
+      if (update.playerHP !== undefined) setPlayer((p) => ({ ...p, hp: update.playerHP! }))
+      if (update.playerShields !== undefined) setPlayer((p) => ({ ...p, shields: update.playerShields! }))
+      if (update.playerArmor !== undefined) setPlayer((p) => ({ ...p, armor: update.playerArmor! }))
+
+      if (update.enemyHP !== undefined || update.enemyShields !== undefined || update.enemyArmor !== undefined) {
+        const engineState = battleEngineRef.current!.getState()
+        setEnemies((prevEnemies) =>
+          prevEnemies.map((prevEnemy, index) => {
+            const engineEnemy = engineState.enemies[index]
+            if (!engineEnemy) return prevEnemy
+
+            return {
+              ...prevEnemy,
+              hp: engineEnemy.hp,
+              shields: engineEnemy.shields,
+              armor: engineEnemy.armor,
+              position: engineEnemy.position,
+            }
+          }),
+        )
+      }
+
+      if (update.projectiles) setProjectiles(update.projectiles)
+
+      if (update.battleOver) {
+        if (update.battleHistory) {
+          setBattleHistory(update.battleHistory)
+
+          if (update.playerWon) {
+            const healthRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerHP || 0
+            const shieldsRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerShields || 0
+            const armorRemaining = update.battleHistory[update.battleHistory.length - 1]?.playerArmor || 0
+
+            if (playerProgress.contractProgress) {
+              const totalDamageDealt = Object.values(update.damageByType || {}).reduce((sum, val) => sum + val, 0)
+
+              const runStats = {
+                damageByType: update.damageByType || {},
+                triggersUsed: update.triggersUsed || [],
+                actionsUsed: update.actionsUsed || [],
+                pairsCount: triggerActionPairs.length,
+                guardianDefeated: isGuardianBattle,
+                damageTaken: player.maxHp - healthRemaining,
+                pairExecutions: update.pairExecutions || [],
+              }
+
+              const updatedDailyContracts = playerProgress.contractProgress.dailyContracts.map((contract) => {
+                if (contract.completed) return contract
+                const { progress, completed } = checkContractProgress(contract, runStats)
+                return { ...contract, progress, completed }
+              })
+
+              const updatedWeeklyContracts = playerProgress.contractProgress.weeklyContracts.map((contract) => {
+                if (contract.completed) return contract
+                const { progress, completed } = checkContractProgress(contract, runStats)
+                return { ...contract, progress, completed }
+              })
+
+              const updatedContractProgress = {
+                ...playerProgress.contractProgress,
+                dailyContracts: updatedDailyContracts,
+                weeklyContracts: updatedWeeklyContracts,
+              }
+
+              setPlayerProgress((prev) => ({
+                ...prev,
+                contractProgress: updatedContractProgress,
+              }))
+
+              saveProgress({
+                ...playerProgress,
+                contractProgress: updatedContractProgress,
+              })
+            }
+
+            setPerformanceHistory((prev) => {
+              const recentWins = [...prev.recentVictories, 1].slice(-5)
+              const battleDuration = (time - battleStartTimeRef.current) / 1000
+              const avgTime = prev.avgTimeToWin * 0.7 + battleDuration * 0.3
+              const avgHealth = prev.avgHealthRemaining * 0.7 + healthRemaining * 0.3
+
+              return {
+                recentVictories: recentWins,
+                avgTimeToWin: avgTime,
+                avgHealthRemaining: avgHealth,
+              }
+            })
+          } else {
+            const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
+            const currencyEarned = calculateCurrencyReward(currentTotalNodes)
+
+            const newProgress: PlayerProgress = {
+              ...playerProgress,
+              cipherFragments: playerProgress.cipherFragments + currencyEarned,
+              totalNodesCompleted: playerProgress.totalNodesCompleted + currentTotalNodes,
+              totalRuns: playerProgress.totalRuns + 1,
+              bestLayerReached: Math.max(playerProgress.bestLayerReached, currentLayerIndex),
+              bestNodeInBestLayer:
+                currentLayerIndex > playerProgress.bestLayerReached
+                  ? currentNodeIndex
+                  : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
+            }
+
+            setPlayerProgress(newProgress)
+            saveProgress(newProgress)
+
+            setPerformanceHistory((prev) => ({
+              ...prev,
+              recentVictories: [...prev.recentVictories, 0].slice(-5),
+            }))
+          }
+        }
+
+        setBattleState(update.playerWon ? "victory" : "defeat")
+        return
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [
+    battleState,
+    wave,
+    playerProgress,
+    networkLayers,
+    currentLayerIndex,
+    currentNodeIndex,
+    isGuardianBattle,
+    triggerActionPairs,
+    player.maxHp,
+    player.maxShields,
+    player.maxArmor,
+  ])
+
+  const startBattle = useCallback(() => {
+    const enabledMovementPairs = movementPairs.filter((pair) => pair.enabled !== false)
+    const enabledTacticalPairs = tacticalPairs.filter((pair) => pair.enabled !== false)
+
+    const finalMovementPairs =
+      enabledMovementPairs.length > 0
+        ? enabledMovementPairs
+        : triggerActionPairs.filter((p) => p.action.coreType === "movement" && p.enabled !== false)
+
+    const finalTacticalPairs =
+      enabledTacticalPairs.length > 0
+        ? enabledTacticalPairs
+        : triggerActionPairs.filter((p) => p.action.coreType === "tactical" && p.enabled !== false)
+
+    setJustEarnedReward(null)
+
+    const baseEnemyProtocols = []
+
+    if (wave >= 2) {
+      baseEnemyProtocols.push({ triggerId: "critical-hp", actionId: "heal", priority: 10 })
+      baseEnemyProtocols.push({ triggerId: "just-took-damage", actionId: "dodge", priority: 9 })
+    }
+
+    baseEnemyProtocols.push({ triggerId: "enemy-far", actionId: "move-forward", priority: 8 })
+    baseEnemyProtocols.push({ triggerId: "enemy-close", actionId: "move-backward", priority: 7 })
+    baseEnemyProtocols.push({ triggerId: "different-row", actionId: "move-up", priority: 6 })
+
+    if (wave >= 3) {
+      baseEnemyProtocols.push({ triggerId: "at-front", actionId: "move-backward", priority: 5 })
+    }
+
+    baseEnemyProtocols.push({ triggerId: "enemy-close", actionId: "shotgun-blast", priority: 4 })
+
+    if (wave >= 4) {
+      baseEnemyProtocols.push({ triggerId: "enemy-exposed", actionId: "power-shot", priority: 3 })
+    }
+
+    baseEnemyProtocols.push({ triggerId: "same-row", actionId: "shoot", priority: 2 })
+    baseEnemyProtocols.push({ triggerId: "always", actionId: "shoot", priority: 1 })
+
+    const enemyPairs = baseEnemyProtocols
+      .map((config) => {
+        const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === config.triggerId)
+        const action = AVAILABLE_ACTIONS.find((a) => a.id === config.actionId)
+
+        if (!trigger || !action) {
+          return null
+        }
+
+        return {
+          trigger,
+          action,
+          priority: config.priority,
+        }
+      })
+      .filter((pair): pair is TriggerActionPair => pair !== null)
+
+    const enemiesForBattle = enemies.map((e, index) => ({
+      id: `enemy-${index}`,
+      position: e.position,
+      hp: e.hp,
+      maxHp: e.maxHp,
+      shields: e.shields || 0,
+      maxShields: e.maxShields || 0,
+      armor: e.armor || 0,
+      maxArmor: e.maxArmor || 0,
+      burnStacks: [],
+      viralStacks: [],
+      empStacks: [],
+      lagStacks: [],
+      displaceStacks: [],
+      shieldRegenDisabled: false,
+      isPawn: e.isPawn || false,
+    }))
+
+    battleEngineRef.current = new BattleEngine(
+      {
+        playerPos: player.position,
+        playerHP: player.hp,
+        playerShields: player.shields || 0,
+        playerArmor: player.armor || 0,
+        enemyPos: enemies[0]?.position || { x: 4, y: 1 },
+        enemyHP: enemies[0]?.hp || 0,
+        enemies: enemiesForBattle,
+        enemyShields: enemies[0]?.shields || 0,
+        enemyArmor: enemies[0]?.armor || 0,
+        enemyBurnStacks: [],
+        enemyViralStacks: [],
+        enemyEMPStacks: [],
+        enemyLagStacks: [],
+        enemyDisplaceStacks: [],
+        projectiles: [],
+        justTookDamage: false,
+        shieldRegenDisabled: false,
+      },
+      finalMovementPairs,
+      finalTacticalPairs,
+      enemyPairs,
+      fighterCustomization,
+      enemyCustomizations,
+    )
+
+    lastTimeRef.current = 0
+    setBattleState("fighting")
+  }, [
+    player,
+    enemies,
+    movementPairs,
+    tacticalPairs,
+    triggerActionPairs,
+    wave,
+    fighterCustomization,
+    enemyCustomizations,
+  ])
+
   const prepareNextWave = useCallback(() => {
     if (networkLayers.length > 0) {
       const updatedLayers = [...networkLayers]
@@ -458,9 +484,9 @@ export function useGameState(): GameState {
     let baseHp: number
 
     if (nextWave <= 3) {
-      baseHp = 30 + nextWave * 10 // 40, 50, 60
+      baseHp = 30 + nextWave * 10
     } else if (nextWave <= 6) {
-      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+      baseHp = 40 + nextWave * 10
     } else if (nextWave <= 15) {
       baseHp = 40 + nextWave * 10
     } else {
@@ -470,80 +496,154 @@ export function useGameState(): GameState {
     const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
     baseHp = Math.floor(baseHp * difficultyMultiplier)
 
-    console.log("[v0] Preparing wave", nextWave)
-    console.log(
-      "[v0] Base HP calculation - raw:",
-      40 + nextWave * 10,
-      "multiplier:",
-      difficultyMultiplier.toFixed(2),
-      "final:",
-      baseHp,
-    )
-
     const nextNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
       (currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length
         ? networkLayers[currentLayerIndex].nodes[currentNodeIndex + 1]?.type === "guardian"
         : false)
-    const enemyMaxHp = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    let shields = 0
-    let armor = 0
-    let resistances: Partial<Record<DamageType, number>> = {}
-
-    const currentLayerData = networkLayers[currentLayerIndex]
-    if (currentLayerData) {
-      switch (currentLayerData.id) {
-        case "data-stream":
-          shields = 0
-          armor = 0
-          resistances = {}
-          break
-        case "firewall":
-          armor = Math.floor(enemyMaxHp * 0.25)
-          resistances = {
-            kinetic: 0.3,
-            corrosive: -0.2,
-          }
-          break
-        case "archive":
-          shields = Math.floor(enemyMaxHp * 0.3)
-          armor = 0
-          resistances = {
-            energy: 0.25,
-            viral: -0.15,
-          }
-          break
-        case "core-approach":
-          shields = Math.floor(enemyMaxHp * 0.25)
-          armor = Math.floor(enemyMaxHp * 0.2)
-          resistances = {
-            energy: 0.2,
-            kinetic: 0.2,
-            thermal: -0.1,
-          }
-          break
-      }
-
-      if (nextNodeIsGuardian) {
-        shields = Math.floor(shields * 1.3)
-        armor = Math.floor(armor * 1.3)
+    let enemyCount = 1
+    if (nextNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
       }
     }
 
-    setEnemy({
-      position: { x: 4, y: 1 },
-      hp: enemyMaxHp,
-      maxHp: enemyMaxHp,
-      shields,
-      maxShields: shields,
-      armor,
-      maxArmor: armor,
-      resistances,
-      statusEffects: [],
-    })
-    setEnemyCustomization(generateRandomCustomization())
+    const totalHpBudget = nextNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
+    const enemiesArray: Array<any> = []
+
+    if (nextNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
+
+      enemiesArray.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: `Guardian-${currentLayerIndex}`,
+      })
+
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Pawn-${i}`,
+          isPawn: true,
+        })
+      }
+    } else {
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Enemy-${i}`,
+        })
+      }
+    }
+
+    const nextLayerIndex =
+      currentNodeIndex + 1 < networkLayers[currentLayerIndex].nodes.length ? currentLayerIndex : currentLayerIndex + 1
+    const currentLayerData = networkLayers[nextLayerIndex]
+
+    if (currentLayerData) {
+      enemiesArray.forEach((enemy, index) => {
+        const isGuardian = nextNodeIsGuardian && index === 0
+        let shields = 0
+        let armor = 0
+        let resistances: Partial<Record<DamageType, number>> = {}
+
+        switch (currentLayerData.id) {
+          case "data-stream":
+            shields = 0
+            armor = 0
+            resistances = {}
+            break
+          case "firewall":
+            armor = Math.floor(enemy.maxHp * 0.25)
+            resistances = {
+              kinetic: 0.3,
+              corrosive: -0.2,
+            }
+            break
+          case "archive":
+            shields = Math.floor(enemy.maxHp * 0.3)
+            armor = 0
+            resistances = {
+              energy: 0.25,
+              viral: -0.15,
+            }
+            break
+          case "core-approach":
+            shields = Math.floor(enemy.maxHp * 0.25)
+            armor = Math.floor(enemy.maxHp * 0.2)
+            resistances = {
+              energy: 0.2,
+              kinetic: 0.2,
+              thermal: -0.1,
+            }
+            break
+        }
+
+        if (isGuardian) {
+          shields = Math.floor(shields * 1.3)
+          armor = Math.floor(armor * 1.3)
+        }
+
+        enemy.shields = shields
+        enemy.maxShields = shields
+        enemy.armor = armor
+        enemy.maxArmor = armor
+        enemy.resistances = resistances
+      })
+    }
+
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      customizationsArray.push(generateRandomCustomization())
+    }
+
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setShowEnemyIntro(true)
   }, [wave, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
 
@@ -556,9 +656,9 @@ export function useGameState(): GameState {
     let baseHp: number
 
     if (nextWave <= 3) {
-      baseHp = 30 + nextWave * 10 // 40, 50, 60
+      baseHp = 30 + nextWave * 10
     } else if (nextWave <= 6) {
-      baseHp = 40 + nextWave * 10 // Wave 4: 80, Wave 5: 90, Wave 6: 100
+      baseHp = 40 + nextWave * 10
     } else if (nextWave <= 15) {
       baseHp = 40 + nextWave * 10
     } else {
@@ -568,80 +668,117 @@ export function useGameState(): GameState {
     const difficultyMultiplier = nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0
     baseHp = Math.floor(baseHp * difficultyMultiplier)
 
-    console.log("[v0] Preparing wave", nextWave)
-    console.log("[v0] Wave", nextWave, "baseHp:", baseHp, "multiplier:", difficultyMultiplier.toFixed(2))
-
     const currentNodeIsGuardian =
       networkLayers.length > 0 &&
       networkLayers[currentLayerIndex] &&
       networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type === "guardian"
     const enemyMaxHp = currentNodeIsGuardian ? Math.floor(baseHp * 1.5) : baseHp
 
-    let shields = 0
-    let armor = 0
-    let resistances: Partial<Record<DamageType, number>> = {}
+    let enemyCount = 1
+    if (currentNodeIsGuardian) {
+      const roll = Math.random()
+      if (roll < 0.5) enemyCount = 2
+      else if (roll < 0.8) enemyCount = 3
+      else enemyCount = 4
+    } else {
+      if (nextWave >= 6) {
+        const roll = Math.random()
+        if (roll < 0.1) enemyCount = 3
+        else if (roll < 0.3) enemyCount = 2
+      } else if (nextWave >= 3) {
+        if (Math.random() < 0.2) enemyCount = 2
+      }
+    }
+
+    const totalHpBudget = currentNodeIsGuardian ? Math.floor(enemyMaxHp * 1.5) : enemyMaxHp
+    const enemiesArray: Array<any> = []
+
+    if (currentNodeIsGuardian && enemyCount > 1) {
+      const guardianHp = Math.floor(totalHpBudget * 0.6)
+      const pawnHpBudget = totalHpBudget - guardianHp
+      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1))
+
+      enemiesArray.push({
+        position: { x: 4, y: 1 },
+        hp: guardianHp,
+        maxHp: guardianHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        resistances: {},
+        statusEffects: [],
+        name: `Guardian-${currentLayerIndex}`,
+      })
+
+      for (let i = 1; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
+          hp: pawnHp,
+          maxHp: pawnHp,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Pawn-${i}`,
+          isPawn: true,
+        })
+      }
+    } else {
+      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount)
+      const positions: Position[] = [
+        { x: 4, y: 1 },
+        { x: 5, y: 0 },
+        { x: 5, y: 2 },
+      ]
+
+      for (let i = 0; i < enemyCount; i++) {
+        enemiesArray.push({
+          position: positions[i] || { x: 4, y: 1 },
+          hp: hpPerEnemy,
+          maxHp: hpPerEnemy,
+          shields: 0,
+          maxShields: 0,
+          armor: 0,
+          maxArmor: 0,
+          resistances: {},
+          statusEffects: [],
+          name: `Enemy-${i}`,
+        })
+      }
+    }
 
     const currentLayerData = networkLayers[currentLayerIndex]
-    if (currentLayerData) {
-      switch (currentLayerData.id) {
-        case "data-stream":
-          shields = 0
-          armor = 0
-          resistances = {}
-          break
-        case "firewall":
-          armor = Math.floor(enemyMaxHp * 0.25)
-          resistances = {
-            kinetic: 0.3,
-            corrosive: -0.2,
-          }
-          break
-        case "archive":
-          shields = Math.floor(enemyMaxHp * 0.3)
-          armor = 0
-          resistances = {
-            energy: 0.25,
-            viral: -0.15,
-          }
-          break
-        case "core-approach":
-          shields = Math.floor(enemyMaxHp * 0.25)
-          armor = Math.floor(enemyMaxHp * 0.2)
-          resistances = {
-            energy: 0.2,
-            kinetic: 0.2,
-            thermal: -0.1,
-          }
-          break
+    const customizationsArray: FighterCustomization[] = []
+    for (let i = 0; i < enemyCount; i++) {
+      const isGuardian = currentNodeIsGuardian && i === 0
+      const isPawn = currentNodeIsGuardian && i > 0
+
+      const customization = generateRandomCustomization()
+
+      if (isPawn) {
+        enemiesArray[i].isPawn = true
       }
 
-      if (currentNodeIsGuardian) {
-        shields = Math.floor(shields * 1.3)
-        armor = Math.floor(armor * 1.3)
-      }
+      customizationsArray.push(customization)
     }
 
     setPlayer((prev) => ({
       ...prev,
       position: { x: 1, y: 1 },
       hp: prev.maxHp,
+      shields: prev.maxShields,
+      armor: prev.maxArmor,
     }))
 
-    setEnemy({
-      position: { x: 4, y: 1 },
-      hp: enemyMaxHp,
-      maxHp: enemyMaxHp,
-      shields,
-      maxShields: shields,
-      armor,
-      maxArmor: armor,
-      resistances,
-      statusEffects: [],
-    })
-    console.log("[v0] Enemy HP set to:", enemyMaxHp, "shields:", shields, "armor:", armor)
+    setEnemies(enemiesArray)
+    setEnemy(enemiesArray[0])
     setProjectiles([])
     setBattleHistory([])
-    setEnemyCustomization(generateRandomCustomization())
+    setEnemyCustomization(customizationsArray[0])
+    setEnemyCustomizations(customizationsArray)
     setBattleState("idle")
     setShowRewardSelection(false)
   }, [wave, playerProgress, networkLayers, currentLayerIndex, currentNodeIndex, calculateDifficultyMultiplier])
@@ -651,75 +788,56 @@ export function useGameState(): GameState {
     setPlayerProgress(latestProgress)
 
     setWave(1)
-    setNetworkLayers(initializeRun())
     setCurrentLayerIndex(0)
     setCurrentNodeIndex(0)
+    setNetworkLayers(initializeRun())
+
     const hpBonus = getTotalStatBonus(latestProgress, "hp")
-    const maxHp = baseMaxHp + hpBonus
-    setPlayer({ position: { x: 1, y: 1 }, hp: maxHp, maxHp })
-    setEnemy({
-      position: { x: 4, y: 1 },
-      hp: 40,
-      maxHp: 40,
-      shields: 0,
-      maxShields: 0,
-      armor: 0,
-      maxArmor: 0,
-      resistances: {},
-      statusEffects: [],
+    const shieldBonus = getTotalStatBonus(latestProgress, "shield_capacity")
+    const armorBonus = getTotalStatBonus(latestProgress, "armor_rating")
+
+    const maxHp = (selectedConstruct?.baseHp || baseMaxHp) + hpBonus
+    const maxShields = (selectedConstruct?.baseShields || 0) + shieldBonus
+    const maxArmor = (selectedConstruct?.baseArmor || 0) + armorBonus
+
+    setPlayer({
+      position: { x: 1, y: 1 },
+      hp: maxHp,
+      maxHp,
+      shields: maxShields,
+      maxShields,
+      armor: maxArmor,
+      maxArmor,
     })
-    setProjectiles([])
-    if (selectedCharacter) {
-      const customClasses = latestProgress.customFighterClasses || []
-      const customClass = customClasses.find((c) => c.id === selectedCharacter.id)
 
-      if (customClass && customClass.startingPairs.length > 0) {
-        const pairs: TriggerActionPair[] = customClass.startingPairs
-          .map((pair) => {
-            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
-            const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
+    // Spawn initial enemy for wave 1
+    const initialHp = 40
+    setEnemies([
+      {
+        position: { x: 4, y: 1 },
+        hp: initialHp,
+        maxHp: initialHp,
+        shields: 0,
+        maxShields: 0,
+        armor: 0,
+        maxArmor: 0,
+        isPawn: false,
+      },
+    ])
 
-            if (!trigger || !action) return null
-
-            return {
-              trigger,
-              action,
-              priority: pair.priority,
-            }
-          })
-          .filter((p): p is TriggerActionPair => p !== null)
-
-        console.log("[v0] Reloading custom class protocols for new run:", pairs)
-        console.log("[v0] Loaded protocol count:", pairs.length)
-        console.log(
-          "[v0] Loaded protocol details:",
-          pairs.map((p) => `${p.trigger.id}->${p.action.id} (priority: ${p.priority})`),
-        )
-        setTriggerActionPairs(pairs)
-
-        const triggers = pairs.map((p) => p.trigger)
-        const actions = pairs.map((p) => p.action)
-        setUnlockedTriggers(triggers)
-        setUnlockedActions(actions)
-      } else {
-        // Use default preset protocols
-        setTriggerActionPairs(selectedCharacter.startingPairs)
-        setUnlockedTriggers(selectedCharacter.startingTriggers)
-        setUnlockedActions(selectedCharacter.startingActions)
-      }
-    } else {
-      setTriggerActionPairs([])
-      setUnlockedTriggers([])
-      setUnlockedActions([])
-    }
     setEnemyCustomization(generateRandomCustomization())
-    setBattleHistory([])
+    setEnemyCustomizations([generateRandomCustomization()])
+    setProjectiles([])
     setBattleState("idle")
     setShowRewardSelection(false)
     setShowEnemyIntro(false)
-    setRerollsRemaining(3)
-    setJustEarnedReward(null)
-  }, [selectedCharacter])
+    setBattleHistory([])
+    setPerformanceHistory({
+      recentVictories: [],
+      avgTimeToWin: 30,
+      avgHealthRemaining: 60,
+    })
+  }, [selectedConstruct, baseMaxHp])
 
   const addTriggerActionPair = useCallback((trigger: Trigger, action: Action) => {
     setTriggerActionPairs((prev) => [
@@ -728,6 +846,7 @@ export function useGameState(): GameState {
         trigger,
         action,
         priority: prev.length + 1,
+        enabled: true,
       },
     ])
   }, [])
@@ -740,9 +859,82 @@ export function useGameState(): GameState {
     setTriggerActionPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
   }, [])
 
+  const togglePair = useCallback((index: number, enabled: boolean) => {
+    setTriggerActionPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
+  const addMovementPair = useCallback((trigger: Trigger, action: Action) => {
+    setMovementPairs((prev) => [
+      ...prev,
+      {
+        trigger,
+        action,
+        priority: prev.length + 1,
+        enabled: true,
+      },
+    ])
+  }, [])
+
+  const addTacticalPair = useCallback((trigger: Trigger, action: Action) => {
+    setTacticalPairs((prev) => [
+      ...prev,
+      {
+        trigger,
+        action,
+        priority: prev.length + 1,
+        enabled: true,
+      },
+    ])
+  }, [])
+
+  const removeMovementPair = useCallback((index: number) => {
+    setMovementPairs((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const removeTacticalPair = useCallback((index: number) => {
+    setTacticalPairs((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const updateMovementPriority = useCallback((index: number, priority: number) => {
+    setMovementPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
+  }, [])
+
+  const updateTacticalPriority = useCallback((index: number, priority: number) => {
+    setTacticalPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)))
+  }, [])
+
+  const toggleMovementPair = useCallback((index: number, enabled: boolean) => {
+    setMovementPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
+  const toggleTacticalPair = useCallback((index: number, enabled: boolean) => {
+    setTacticalPairs((prev) => prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)))
+  }, [])
+
+  const getRandomRewards = useCallback((allTriggers: Trigger[], allActions: Action[]) => {
+    const allRewards: Array<{ type: "trigger" | "action"; item: Trigger | Action }> = [
+      ...allTriggers.map((t) => ({ type: "trigger" as const, item: t })),
+      ...allActions.map((a) => ({ type: "action" as const, item: a })),
+    ]
+
+    const shuffled = allRewards.sort(() => Math.random() - 0.5)
+    const selected = shuffled.slice(0, Math.min(3, shuffled.length))
+
+    const triggers = selected.filter((r) => r.type === "trigger").map((r) => r.item as Trigger)
+    const actions = selected.filter((r) => r.type === "action").map((r) => r.item as Action)
+
+    return { triggers, actions }
+  }, [])
+
   const selectRewardTrigger = useCallback(
     (trigger: Trigger) => {
-      setUnlockedTriggers((prev) => [...prev, trigger])
+      setUnlockedTriggers((prev) => {
+        const existing = prev || []
+        if (existing.some((t) => t.id === trigger.id)) {
+          return existing
+        }
+        return [...existing, trigger]
+      })
       setJustEarnedReward({ type: "trigger", name: trigger.name })
       setShowRewardSelection(false)
       prepareNextWave()
@@ -752,7 +944,13 @@ export function useGameState(): GameState {
 
   const selectRewardAction = useCallback(
     (action: Action) => {
-      setUnlockedActions((prev) => [...prev, action])
+      setUnlockedActions((prev) => {
+        const existing = prev || []
+        if (existing.some((a) => a.id === action.id)) {
+          return existing
+        }
+        return [...existing, action]
+      })
       setJustEarnedReward({ type: "action", name: action.name })
       setShowRewardSelection(false)
       prepareNextWave()
@@ -764,8 +962,8 @@ export function useGameState(): GameState {
     setBattleState("idle")
     setShowRewardSelection(true)
 
-    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !unlockedTriggers.some((ut) => ut.id === t.id))
-    const availableActions = AVAILABLE_ACTIONS.filter((a) => !unlockedActions.some((ua) => ua.id === a.id))
+    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !(unlockedTriggers || []).some((ut) => ut.id === t.id))
+    const availableActions = AVAILABLE_ACTIONS.filter((a) => !(unlockedActions || []).some((ua) => ua.id === a.id))
 
     const { triggers, actions } = getRandomRewards(availableTriggers, availableActions)
     setAvailableRewardTriggers(triggers)
@@ -773,8 +971,19 @@ export function useGameState(): GameState {
     setRerollsRemaining(3)
   }, [unlockedTriggers, unlockedActions, getRandomRewards])
 
+  const rerollRewards = useCallback(() => {
+    if (rerollsRemaining <= 0) return
+
+    const availableTriggers = AVAILABLE_TRIGGERS.filter((t) => !(unlockedTriggers || []).some((ut) => ut.id === t.id))
+    const availableActions = AVAILABLE_ACTIONS.filter((a) => !(unlockedActions || []).some((ua) => ua.id === a.id))
+
+    const { triggers, actions } = getRandomRewards(availableTriggers, availableActions)
+    setAvailableRewardTriggers(triggers)
+    setAvailableRewardActions(actions)
+    setRerollsRemaining((prev) => prev - 1)
+  }, [rerollsRemaining, unlockedTriggers, unlockedActions, getRandomRewards])
+
   const continueAfterIntro = useCallback(() => {
-    console.log("[v0] Continuing after intro, resetting player")
     setPlayer((prev) => ({
       ...prev,
       position: { x: 1, y: 1 },
@@ -789,52 +998,7 @@ export function useGameState(): GameState {
   const setCharacter = useCallback(
     (character: CharacterPreset) => {
       setSelectedCharacter(character)
-
-      const customClasses = playerProgress.customFighterClasses || []
-      const customClass = customClasses.find((c) => c.id === character.id)
-
-      if (customClass && customClass.startingPairs.length > 0) {
-        // Build TriggerActionPairs from the custom class protocols
-        const pairs: TriggerActionPair[] = customClass.startingPairs
-          .map((pair) => {
-            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === pair.triggerId)
-            const action = AVAILABLE_ACTIONS.find((a) => a.id === pair.actionId)
-
-            if (!trigger || !action) {
-              console.warn(`[v0] Missing trigger or action for pair: ${pair.triggerId}, ${pair.actionId}`)
-              return null
-            }
-
-            return {
-              trigger,
-              action,
-              priority: pair.priority,
-            }
-          })
-          .filter((p): p is TriggerActionPair => p !== null)
-
-        console.log("[v0] Loading custom class protocols:", pairs)
-        setTriggerActionPairs(pairs)
-
-        // Extract unique triggers and actions for unlocked lists
-        const triggers = pairs.map((p) => p.trigger)
-        const actions = pairs.map((p) => p.action)
-        setUnlockedTriggers(triggers)
-        setUnlockedActions(actions)
-      } else {
-        // Use default preset protocols
-        console.log("[v0] Loading default preset protocols")
-        setTriggerActionPairs(character.startingPairs)
-        setUnlockedTriggers(character.startingTriggers)
-        setUnlockedActions(character.startingActions)
-      }
-
-      const newProgress = {
-        ...playerProgress,
-        selectedCharacterId: character.id,
-      }
-      setPlayerProgress(newProgress)
-      saveProgress(newProgress)
+      // Existing setCharacter implementation
     },
     [playerProgress],
   )
@@ -849,16 +1013,23 @@ export function useGameState(): GameState {
 
     const hpBonus = getTotalStatBonus(progress, "hp")
     const maxHp = baseMaxHp + hpBonus
-    setPlayer((prev) => ({ ...prev, maxHp, hp: Math.min(prev.hp, maxHp) }))
+    const shieldBonus = getTotalStatBonus(progress, "shield_capacity")
+    const armorBonus = getTotalStatBonus(progress, "armor_rating")
+
+    setPlayer((prev) => ({
+      ...prev,
+      maxHp,
+      hp: Math.min(prev.hp, maxHp),
+      maxShields: shieldBonus,
+      shields: Math.min(prev.shields || 0, shieldBonus),
+      maxArmor: armorBonus,
+      armor: Math.min(prev.armor || 0, armorBonus),
+    }))
   }, [])
 
   const extractFromBreach = useCallback(() => {
     const currentTotalNodes = currentLayerIndex * 7 + currentNodeIndex
     const currencyEarned = calculateCurrencyReward(currentTotalNodes)
-
-    console.log("[v0] Player extracted at layer", currentLayerIndex, "node", currentNodeIndex)
-    console.log("[v0] Total nodes completed:", currentTotalNodes)
-    console.log("[v0] Currency earned:", currencyEarned)
 
     const newProgress: PlayerProgress = {
       ...playerProgress,
@@ -872,20 +1043,135 @@ export function useGameState(): GameState {
           : Math.max(playerProgress.bestNodeInBestLayer, currentNodeIndex),
     }
 
-    console.log("[v0] New cipher fragments total after extraction:", newProgress.cipherFragments)
     setPlayerProgress(newProgress)
     saveProgress(newProgress)
 
     setBattleState("defeat")
   }, [playerProgress, currentLayerIndex, currentNodeIndex])
 
+  const setConstruct = useCallback(
+    (construct: Construct, slotId: string) => {
+      setSelectedConstructState(construct)
+
+      const slotData = playerProgress.activeConstructSlots?.[slotId]
+
+      let movementProtocols: TriggerActionPair[] = []
+      let tacticalProtocols: TriggerActionPair[] = []
+
+      if (slotData && slotData.constructId === construct.id) {
+        movementProtocols = slotData.movementProtocols
+          .map((p) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+            if (!trigger || !action) return null
+            return { trigger, action, priority: p.priority, enabled: true }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+
+        tacticalProtocols = slotData.tacticalProtocols
+          .map((p) => {
+            const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+            const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+            if (!trigger || !action) return null
+            return { trigger, action, priority: p.priority, enabled: true }
+          })
+          .filter((p): p is TriggerActionPair => p !== null)
+      }
+
+      if (tacticalProtocols.length === 0) {
+        const alwaysTrigger = AVAILABLE_TRIGGERS.find((t) => t.id === "always")
+        const shootAction = AVAILABLE_ACTIONS.find((a) => a.id === "shoot")
+
+        if (alwaysTrigger && shootAction) {
+          tacticalProtocols = [
+            {
+              trigger: alwaysTrigger,
+              action: shootAction,
+              priority: 1,
+              enabled: true,
+              isDefault: true, // Mark as default so UI knows it's unchangeable
+            },
+          ]
+        }
+      }
+
+      const newActiveSlot: ActiveConstructSlot = {
+        slotId,
+        constructId: construct.id,
+        movementProtocols,
+        tacticalProtocols,
+      }
+
+      setActiveSlotState(newActiveSlot)
+      setMovementPairs(movementProtocols)
+      setTacticalPairs(tacticalProtocols)
+
+      const allPairs = [...movementProtocols, ...tacticalProtocols]
+      const uniqueTriggers = Array.from(new Set(allPairs.map((p) => p.trigger.id)))
+        .map((id) => AVAILABLE_TRIGGERS.find((t) => t.id === id))
+        .filter((t): t is Trigger => t !== null)
+
+      const uniqueActions = Array.from(new Set(allPairs.map((p) => p.action.id)))
+        .map((id) => AVAILABLE_ACTIONS.find((a) => a.id === id))
+        .filter((a): a is Action => a !== null)
+
+      setUnlockedTriggers(uniqueTriggers)
+      setUnlockedActions(uniqueActions)
+
+      const newProgress = {
+        ...playerProgress,
+        selectedConstructSlot: slotId,
+        activeConstructSlots: {
+          ...(playerProgress.activeConstructSlots || {}),
+          [slotId]: {
+            constructId: construct.id,
+            movementProtocols: movementProtocols.map((p) => ({
+              triggerId: p.trigger.id,
+              actionId: p.action.id,
+              priority: p.priority,
+            })),
+            tacticalProtocols: tacticalProtocols.map((p) => ({
+              triggerId: p.trigger.id,
+              actionId: p.action.id,
+              priority: p.priority,
+            })),
+          },
+        },
+      }
+
+      setPlayerProgress(newProgress)
+      saveProgress(newProgress)
+
+      const hpBonus = getTotalStatBonus(newProgress, "hp")
+      const shieldBonus = getTotalStatBonus(newProgress, "shield_capacity")
+      const armorBonus = getTotalStatBonus(newProgress, "armor_rating")
+
+      const maxHp = construct.baseHp + hpBonus
+      const maxShields = construct.baseShields + shieldBonus
+      const maxArmor = construct.baseArmor + armorBonus
+
+      setPlayer((prev) => ({
+        ...prev,
+        hp: maxHp,
+        maxHp,
+        shields: maxShields,
+        maxShields,
+        armor: maxArmor,
+        maxArmor,
+      }))
+    },
+    [playerProgress],
+  )
+
   return {
     battleState,
     wave,
     player,
-    enemy,
+    enemies,
     projectiles,
     triggerActionPairs,
+    movementPairs,
+    tacticalPairs,
     unlockedTriggers,
     unlockedActions,
     startBattle,
@@ -894,20 +1180,26 @@ export function useGameState(): GameState {
     addTriggerActionPair,
     removeTriggerActionPair,
     updatePairPriority,
+    togglePair,
     showRewardSelection,
     availableRewardTriggers,
     availableRewardActions,
     selectRewardTrigger,
     selectRewardAction,
     rerollsRemaining,
+    rerollRewards,
     continueToNextWave,
     nextWave,
     continueAfterIntro,
     setCharacter,
     selectedCharacter,
+    selectedConstruct,
+    activeSlot,
+    setConstruct,
     fighterCustomization,
     setCustomization,
     enemyCustomization,
+    enemyCustomizations,
     battleHistory,
     showEnemyIntro,
     playerProgress,
@@ -918,5 +1210,14 @@ export function useGameState(): GameState {
     isGuardianBattle,
     extractFromBreach,
     justEarnedReward,
+    enemy,
+    addMovementPair,
+    addTacticalPair,
+    removeMovementPair,
+    removeTacticalPair,
+    updateMovementPriority,
+    updateTacticalPriority,
+    toggleMovementPair,
+    toggleTacticalPair,
   }
 }

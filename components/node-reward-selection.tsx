@@ -95,16 +95,36 @@ export function NodeRewardSelection({
           <h4 className="text-sm font-bold text-magenta-400 mb-2">ACTIONS</h4>
           <ScrollArea className="h-[40dvh]">
             <div className="space-y-2 pr-4">
-              {availableActions.slice(0, 3).map((action) => (
-                <Card
-                  key={action.id}
-                  className="p-3 cursor-pointer hover:border-magenta-400 transition-colors border-2"
-                  onClick={() => handleRewardSelection(() => onSelectAction(action), action.name)}
-                >
-                  <h5 className="font-bold text-sm text-magenta-400">{action.name}</h5>
-                  <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
-                </Card>
-              ))}
+              {availableActions.slice(0, 3).map((action) => {
+                const coreType = action.coreType
+                return (
+                  <Card
+                    key={action.id}
+                    className="p-3 cursor-pointer hover:border-magenta-400 transition-colors border-2"
+                    onClick={() => handleRewardSelection(() => onSelectAction(action), action.name)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        {coreType && (
+                          <div className="mb-1">
+                            <span
+                              className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${
+                                coreType === "movement"
+                                  ? "bg-purple-500/20 text-purple-400 border-purple-500/50"
+                                  : "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                              }`}
+                            >
+                              {coreType === "movement" ? "MOVEMENT" : "TACTICAL"}
+                            </span>
+                          </div>
+                        )}
+                        <h5 className="font-bold text-sm text-magenta-400">{action.name}</h5>
+                        <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           </ScrollArea>
         </div>
@@ -228,7 +248,6 @@ export function NodeRewardSelection({
 
       {isIntegrating && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-lg">
-          {console.log("[v0] Rendering integration animation overlay")}
           <div className="text-center space-y-6">
             {/* Spinning hexagon rings */}
             <div className="relative w-32 h-32 mx-auto">

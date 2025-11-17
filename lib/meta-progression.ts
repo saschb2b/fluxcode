@@ -26,7 +26,6 @@ export interface MetaUpgrade {
       | "viral_damage"
       | "corrosive_damage"
       | "explosive_damage"
-      | "electromagnetic_damage"
       | "glacial_damage"
       | "status_chance"
       | "status_duration"
@@ -51,6 +50,22 @@ export interface PlayerProgress {
   selectedCharacterId: string | null
   contractProgress?: ContractProgress
   customFighterClasses?: CustomFighterClass[]
+  activeConstructSlots?: {
+    [slotId: string]: {
+      constructId: string | null
+      movementProtocols: Array<{
+        triggerId: string
+        actionId: string
+        priority: number
+      }>
+      tacticalProtocols: Array<{
+        triggerId: string
+        actionId: string
+        priority: number
+      }>
+    }
+  }
+  selectedConstructSlot?: string // "slot-1", "slot-2", "slot-3"
 }
 
 export interface CustomFighterClass {
@@ -62,6 +77,23 @@ export interface CustomFighterClass {
     actionId: string
     priority: number
   }>
+  startingMovementPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  startingTacticalPairs?: Array<{
+    triggerId: string
+    actionId: string
+    priority: number
+    isDefault?: boolean
+  }>
+  constructStats?: {
+    maxHp: number
+    maxShields: number
+    maxArmor: number
+  }
   customization?: FighterCustomization
 }
 
@@ -950,26 +982,6 @@ export const META_UPGRADES: MetaUpgrade[] = [
     effect: { type: "explosive_damage", value: 0.25 },
   },
 
-  // Electromagnetic Damage Specialization
-  {
-    id: "electromagnetic_mastery_1",
-    name: "EMP Specialist I",
-    description: "Increase all Electromagnetic damage by 15%",
-    category: "stat",
-    cost: 120,
-    maxLevel: 4,
-    effect: { type: "electromagnetic_damage", value: 0.15 },
-  },
-  {
-    id: "electromagnetic_mastery_2",
-    name: "EMP Specialist II",
-    description: "Increase all Electromagnetic damage by 25%",
-    category: "stat",
-    cost: 280,
-    maxLevel: 3,
-    effect: { type: "electromagnetic_damage", value: 0.25 },
-  },
-
   // Glacial Damage Specialization
   {
     id: "glacial_mastery_1",
@@ -1329,6 +1341,24 @@ export function getDefaultProgress(): PlayerProgress {
     selectedCharacterId: null,
     contractProgress: undefined, // Will be initialized when first accessed
     customFighterClasses: undefined,
+    activeConstructSlots: {
+      "slot-1": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+      "slot-2": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+      "slot-3": {
+        constructId: null,
+        movementProtocols: [],
+        tacticalProtocols: [],
+      },
+    },
+    selectedConstructSlot: "slot-1",
   }
 }
 
@@ -1397,7 +1427,6 @@ export function getTotalStatBonus(
     | "viral_damage"
     | "corrosive_damage"
     | "explosive_damage"
-    | "electromagnetic_damage"
     | "glacial_damage"
     | "status_chance"
     | "status_duration"

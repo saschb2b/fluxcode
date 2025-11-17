@@ -1,4 +1,4 @@
-export function generateEnemyName(wave: number): { name: string; title: string } {
+export function generateEnemyName(wave: number, index = 0): { name: string; title: string } {
   const prefixes = [
     "Dark",
     "Shadow",
@@ -53,13 +53,34 @@ export function generateEnemyName(wave: number): { name: string; title: string }
     "the Ruthless",
   ]
 
-  // Use wave number as seed for consistent but varied names
-  const prefixIndex = (wave * 7) % prefixes.length
-  const nameIndex = (wave * 13) % names.length
-  const titleIndex = (wave * 17) % titles.length
+  const prefixIndex = ((wave + index) * 7) % prefixes.length
+  const nameIndex = ((wave + index) * 13) % names.length
+  const titleIndex = ((wave + index) * 17) % titles.length
 
   return {
     name: `${prefixes[prefixIndex]} ${names[nameIndex]}`,
     title: titles[titleIndex],
   }
 }
+
+export function generatePawnName(guardianWave: number, pawnIndex: number): { name: string; type: string } {
+  const pawnTypes = [
+    "Support Drone",
+    "Shield Bot",
+    "Repair Unit",
+    "Buffer Node",
+    "Healing Core",
+    "Defense Turret",
+    "Amplifier",
+    "Guardian Minion",
+  ]
+
+  const typeIndex = (pawnIndex * 11) % pawnTypes.length
+
+  return {
+    name: `${pawnTypes[typeIndex]} ${String.fromCharCode(65 + pawnIndex)}`, // A, B, C, etc.
+    type: pawnTypes[typeIndex],
+  }
+}
+
+export const generateGuardianPawnName = generatePawnName

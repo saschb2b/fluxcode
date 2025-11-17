@@ -5,31 +5,38 @@ import { BattleArena } from "@/components/battle-arena"
 import { GameUI } from "@/components/game-ui"
 import { StartScreen } from "@/components/start-screen"
 import { Hub } from "@/components/hub"
-import { CharacterSelection } from "@/components/character-selection"
+import { ConstructSelection } from "@/components/construct-selection"
 import { FighterCustomization } from "@/components/fighter-customization"
 import { MetaShop } from "@/components/meta-shop"
 import { Codex } from "@/components/codex"
 import { NetworkContractsView } from "@/components/network-contracts-view"
 import { FighterClassManager } from "@/components/fighter-class-manager"
+import { ConstructSlotManager } from "@/components/construct-slot-manager"
 import { WelcomeDialog } from "@/components/welcome-dialog"
 import { useGameState } from "@/hooks/use-game-state"
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts"
-import { CHARACTER_PRESETS } from "@/lib/character-presets"
+import { CONSTRUCTS } from "@/lib/constructs"
 import { claimContractReward, forceRefreshContracts } from "@/lib/network-contracts"
-import type { CharacterPreset } from "@/lib/character-presets"
+import type { Construct } from "@/types/game"
 import type { FighterCustomization as FighterCustomizationType } from "@/lib/fighter-parts"
 import type { CustomFighterClass } from "@/lib/meta-progression"
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
+import { AVAILABLE_ACTIONS } from "@/lib/actions"
 
 export default function Home() {
   const gameState = useGameState()
-  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "class-manager" | "character-select" | "game">("start")
+  const [gamePhase, setGamePhase] = useState<"start" | "hub" | "class-manager" | "construct-select" | "game">("start")
   const [fighterCustomization, setFighterCustomization] = useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION)
   const [showCustomization, setShowCustomization] = useState(false)
   const [showMetaShop, setShowMetaShop] = useState(false)
   const [showCodex, setShowCodex] = useState(false)
   const [showContracts, setShowContracts] = useState(false)
+  const [showSlotManager, setShowSlotManager] = useState(false)
+  const [showFighterClassEditor, setShowFighterClassEditor] = useState(false)
+  const [pendingSlotAssignment, setPendingSlotAssignment] = useState<string | null>(null)
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const latestPlayerProgressRef = useRef(gameState.playerProgress)
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -53,6 +60,10 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    latestPlayerProgressRef.current = gameState.playerProgress
+  }, [gameState.playerProgress])
+
+  useEffect(() => {
     if (gameState.selectedCharacter && gameState.playerProgress.customFighterClasses) {
       const customClass = gameState.playerProgress.customFighterClasses.find(
         (c) => c.id === gameState.selectedCharacter?.id,
@@ -65,16 +76,16 @@ export default function Home() {
 
   useEffect(() => {
     if (gamePhase === "hub") {
-      if (gameState.playerProgress.selectedCharacterId) {
-        const persistedCharacter = CHARACTER_PRESETS.find(
-          (char) => char.id === gameState.playerProgress.selectedCharacterId,
-        )
-        if (persistedCharacter && !gameState.selectedCharacter) {
-          gameState.setCharacter(persistedCharacter)
+      const slotId = gameState.playerProgress.selectedConstructSlot || "slot-1"
+      const slotData = gameState.playerProgress.activeConstructSlots?.[slotId]
+
+      if (slotData) {
+        const persistedConstruct = CONSTRUCTS.find((construct) => construct.id === slotData.constructId)
+        if (persistedConstruct && !gameState.selectedConstruct) {
+          gameState.setConstruct(persistedConstruct, slotId)
         }
       }
 
-      // Use a small timeout to ensure character is loaded before showing UI
       const timer = setTimeout(() => {
         setIsInitialLoadComplete(true)
       }, 50)
@@ -92,9 +103,10 @@ export default function Home() {
     setGamePhase("hub")
   }
 
-  const handleCharacterSelect = (character: CharacterPreset) => {
-    gameState.setCharacter(character)
+  const handleConstructSelect = (construct: Construct, slotId: string) => {
+    gameState.setConstruct(construct, slotId)
     setGamePhase("hub")
+    setPendingSlotAssignment(null)
   }
 
   const handleCustomizationConfirm = (customization: FighterCustomizationType) => {
@@ -117,14 +129,15 @@ export default function Home() {
   }
 
   const handleStartRun = () => {
-    if (gameState.selectedCharacter) {
+    if (gameState.selectedConstruct) {
       gameState.resetGame()
       setGamePhase("game")
     }
   }
 
-  const handleOpenCharacterSelect = () => {
-    setGamePhase("character-select")
+  const handleOpenConstructSelect = () => {
+    setPendingSlotAssignment("slot-1") // Default to slot-1 if opened from hub
+    setGamePhase("construct-select")
   }
 
   const handleOpenCustomization = () => {
@@ -155,6 +168,48 @@ export default function Home() {
     setShowContracts(false)
   }
 
+  const handleOpenSlotManager = () => {
+    setShowSlotManager(true)
+  }
+
+  const handleCloseSlotManager = () => {
+    setShowSlotManager(false)
+    setPendingSlotAssignment(null)
+  }
+
+  const handleSelectSlot = (slotId: string) => {
+    console.log("[v0] handleSelectSlot called with slotId:", slotId)
+    const slotData = gameState.playerProgress.activeConstructSlots?.[slotId]
+    console.log("[v0] Slot data:", slotData)
+
+    if (slotData) {
+      const construct = CONSTRUCTS.find((c) => c.id === slotData.constructId)
+      console.log("[v0] Found construct:", construct)
+
+      if (construct) {
+        gameState.setConstruct(construct, slotId)
+        console.log("[v0] setConstruct completed - activeSlot:", gameState.activeSlot)
+        console.log("[v0] Movement pairs:", gameState.movementPairs?.length)
+        console.log("[v0] Tactical pairs:", gameState.tacticalPairs?.length)
+        setShowSlotManager(false)
+      }
+    }
+  }
+
+  const handleAssignToSlot = (slotId: string) => {
+    setPendingSlotAssignment(slotId)
+    setShowSlotManager(false)
+    setGamePhase("construct-select")
+  }
+
+  const handleOpenCalibration = () => {
+    setShowFighterClassEditor(true)
+  }
+
+  const handleCloseCalibration = () => {
+    setShowFighterClassEditor(false)
+  }
+
   const handleOpenClassManager = () => {
     setGamePhase("class-manager")
   }
@@ -171,28 +226,24 @@ export default function Home() {
     const allClasses =
       customClasses.length > 0
         ? customClasses
-        : CHARACTER_PRESETS.map((preset) => ({
-            id: preset.id,
-            name: preset.name,
-            color: preset.color,
-            startingPairs: preset.startingPairs.map((pair) => ({
-              triggerId: pair.trigger.id,
-              actionId: pair.action.id,
-              priority: pair.priority,
-            })),
-            customization: DEFAULT_CUSTOMIZATION, // Default customization for presets
+        : CONSTRUCTS.map((construct) => ({
+            id: construct.id,
+            name: construct.name,
+            color: construct.color,
+            startingPairs: [],
+            customization: DEFAULT_CUSTOMIZATION,
           }))
 
     const selectedClass = allClasses.find((c) => c.id === classId)
     if (selectedClass) {
-      const preset = CHARACTER_PRESETS.find((p) => p.id === selectedClass.id)
-      if (preset) {
-        const characterPreset: CharacterPreset = {
-          ...preset,
+      const construct = CONSTRUCTS.find((p) => p.id === selectedClass.id)
+      if (construct) {
+        const constructData: Construct = {
+          ...construct,
           name: selectedClass.name,
           color: selectedClass.color,
         }
-        gameState.setCharacter(characterPreset)
+        gameState.setConstruct(constructData)
 
         if (selectedClass.customization) {
           setFighterCustomization(selectedClass.customization)
@@ -255,19 +306,23 @@ export default function Home() {
 
       {gamePhase === "hub" && isInitialLoadComplete && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
-          {!gameState.selectedCharacter && <WelcomeDialog onOpenClassManager={handleOpenClassManager} />}
+          {!gameState.selectedConstruct && <WelcomeDialog onOpenClassManager={handleOpenSlotManager} />}
 
           <Hub
-            selectedCharacter={gameState.selectedCharacter}
+            selectedConstruct={gameState.selectedConstruct}
             fighterCustomization={fighterCustomization}
             playerProgress={gameState.playerProgress}
             playerMaxHp={gameState.player.maxHp}
+            playerMaxShields={gameState.player.maxShields}
+            playerMaxArmor={gameState.player.maxArmor}
             onStartRun={handleStartRun}
-            onSelectCharacter={handleOpenCharacterSelect}
+            onSelectConstruct={handleOpenConstructSelect}
             onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
+            onOpenSlotManager={handleOpenSlotManager}
+            onOpenCalibration={handleOpenCalibration}
             onOpenClassManager={handleOpenClassManager}
             bgmAudioRef={audioRef}
             isInHub={true}
@@ -275,9 +330,13 @@ export default function Home() {
         </main>
       )}
 
-      {gamePhase === "character-select" && (
+      {gamePhase === "construct-select" && (
         <main className="relative w-full h-dvh overflow-hidden bg-background">
-          <CharacterSelection onSelect={handleCharacterSelect} onBack={handleBackToHub} />
+          <ConstructSelection
+            onSelect={handleConstructSelect}
+            onBack={handleBackToHub}
+            currentSlotId={pendingSlotAssignment || "slot-1"}
+          />
         </main>
       )}
 
@@ -285,7 +344,7 @@ export default function Home() {
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <FighterClassManager
             customClasses={gameState.playerProgress.customFighterClasses || []}
-            selectedClassId={gameState.playerProgress.selectedCharacterId}
+            selectedClassId={gameState.playerProgress.selectedConstructSlot || null}
             onSaveClasses={handleSaveCustomClasses}
             onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
@@ -302,6 +361,7 @@ export default function Home() {
               gameState={gameState}
               fighterCustomization={fighterCustomization}
               enemyCustomization={gameState.enemyCustomization}
+              enemyCustomizations={gameState.enemyCustomizations}
             />
           </div>
 
@@ -317,6 +377,131 @@ export default function Home() {
             currentCustomization={fighterCustomization}
           />
         </div>
+      )}
+
+      {showSlotManager && (
+        <ConstructSlotManager
+          playerProgress={gameState.playerProgress}
+          currentSlotId={gameState.playerProgress.selectedConstructSlot || null}
+          onSelectSlot={handleSelectSlot}
+          onAssignToSlot={handleAssignToSlot}
+          onClose={handleCloseSlotManager}
+        />
+      )}
+
+      {showFighterClassEditor && gameState.selectedConstruct && gameState.activeSlot && (
+        <FighterClassManager
+          key={`calibration-${gameState.activeSlot.slotId}-${Date.now()}`}
+          customClasses={[
+            {
+              id: gameState.selectedConstruct.id,
+              name: gameState.selectedConstruct.name,
+              color: gameState.selectedConstruct.color,
+              startingPairs: [],
+              startingMovementPairs:
+                latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]
+                  ?.movementProtocols || [],
+              startingTacticalPairs:
+                latestPlayerProgressRef.current.activeConstructSlots?.[gameState.activeSlot.slotId]
+                  ?.tacticalProtocols || [],
+              customization: fighterCustomization,
+              constructStats: {
+                maxHp: gameState.selectedConstruct.baseHp,
+                maxShields: gameState.selectedConstruct.baseShields,
+                maxArmor: gameState.selectedConstruct.baseArmor,
+              },
+            },
+          ]}
+          selectedClassId={gameState.selectedConstruct.id}
+          skipSelection={true}
+          onSaveClasses={(classes) => {
+            const updatedClass = classes[0]
+
+            if (updatedClass && gameState.activeSlot) {
+              const slotId = gameState.activeSlot.slotId
+
+              const movementProtocols = (updatedClass.startingMovementPairs || []).map((p) => ({
+                triggerId: p.triggerId,
+                actionId: p.actionId,
+                priority: p.priority,
+              }))
+
+              const tacticalProtocols = (updatedClass.startingTacticalPairs || []).map((p) => ({
+                triggerId: p.triggerId,
+                actionId: p.actionId,
+                priority: p.priority,
+              }))
+
+              const newSlots = {
+                ...(gameState.playerProgress.activeConstructSlots || {}),
+                [slotId]: {
+                  constructId: gameState.activeSlot.constructId,
+                  movementProtocols,
+                  tacticalProtocols,
+                },
+              }
+
+              const newProgress = {
+                ...gameState.playerProgress,
+                activeConstructSlots: newSlots,
+              }
+
+              gameState.updatePlayerProgress(newProgress)
+              latestPlayerProgressRef.current = newProgress
+
+              // This avoids the race condition where setConstruct reads stale state
+              const movementPairs = movementProtocols
+                .map((p) => {
+                  const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+                  const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter(Boolean) as any[]
+
+              const tacticalPairs = tacticalProtocols
+                .map((p) => {
+                  const trigger = AVAILABLE_TRIGGERS.find((t) => t.id === p.triggerId)
+                  const action = AVAILABLE_ACTIONS.find((a) => a.id === p.actionId)
+                  if (!trigger || !action) return null
+                  return { trigger, action, priority: p.priority, enabled: true }
+                })
+                .filter(Boolean) as any[]
+
+              // Update the pairs using the existing add methods
+              if (gameState.addMovementPair && gameState.removeMovementPair) {
+                // Clear existing pairs
+                const currentMovementCount = gameState.movementPairs?.length || 0
+                for (let i = currentMovementCount - 1; i >= 0; i--) {
+                  gameState.removeMovementPair(i)
+                }
+                // Add new pairs
+                movementPairs.forEach((pair) => {
+                  if (pair && gameState.addMovementPair) {
+                    gameState.addMovementPair(pair.trigger, pair.action)
+                  }
+                })
+              }
+
+              if (gameState.addTacticalPair && gameState.removeTacticalPair) {
+                // Clear existing pairs
+                const currentTacticalCount = gameState.tacticalPairs?.length || 0
+                for (let i = currentTacticalCount - 1; i >= 0; i--) {
+                  gameState.removeTacticalPair(i)
+                }
+                // Add new pairs
+                tacticalPairs.forEach((pair) => {
+                  if (pair && gameState.addTacticalPair) {
+                    gameState.addTacticalPair(pair.trigger, pair.action)
+                  }
+                })
+              }
+            }
+            handleCloseCalibration()
+          }}
+          onSelectClass={() => {}}
+          onClose={handleCloseCalibration}
+        />
       )}
 
       {showCodex && <Codex isOpen={showCodex} onClose={handleCloseCodex} />}
