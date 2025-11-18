@@ -613,6 +613,11 @@ export function Simulacrum({
             maxShields={enableShield ? 200 : 0}
             armor={isRunning ? gameState.enemy.armor : enableArmor ? 150 : 0}
             maxArmor={enableArmor ? 150 : 0}
+            corrosiveStacks={corrosiveStacks}
+            lagStacks={lagStacks}
+            burnStacks={burnStacks}
+            viralStacks={viralStacks}
+            empStacks={empStacks}
           />
 
           <Projectiles projectiles={gameState.projectiles} />

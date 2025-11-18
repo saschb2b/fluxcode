@@ -1,27 +1,37 @@
-"use client"
+"use client";
 
-import { Canvas } from "@react-three/fiber"
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
-import { Suspense } from "react"
-import { StarField, FloatingGeometry, CircuitLayer, DataStreams, AmbientParticles } from "./cyberpunk-background"
-import { CustomizableFighter } from "./customizable-fighter"
-import type { FighterCustomization } from "@/lib/fighter-parts"
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { Suspense } from "react";
+import {
+  StarField,
+  FloatingGeometry,
+  CircuitLayer,
+  DataStreams,
+  AmbientParticles,
+} from "./cyberpunk-background";
+import { CustomizableFighter } from "./customizable-fighter";
+import type { FighterCustomization } from "@/lib/fighter-parts";
 
 interface Hub3DSceneProps {
-  fighterCustomization: FighterCustomization
-  hasCharacter: boolean
+  fighterCustomization: FighterCustomization;
+  hasCharacter: boolean;
   constructStats?: {
     // Added construct stats prop
-    hp: number
-    maxHp: number
-    shields: number
-    maxShields: number
-    armor: number
-    maxArmor: number
-  }
+    hp: number;
+    maxHp: number;
+    shields: number;
+    maxShields: number;
+    armor: number;
+    maxArmor: number;
+  };
 }
 
-export function Hub3DScene({ fighterCustomization, hasCharacter, constructStats }: Hub3DSceneProps) {
+export function Hub3DScene({
+  fighterCustomization,
+  hasCharacter,
+  constructStats,
+}: Hub3DSceneProps) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       <Canvas>
@@ -70,8 +80,14 @@ export function Hub3DScene({ fighterCustomization, hasCharacter, constructStats 
         </Suspense>
 
         {/* Subtle camera controls - disabled on mobile for performance */}
-        <OrbitControls enableZoom={false} enablePan={false} enableRotate={false} autoRotate autoRotateSpeed={0.5} />
+        <OrbitControls
+          enableZoom={false}
+          enablePan={false}
+          enableRotate={false}
+          autoRotate
+          autoRotateSpeed={0.5}
+        />
       </Canvas>
     </div>
-  )
+  );
 }
