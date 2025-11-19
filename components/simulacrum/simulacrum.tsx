@@ -13,6 +13,8 @@ import {
   Target,
   Clock,
   Move,
+  Flame,
+  TriangleAlert,
 } from "lucide-react";
 import { BattleGrid } from "../battle-grid";
 import { CustomizableFighter } from "../customizable-fighter";
@@ -624,24 +626,22 @@ export function Simulacrum({
         </Canvas>
 
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-black/80 border border-yellow-500/50 px-2 py-1 md:px-4 md:py-2 rounded">
-          <p className="text-yellow-400 text-xs md:text-sm font-mono">
-            ⚠ DUMMY - INVINCIBLE
+          <p className="text-yellow-400 text-xs font-mono mt-1 flex items-center gap-1">
+            <TriangleAlert />
+            DUMMY - INVINCIBLE
           </p>
           {enableMovement && (
             <p className="text-cyan-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <Move className="w-3 h-3" />
-              Moving
+              Moving Active
             </p>
           )}
           {enableShield && (
             <p className="text-blue-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full border-2 border-blue-400 bg-blue-400/20" />
               Shield Active
             </p>
           )}
           {enableArmor && (
             <p className="text-orange-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded border-2 border-orange-400 bg-orange-400/20" />
               Armor Active
             </p>
           )}
@@ -653,13 +653,13 @@ export function Simulacrum({
           )}
           {burnStacks > 0 && (
             <p className="text-orange-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+              <Flame className="w-3 h-3" />
               {burnStacks}x Burn (DoT)
             </p>
           )}
           {viralStacks > 0 && (
             <p className="text-green-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-3 h-3" />
               {viralStacks}x Viral Infection (+
               {(1.0 +
                 (viralStacks === 1
@@ -678,7 +678,7 @@ export function Simulacrum({
           )}
           {empStacks > 0 && (
             <p className="text-blue-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
+              <Zap className="w-3 h-3 animate-pulse" />
               {empStacks}x EMP (Shield Disabled)
             </p>
           )}
