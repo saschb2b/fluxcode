@@ -262,7 +262,7 @@ export function Simulacrum({
       initialState,
       playerMovementPairs,
       playerTacticalPairs,
-      [], // Empty enemy pairs - protocols are embedded in enemy.triggerActionPairs
+      [[...enemyMovementPairs, ...enemyTacticalPairs]],
       customization,
       undefined,
     );
