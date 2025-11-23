@@ -87,17 +87,182 @@ export interface Action {
   execute: (context: BattleContext) => ActionResult;
 }
 
-export interface ActionResult {
-  type: "shoot" | "move" | "rapid-fire" | "heal";
-  damage?: number;
-  damageType?: DamageType; // Optional damage type
-  position?: Position;
-  count?: number;
-  amount?: number;
-  statusChance?: number; // chance to apply the damage type's status effect
-  triggerId?: string; // Added trigger and action IDs for tracking
-  actionId?: string;
-}
+/**
+ * Result of executing an action.
+ * Uses discriminated unions to ensure type safety - each action type
+ * has exactly the properties it needs with no optionals.
+ */
+export type ActionResult =
+  | {
+      /** Basic projectile attack */
+      type: "shoot" | "homing" | "piercing-shot";
+      /** Damage dealt by this attack */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Fire multiple projectiles in quick succession */
+      type: "rapid-fire";
+      /** Damage per shot */
+      damage: number;
+      /** Number of shots fired */
+      count: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Attack that hits an entire row or spreads to all rows */
+      type: "wave" | "spread";
+      /** Damage dealt */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Explosive projectile with delayed detonation */
+      type: "bomb" | "cluster";
+      /** Damage dealt on impact */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+      /** Milliseconds before detonation */
+      delay: number;
+      /** Number of projectiles (for cluster bombs) */
+      count?: number;
+    }
+  | {
+      /** Persistent area damage over time */
+      type: "field";
+      /** Damage per tick */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Total duration in milliseconds */
+      duration: number;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Close-range melee attack */
+      type: "melee" | "wide-melee";
+      /** Damage dealt */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Maximum range in tiles */
+      range: number;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Fire 3 projectiles in different rows */
+      type: "triple-shot";
+      /** Damage per projectile */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Attack while moving forward simultaneously */
+      type: "dash-attack";
+      /** Damage dealt */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** New position after dash */
+      position: Position;
+    }
+  | {
+      /** Attack while moving backward simultaneously */
+      type: "retreat-shot";
+      /** Damage dealt */
+      damage: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** New position after retreat */
+      position: Position;
+    }
+  | {
+      /** Vampiric attack that damages enemy and heals user */
+      type: "drain";
+      /** Damage dealt to enemy */
+      damage: number;
+      /** HP restored to user */
+      heal: number;
+      /** Type of damage for elemental calculations */
+      damageType: DamageType;
+      /** Chance (0-1) to apply a status effect */
+      statusChance?: number;
+    }
+  | {
+      /** Reposition without attacking */
+      type: "move";
+      /** Target position */
+      position: Position;
+    }
+  | {
+      /** Instant HP restoration */
+      type: "heal";
+      /** HP amount to restore */
+      amount: number;
+    }
+  | {
+      /** HP restoration over time */
+      type: "heal-over-time";
+      /** HP restored per tick */
+      healPerTick: number;
+      /** Total duration in milliseconds */
+      duration: number;
+    }
+  | {
+      /** Absorb the next incoming attack */
+      type: "barrier";
+      /** Duration in milliseconds */
+      duration: number;
+    }
+  | {
+      /** Reduce incoming damage for duration */
+      type: "shield";
+      /** Duration in milliseconds */
+      duration: number;
+      /** Percentage (0-100) of damage to reduce */
+      reduction: number;
+    }
+  | {
+      /** Reflect portion of damage back to attacker */
+      type: "counter";
+      /** Duration in milliseconds */
+      duration: number;
+      /** Percentage (0-100) of damage to reflect */
+      reflectPercent: number;
+    }
+  | {
+      /** Make user invulnerable for duration */
+      type: "invincible";
+      /** Duration in milliseconds */
+      duration: number;
+    }
+  | {
+      /** Temporarily modify a stat */
+      type: "buff";
+      /** Which stat to modify */
+      stat: "damage" | "cooldown";
+      /** Multiplier to apply (0.7 = 30% reduction, 1.5 = 50% increase) */
+      multiplier: number;
+      /** Duration in milliseconds */
+      duration: number;
+    };
 
 export interface TriggerActionPair {
   trigger: Trigger;
