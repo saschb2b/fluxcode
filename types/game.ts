@@ -128,6 +128,58 @@ export interface BattleContext {
   isPlayer: boolean;
 }
 
+export interface BattleState {
+  playerPos: Position;
+  playerHP: number;
+  playerShields?: number; // Added player shields
+  playerArmor?: number; // Added player armor
+  enemyPos: Position; // Keep for backwards compatibility
+  enemyHP: number; // Keep for backwards compatibility
+  enemies: EnemyState[]; // Added array of enemy states
+  enemyShields: number; // Keep for backwards compatibility
+  enemyArmor: number; // Keep for backwards compatibility
+  projectiles: Projectile[];
+  justTookDamage: boolean;
+  enemyBurnStacks: BurnStack[]; // Keep for backwards compatibility
+  enemyViralStacks: ViralStack[];
+  enemyEMPStacks: EMPStack[];
+  enemyLagStacks: LagStack[];
+  enemyDisplaceStacks: DisplaceStack[];
+  enemyCorrosiveStacks: CorrosiveStack[];
+  shieldRegenDisabled: boolean;
+  enemyImmuneToStatus?: boolean;
+}
+
+export interface BattleHistoryPoint {
+  time: number;
+  playerHP: number;
+  enemyHP: number;
+}
+
+export interface BattleUpdate {
+  playerPos?: Position;
+  playerHP?: number;
+  playerShields?: number; // Added player shields
+  playerArmor?: number; // Added player armor
+  enemyPos?: Position;
+  enemyHP?: number;
+  enemyShields?: number;
+  enemyArmor?: number;
+  projectiles?: Projectile[];
+  justTookDamage?: boolean;
+  battleOver?: boolean;
+  playerWon?: boolean;
+  battleHistory?: BattleHistoryPoint[];
+  damageDealt?: { type: DamageType; amount: number };
+  pairExecuted?: { triggerId: string; actionId: string };
+  burnStacks?: number;
+  viralStacks?: number;
+  empStacks?: number;
+  lagStacks?: number;
+  displaceStacks?: number;
+  corrosiveStacks?: number;
+}
+
 export interface Construct {
   id: string;
   name: string;
@@ -163,6 +215,58 @@ export interface CharacterPreset {
   startingActions: any[];
   startingMovementPairs: TriggerActionPair[]; // Added dual-core protocol arrays
   startingTacticalPairs: TriggerActionPair[];
+}
+
+export interface BurnStack {
+  damage: number;
+  endTime: number;
+}
+
+export interface ViralStack {
+  endTime: number;
+}
+
+export interface CorrosiveStack {
+  endTime: number;
+  armorStripped: number;
+}
+
+export interface EMPStack {
+  endTime: number;
+  shieldDrainPercent: number;
+}
+
+export interface LagStack {
+  endTime: number;
+  cooldownIncrease: number; // 15% per stack
+  movementReduction: number; // 10% per stack
+  actionFailureChance: number; // 5% per stack
+}
+
+export interface DisplaceStack {
+  endTime: number;
+  pushDistance: number; // number of tiles to push back
+  corruptMovement: boolean; // whether to corrupt next move action
+}
+
+export interface EnemyState {
+  id: string;
+  position: Position;
+  hp: number;
+  maxHp: number;
+  shields: number;
+  maxShields: number;
+  armor: number;
+  maxArmor: number;
+  burnStacks: BurnStack[];
+  viralStacks: ViralStack[];
+  empStacks: EMPStack[];
+  lagStacks: LagStack[];
+  displaceStacks: DisplaceStack[];
+  corrosiveStacks: CorrosiveStack[];
+  shieldRegenDisabled: boolean;
+  isPawn: boolean; // Flag for guardian pawns
+  triggerActionPairs?: TriggerActionPair[]; // Added to potentially embed protocols in enemy object
 }
 
 export interface GameState {

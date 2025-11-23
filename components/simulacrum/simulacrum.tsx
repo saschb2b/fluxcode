@@ -24,17 +24,17 @@ import {
   StarField,
   AmbientParticles,
 } from "../cyberpunk-background";
-import { BattleEngine, type BattleState } from "@/lib/battle-engine";
 import { buildTriggerActionPairs } from "@/lib/protocol-builder";
 import type { CustomFighterClass } from "@/lib/meta-progression";
 import type { FighterCustomization } from "@/lib/fighter-parts";
-import type { GameState } from "@/types/game";
+import type { BattleState, GameState } from "@/types/game";
 import {
   HEAD_SHAPES,
   BODY_SHAPES,
   ARM_SHAPES,
   CHASSIS_TYPES,
 } from "@/lib/fighter-parts";
+import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
