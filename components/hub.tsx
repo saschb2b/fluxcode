@@ -88,9 +88,7 @@ export function Hub({
     if (bgmAudioRef?.current) {
       bgmAudioRef.current.volume = 0.2;
     }
-    const audio = new Audio(
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/corrupt-data-sound-379468-HQLEeA9R8HMMVTOvLhZb5N5Kvad81G.mp3",
-    );
+    const audio = new Audio("/sounds/fx/breach.mp3");
     audio.volume = 0.7;
     audio
       .play()
