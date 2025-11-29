@@ -21,6 +21,9 @@ import type { PlayerProgress } from "@/lib/meta-progression";
 import { META_UPGRADES, canAffordUpgrade } from "@/lib/meta-progression";
 import { Hub3DScene } from "./hub-3d-scene";
 import { useState, useMemo } from "react";
+import { GameAudioController } from "./game/GameAudioController";
+import { audioManager } from "@/lib/audio/AudioManager";
+import { SFX_ASSETS } from "@/lib/audio/assets";
 
 interface HubProps {
   selectedConstruct: Construct | null;
@@ -84,20 +87,13 @@ export function Hub({
 
   const handleBreach = () => {
     setIsBreaching(true);
-    const originalVolume = bgmAudioRef?.current?.volume ?? 0.5;
-    if (bgmAudioRef?.current) {
-      bgmAudioRef.current.volume = 0.2;
-    }
-    const audio = new Audio("/sounds/fx/breach.mp3");
-    audio.volume = 0.7;
-    audio
-      .play()
-      .catch((err) => console.error("[v0] Failed to play breach sound:", err));
-    audio.addEventListener("ended", () => {
-      if (bgmAudioRef?.current) {
-        bgmAudioRef.current.volume = originalVolume;
-      }
-    });
+
+    audioManager
+      .loadSound(SFX_ASSETS.BREACH.id, SFX_ASSETS.BREACH.url)
+      .then(() => {
+        audioManager.playSFX(SFX_ASSETS.BREACH.id);
+      });
+
     setTimeout(() => {
       onStartRun();
     }, 3000);
@@ -114,6 +110,7 @@ export function Hub({
 
   return (
     <div className="absolute inset-0 bg-gradient-to-b from-[#0a0015] via-[#1a0030] to-[#0a0015] overflow-y-auto h-dvh">
+      <GameAudioController />
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent animate-pulse" />
         <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-magenta-500 to-transparent animate-pulse" />

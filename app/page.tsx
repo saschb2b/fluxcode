@@ -25,8 +25,11 @@ import type { FighterCustomization as FighterCustomizationType } from "@/lib/fig
 import type { CustomFighterClass } from "@/lib/meta-progression";
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
 import { AVAILABLE_ACTIONS } from "@/lib/actions";
+import { GameView, useGameStore } from "@/lib/store/gameStore";
 
 export default function Home() {
+  const { currentView, setView } = useGameStore();
+
   const gameState = useGameState();
   const [gamePhase, setGamePhase] = useState<
     "start" | "hub" | "class-manager" | "construct-select" | "game"
@@ -45,28 +48,6 @@ export default function Home() {
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const latestPlayerProgressRef = useRef(gameState.playerProgress);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio("/sounds/bgm/computer-mind.mp3");
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.5;
-
-      audioRef.current.play().catch((error) => {
-        console.log(
-          "[v0] Audio autoplay blocked, will play on user interaction:",
-          error,
-        );
-      });
-    }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     latestPlayerProgressRef.current = gameState.playerProgress;
@@ -226,10 +207,12 @@ export default function Home() {
 
   const handleOpenCalibration = () => {
     setShowFighterClassEditor(true);
+    setView(GameView.TINKER);
   };
 
   const handleCloseCalibration = () => {
     setShowFighterClassEditor(false);
+    setView(GameView.HUB);
   };
 
   const handleOpenClassManager = () => {
