@@ -31,7 +31,7 @@ import {
   shouldRefreshContracts,
   checkContractProgress,
 } from "@/lib/network-contracts";
-import { BattleEngine } from "@/lib/battle-engine";
+import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
 
 export function useGameState(): GameState {
   const [battleState, setBattleState] = useState<
@@ -507,24 +507,6 @@ export function useGameState(): GameState {
       })
       .filter((pair): pair is TriggerActionPair => pair !== null);
 
-    const enemiesForBattle = enemies.map((e, index) => ({
-      id: `enemy-${index}`,
-      position: e.position,
-      hp: e.hp,
-      maxHp: e.maxHp,
-      shields: e.shields || 0,
-      maxShields: e.maxShields || 0,
-      armor: e.armor || 0,
-      maxArmor: e.maxArmor || 0,
-      burnStacks: [],
-      viralStacks: [],
-      empStacks: [],
-      lagStacks: [],
-      displaceStacks: [],
-      shieldRegenDisabled: false,
-      isPawn: e.isPawn || false,
-    }));
-
     battleEngineRef.current = new BattleEngine(
       {
         playerPos: player.position,
@@ -533,7 +515,24 @@ export function useGameState(): GameState {
         playerArmor: player.armor || 0,
         enemyPos: enemies[0]?.position || { x: 4, y: 1 },
         enemyHP: enemies[0]?.hp || 0,
-        enemies: enemiesForBattle,
+        enemies: enemies.map((e, index) => ({
+          id: `enemy-${index}`,
+          position: e.position,
+          hp: e.hp,
+          maxHp: e.maxHp,
+          shields: e.shields || 0,
+          maxShields: e.maxShields || 0,
+          armor: e.armor || 0,
+          maxArmor: e.maxArmor || 0,
+          burnStacks: [],
+          viralStacks: [],
+          empStacks: [],
+          lagStacks: [],
+          displaceStacks: [],
+          corrosiveStacks: [],
+          shieldRegenDisabled: false,
+          isPawn: e.isPawn || false,
+        })),
         enemyShields: enemies[0]?.shields || 0,
         enemyArmor: enemies[0]?.armor || 0,
         enemyBurnStacks: [],
@@ -541,6 +540,7 @@ export function useGameState(): GameState {
         enemyEMPStacks: [],
         enemyLagStacks: [],
         enemyDisplaceStacks: [],
+        enemyCorrosiveStacks: [],
         projectiles: [],
         justTookDamage: false,
         shieldRegenDisabled: false,
