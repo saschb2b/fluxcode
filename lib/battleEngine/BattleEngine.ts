@@ -212,10 +212,6 @@ export class BattleEngine {
 
     if (movementAction) {
       this.applyAction(movementAction, true, update);
-      update.pairExecuted = {
-        triggerId: movementAction.triggerId!,
-        actionId: movementAction.actionId!,
-      };
       return;
     }
 
@@ -229,10 +225,6 @@ export class BattleEngine {
 
     if (tacticalAction) {
       this.applyAction(tacticalAction, true, update);
-      update.pairExecuted = {
-        triggerId: tacticalAction.triggerId!,
-        actionId: tacticalAction.actionId!,
-      };
     }
   }
 

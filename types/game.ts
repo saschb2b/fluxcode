@@ -301,7 +301,6 @@ export interface BattleState {
   enemies: EnemyState[];
   projectiles: Projectile[];
   justTookDamage: boolean;
-  shieldRegenDisabled: boolean;
   enemyImmuneToStatus?: boolean;
 }
 
@@ -326,7 +325,6 @@ export interface BattleUpdate {
   playerWon?: boolean;
   battleHistory?: BattleHistoryPoint[];
   damageDealt?: { type: DamageType; amount: number };
-  pairExecuted?: { triggerId: string; actionId: string };
 }
 
 export interface Construct {

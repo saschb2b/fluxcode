@@ -76,7 +76,7 @@ export function Simulacrum({
   const animationFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
-  const damageTrackingRef = useRef({ total: 0, hits: 0, executions: 0 });
+  const damageTrackingRef = useRef({ total: 0, hits: 0 });
   const recentDamageRef = useRef<Array<{ timestamp: number; damage: number }>>(
     [],
   );
@@ -87,7 +87,6 @@ export function Simulacrum({
     dps: 0,
     peakDps: 0,
     hits: 0,
-    protocolExecutions: 0,
     testDuration: 0,
   });
   const [gameState, setGameState] = useState<GameState>({
@@ -105,7 +104,7 @@ export function Simulacrum({
   });
 
   const startTest = () => {
-    damageTrackingRef.current = { total: 0, hits: 0, executions: 0 };
+    damageTrackingRef.current = { total: 0, hits: 0 };
     recentDamageRef.current = [];
     peakDpsRef.current = 0;
     startTimeRef.current = Date.now();
@@ -221,10 +220,6 @@ export function Simulacrum({
       playerHP: classData.constructStats?.maxHp || 100,
       playerArmor: classData.constructStats?.maxArmor || 0,
       playerShields: classData.constructStats?.maxShields || 0,
-      enemyPos: { x: 4, y: 1 },
-      enemyHP: 999999,
-      enemyShields: shieldAmount,
-      enemyArmor: armorAmount,
       projectiles: [],
       justTookDamage: false,
       enemyImmuneToStatus: immuneToStatus,
@@ -249,13 +244,6 @@ export function Simulacrum({
           triggerActionPairs: [...enemyMovementPairs, ...enemyTacticalPairs],
         },
       ],
-      enemyBurnStacks: [],
-      enemyViralStacks: [],
-      enemyEMPStacks: [],
-      enemyLagStacks: [],
-      enemyDisplaceStacks: [],
-      enemyCorrosiveStacks: [],
-      shieldRegenDisabled: false,
     };
 
     battleEngineRef.current = new BattleEngine(
@@ -301,7 +289,7 @@ export function Simulacrum({
 
   const resetTest = () => {
     stopTest();
-    damageTrackingRef.current = { total: 0, hits: 0, executions: 0 };
+    damageTrackingRef.current = { total: 0, hits: 0 };
     recentDamageRef.current = [];
     peakDpsRef.current = 0;
     setArmorStrips(0);
@@ -317,7 +305,6 @@ export function Simulacrum({
       dps: 0,
       peakDps: 0,
       hits: 0,
-      protocolExecutions: 0,
       testDuration: 0,
     });
     setGameState({
@@ -364,10 +351,6 @@ export function Simulacrum({
           timestamp: now,
           damage: update.damageDealt.amount,
         });
-      }
-
-      if (update.pairExecuted) {
-        damageTrackingRef.current.executions += 1;
       }
 
       const newState = battleEngineRef.current!.getState();
@@ -463,7 +446,6 @@ export function Simulacrum({
         dps: currentDps,
         peakDps: peakDpsRef.current,
         hits: damageTrackingRef.current.hits,
-        protocolExecutions: damageTrackingRef.current.executions,
         testDuration: Math.round(elapsedSeconds * 10) / 10,
       });
 
@@ -539,16 +521,6 @@ export function Simulacrum({
             {metrics.totalDamage.toFixed(2)}
           </p>
           <p className="text-[10px] text-green-300/50">{metrics.hits} hits</p>
-        </Card>
-
-        <Card className="shrink-0 min-w-40 bg-gradient-to-br from-purple-950/50 to-black/50 border border-purple-500/50 p-2 md:p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
-            <h3 className="text-xs text-purple-300/70 font-mono">PROTOCOLS</h3>
-          </div>
-          <p className="text-xl md:text-2xl font-bold text-purple-400 font-mono">
-            {metrics.protocolExecutions}
-          </p>
         </Card>
 
         <Card className="shrink-0 min-w-40 bg-gradient-to-br from-yellow-950/50 to-black/50 border border-yellow-500/50 p-2 md:p-3">
