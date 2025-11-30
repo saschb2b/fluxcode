@@ -207,7 +207,7 @@ export class BattleEngine {
       context,
       deltaTime,
       "movement",
-      "player",
+      "player-movement",
     );
 
     if (movementAction) {
@@ -224,7 +224,7 @@ export class BattleEngine {
       context,
       deltaTime,
       "tactical",
-      "player",
+      "player-tactical",
     );
 
     if (tacticalAction) {
