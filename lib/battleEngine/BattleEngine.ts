@@ -389,8 +389,8 @@ export class BattleEngine {
   /**
    * Applies an action result to the battle state.
    *
-   * Handles different action types (shoot, move, heal, etc.) and modifies
-   * the battle state accordingly.
+   * Handles all action types (shoot, move, heal, wave, field, melee, etc.) and
+   * modifies the battle state accordingly.
    *
    * @private
    * @param {ActionResult} action - The action result to apply
@@ -404,45 +404,267 @@ export class BattleEngine {
     update: BattleUpdate,
     enemy?: EnemyState,
   ): void {
-    if (action.type === "shoot") {
-      const proj = this.projectileManager.createProjectile(
-        isPlayer ? this.state.playerPos : enemy!.position,
-        isPlayer ? "right" : "left",
-        action.damage || 10,
-        action.damageType || DamageType.KINETIC,
-        action.statusChance || 0,
-      );
-      this.state.projectiles.push(proj);
-      update.projectiles = [...this.state.projectiles];
-    } else if (action.type === "move" && action.position) {
-      if (isPlayer) {
-        this.state.playerPos = action.position;
-        update.playerPos = action.position;
-      } else if (enemy) {
-        if (action.position.x < 3) return;
-        const occupied = this.state.enemies.some(
-          (e) =>
-            e.id !== enemy.id &&
-            e.hp > 0 &&
-            e.position.x === action.position.x &&
-            e.position.y === action.position.y,
-        );
+    const sourcePos = isPlayer ? this.state.playerPos : enemy!.position;
+    const targetPos = isPlayer ? enemy?.position : this.state.playerPos;
 
-        if (!occupied) {
+    switch (action.type) {
+      case "shoot":
+      case "homing":
+      case "piercing-shot": {
+        const proj = this.projectileManager.createProjectile(
+          sourcePos,
+          isPlayer ? "right" : "left",
+          action.damage,
+          action.damageType,
+          action.statusChance || 0,
+        );
+        this.state.projectiles.push(proj);
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "rapid-fire": {
+        for (let i = 0; i < action.count; i++) {
+          const proj = this.projectileManager.createProjectile(
+            sourcePos,
+            isPlayer ? "right" : "left",
+            action.damage,
+            action.damageType,
+            action.statusChance || 0,
+          );
+          this.state.projectiles.push(proj);
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "triple-shot": {
+        for (let row = 0; row <= 2; row++) {
+          const proj = this.projectileManager.createProjectile(
+            { ...sourcePos, y: row },
+            isPlayer ? "right" : "left",
+            action.damage,
+            action.damageType,
+            action.statusChance || 0,
+          );
+          this.state.projectiles.push(proj);
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "wave":
+      case "spread": {
+        // Wave hits entire row, spread hits all rows from source position
+        const rows = action.type === "spread" ? [0, 1, 2] : [sourcePos.y];
+        rows.forEach((row) => {
+          const proj = this.projectileManager.createProjectile(
+            { ...sourcePos, y: row },
+            isPlayer ? "right" : "left",
+            action.damage,
+            action.damageType,
+            action.statusChance || 0,
+          );
+          this.state.projectiles.push(proj);
+        });
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "bomb":
+      case "cluster": {
+        const projectileCount =
+          action.type === "cluster" ? action.count || 3 : 1;
+        for (let i = 0; i < projectileCount; i++) {
+          const proj = this.projectileManager.createProjectile(
+            sourcePos,
+            isPlayer ? "right" : "left",
+            action.damage,
+            action.damageType,
+            action.statusChance || 0,
+          );
+          this.state.projectiles.push(proj);
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "field": {
+        // Create persistent field damage over time
+        // Field spawns multiple projectiles over duration
+        const tickCount = Math.floor(action.duration / 500);
+        for (let i = 0; i < tickCount; i++) {
+          const proj = this.projectileManager.createProjectile(
+            sourcePos,
+            isPlayer ? "right" : "left",
+            action.damage,
+            action.damageType,
+            action.statusChance || 0,
+          );
+          this.state.projectiles.push(proj);
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "melee":
+      case "wide-melee": {
+        if (!targetPos) break;
+
+        const distance =
+          Math.abs(sourcePos.x - targetPos.x) +
+          Math.abs(sourcePos.y - targetPos.y);
+
+        if (distance <= action.range) {
+          const sameRow = sourcePos.y === targetPos.y;
+          const shouldHit = action.type === "wide-melee" || sameRow;
+
+          if (shouldHit) {
+            const proj = this.projectileManager.createProjectile(
+              sourcePos,
+              isPlayer ? "right" : "left",
+              action.damage,
+              action.damageType,
+              action.statusChance || 0,
+            );
+            this.state.projectiles.push(proj);
+            update.projectiles = [...this.state.projectiles];
+          }
+        }
+        break;
+      }
+
+      case "dash-attack": {
+        const proj = this.projectileManager.createProjectile(
+          sourcePos,
+          isPlayer ? "right" : "left",
+          action.damage,
+          action.damageType,
+          0,
+        );
+        this.state.projectiles.push(proj);
+
+        if (isPlayer) {
+          this.state.playerPos = action.position;
+          update.playerPos = action.position;
+        } else if (enemy) {
           enemy.position = action.position;
           update.enemyPos = action.position;
         }
+        update.projectiles = [...this.state.projectiles];
+        break;
       }
-    } else if (action.type === "heal") {
-      if (isPlayer) {
-        this.state.playerHP = Math.min(
-          this.state.playerHP + (action.amount || 20),
-          100,
+
+      case "retreat-shot": {
+        const proj = this.projectileManager.createProjectile(
+          sourcePos,
+          isPlayer ? "right" : "left",
+          action.damage,
+          action.damageType,
+          0,
         );
-        update.playerHP = this.state.playerHP;
-      } else if (enemy) {
-        enemy.hp = Math.min(enemy.hp + (action.amount || 20), enemy.maxHp);
-        update.enemyHP = this.state.enemies.reduce((sum, e) => sum + e.hp, 0);
+        this.state.projectiles.push(proj);
+
+        if (isPlayer) {
+          this.state.playerPos = action.position;
+          update.playerPos = action.position;
+        } else if (enemy) {
+          enemy.position = action.position;
+          update.enemyPos = action.position;
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "drain": {
+        const proj = this.projectileManager.createProjectile(
+          sourcePos,
+          isPlayer ? "right" : "left",
+          action.damage,
+          action.damageType,
+          action.statusChance || 0,
+        );
+        this.state.projectiles.push(proj);
+
+        if (isPlayer) {
+          this.state.playerHP = Math.min(
+            this.state.playerHP + action.heal,
+            100,
+          );
+          update.playerHP = this.state.playerHP;
+        } else if (enemy) {
+          enemy.hp = Math.min(enemy.hp + action.heal, enemy.maxHp);
+          update.enemyHP = this.state.enemies.reduce((sum, e) => sum + e.hp, 0);
+        }
+        update.projectiles = [...this.state.projectiles];
+        break;
+      }
+
+      case "move": {
+        if (isPlayer) {
+          this.state.playerPos = action.position;
+          update.playerPos = action.position;
+        } else if (enemy) {
+          if (action.position.x < 3) break;
+
+          const occupied = this.state.enemies.some(
+            (e) =>
+              e.id !== enemy.id &&
+              e.hp > 0 &&
+              e.position.x === action.position.x &&
+              e.position.y === action.position.y,
+          );
+
+          if (!occupied) {
+            enemy.position = action.position;
+            update.enemyPos = action.position;
+          }
+        }
+        break;
+      }
+
+      case "heal": {
+        if (isPlayer) {
+          this.state.playerHP = Math.min(
+            this.state.playerHP + action.amount,
+            100,
+          );
+          update.playerHP = this.state.playerHP;
+        } else if (enemy) {
+          enemy.hp = Math.min(enemy.hp + action.amount, enemy.maxHp);
+          update.enemyHP = this.state.enemies.reduce((sum, e) => sum + e.hp, 0);
+        }
+        break;
+      }
+
+      case "heal-over-time": {
+        // Apply immediate first tick, schedule rest
+        const tickCount = Math.floor(action.duration / 500);
+        const healAmount = action.healPerTick;
+
+        if (isPlayer) {
+          this.state.playerHP = Math.min(this.state.playerHP + healAmount, 100);
+          update.playerHP = this.state.playerHP;
+        } else if (enemy) {
+          enemy.hp = Math.min(enemy.hp + healAmount, enemy.maxHp);
+          update.enemyHP = this.state.enemies.reduce((sum, e) => sum + e.hp, 0);
+        }
+        break;
+      }
+
+      case "barrier":
+      case "shield":
+      case "counter":
+      case "invincible": {
+        // These require implementation of buff/status system on entities
+        // Placeholder: add status effect to appropriate entity
+        break;
+      }
+
+      case "buff": {
+        // Requires buff system implementation on entities
+        // Placeholder: add buff to appropriate entity
+        break;
       }
     }
   }

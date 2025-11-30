@@ -41,7 +41,6 @@ export const THERMAL_ACTIONS: Action[] = [
     3000,
     1.0,
   ),
-  createWaveAction("blizzard", "Blizzard", 18, DamageType.GLACIAL, 3500, 0.8),
   createFieldAction(
     "firewall",
     "Firewall",

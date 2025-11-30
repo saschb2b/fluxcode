@@ -23,6 +23,7 @@ export const GLACIAL_ACTIONS: Action[] = [
     4000,
     1.0,
   ),
+  createWaveAction("blizzard", "Blizzard", 18, DamageType.GLACIAL, 3500, 0.8),
   createWaveAction(
     "glacial-spike",
     "Glacial Spike",
