@@ -618,6 +618,7 @@ export function Simulacrum({
             burnStacks={burnStacks}
             viralStacks={viralStacks}
             empStacks={empStacks}
+            displaceStacks={displaceStacks}
           />
 
           <Projectiles projectiles={gameState.projectiles} />
