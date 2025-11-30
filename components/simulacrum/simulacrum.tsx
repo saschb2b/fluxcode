@@ -386,28 +386,28 @@ export function Simulacrum({
         }
       }
 
-      if (update.burnStacks !== undefined) {
-        setBurnStacks(update.burnStacks);
+      if (enemy.burnStacks !== undefined) {
+        setBurnStacks(enemy.burnStacks.length);
       }
 
-      if (update.viralStacks !== undefined) {
-        setViralStacks(update.viralStacks);
+      if (enemy.viralStacks !== undefined) {
+        setViralStacks(enemy.viralStacks.length);
       }
 
-      if (update.empStacks !== undefined) {
-        setEmpStacks(update.empStacks);
+      if (enemy.empStacks !== undefined) {
+        setEmpStacks(enemy.empStacks.length);
       }
 
-      if (update.lagStacks !== undefined) {
-        setLagStacks(update.lagStacks);
+      if (enemy.lagStacks !== undefined) {
+        setLagStacks(enemy.lagStacks.length);
       }
 
-      if (update.displaceStacks !== undefined) {
-        setDisplaceStacks(update.displaceStacks);
+      if (enemy.displaceStacks !== undefined) {
+        setDisplaceStacks(enemy.displaceStacks.length);
       }
 
-      if (update.corrosiveStacks !== undefined) {
-        setCorrosiveStacks(update.corrosiveStacks);
+      if (enemy.corrosiveStacks !== undefined) {
+        setCorrosiveStacks(enemy.corrosiveStacks.length);
       }
 
       setGameState({

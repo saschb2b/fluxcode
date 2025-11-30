@@ -79,8 +79,6 @@ export function UnifiedIntegrityBar({
     return num.toFixed(0);
   };
 
-  console.log({ corrosiveStacks });
-
   return (
     <div className="flex flex-col items-center gap-1 pointer-events-none">
       {/* Entity name label with armor */}

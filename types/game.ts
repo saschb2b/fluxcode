@@ -337,12 +337,6 @@ export interface BattleUpdate {
   battleHistory?: BattleHistoryPoint[];
   damageDealt?: { type: DamageType; amount: number };
   pairExecuted?: { triggerId: string; actionId: string };
-  burnStacks?: number;
-  viralStacks?: number;
-  empStacks?: number;
-  lagStacks?: number;
-  displaceStacks?: number;
-  corrosiveStacks?: number;
 }
 
 export interface Construct {
