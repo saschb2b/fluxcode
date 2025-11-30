@@ -105,11 +105,9 @@ export class AIExecutor {
         const adjustedCooldown = pair.action.cooldown * lagMultiplier;
         this.cooldowns.set(cooldownKey, adjustedCooldown);
 
-        // Return the executed action with trigger/action IDs
+        // Return the executed action
         return {
           ...pair.action.execute(context),
-          triggerId: pair.trigger.id,
-          actionId: pair.action.id,
         };
       }
     }
