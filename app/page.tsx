@@ -28,7 +28,7 @@ import { AVAILABLE_ACTIONS } from "@/lib/actions";
 import { GameView, useGameStore } from "@/lib/store/gameStore";
 
 export default function Home() {
-  const { currentView, setView } = useGameStore();
+  const { setView } = useGameStore();
 
   const gameState = useGameState();
   const [gamePhase, setGamePhase] = useState<
