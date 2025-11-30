@@ -296,21 +296,11 @@ export interface BattleContext {
 export interface BattleState {
   playerPos: Position;
   playerHP: number;
-  playerShields?: number; // Added player shields
-  playerArmor?: number; // Added player armor
-  enemyPos: Position; // Keep for backwards compatibility
-  enemyHP: number; // Keep for backwards compatibility
-  enemies: EnemyState[]; // Added array of enemy states
-  enemyShields: number; // Keep for backwards compatibility
-  enemyArmor: number; // Keep for backwards compatibility
+  playerShields?: number;
+  playerArmor?: number;
+  enemies: EnemyState[];
   projectiles: Projectile[];
   justTookDamage: boolean;
-  enemyBurnStacks: BurnStack[]; // Keep for backwards compatibility
-  enemyViralStacks: ViralStack[];
-  enemyEMPStacks: EMPStack[];
-  enemyLagStacks: LagStack[];
-  enemyDisplaceStacks: DisplaceStack[];
-  enemyCorrosiveStacks: CorrosiveStack[];
   shieldRegenDisabled: boolean;
   enemyImmuneToStatus?: boolean;
 }
