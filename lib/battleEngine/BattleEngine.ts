@@ -147,6 +147,9 @@ export class BattleEngine {
     );
     this.state.projectiles = projectiles;
 
+    // Update projectile positions
+    update.projectiles = [...projectiles];
+
     // Check projectile collisions
     const hitResult = this.projectileManager.checkCollisions(
       projectiles,
