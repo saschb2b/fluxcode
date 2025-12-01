@@ -13,6 +13,8 @@ import {
   Target,
   Clock,
   Move,
+  Flame,
+  TriangleAlert,
 } from "lucide-react";
 import { BattleGrid } from "../battle-grid";
 import { CustomizableFighter } from "../customizable-fighter";
@@ -24,17 +26,17 @@ import {
   StarField,
   AmbientParticles,
 } from "../cyberpunk-background";
-import { BattleEngine, type BattleState } from "@/lib/battle-engine";
 import { buildTriggerActionPairs } from "@/lib/protocol-builder";
 import type { CustomFighterClass } from "@/lib/meta-progression";
 import type { FighterCustomization } from "@/lib/fighter-parts";
-import type { GameState } from "@/types/game";
+import type { BattleState, GameState } from "@/types/game";
 import {
   HEAD_SHAPES,
   BODY_SHAPES,
   ARM_SHAPES,
   CHASSIS_TYPES,
 } from "@/lib/fighter-parts";
+import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
@@ -76,7 +78,7 @@ export function Simulacrum({
   const animationFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
-  const damageTrackingRef = useRef({ total: 0, hits: 0, executions: 0 });
+  const damageTrackingRef = useRef({ total: 0, hits: 0 });
   const recentDamageRef = useRef<Array<{ timestamp: number; damage: number }>>(
     [],
   );
@@ -87,7 +89,6 @@ export function Simulacrum({
     dps: 0,
     peakDps: 0,
     hits: 0,
-    protocolExecutions: 0,
     testDuration: 0,
   });
   const [gameState, setGameState] = useState<GameState>({
@@ -105,7 +106,7 @@ export function Simulacrum({
   });
 
   const startTest = () => {
-    damageTrackingRef.current = { total: 0, hits: 0, executions: 0 };
+    damageTrackingRef.current = { total: 0, hits: 0 };
     recentDamageRef.current = [];
     peakDpsRef.current = 0;
     startTimeRef.current = Date.now();
@@ -135,60 +136,7 @@ export function Simulacrum({
           // Constant repositioning - strafe every opportunity
           {
             triggerId: "always",
-            actionId: "strafe-right",
-            priority: 10,
-          },
-          // Align rows quickly with jump
-          {
-            triggerId: "different-row",
-            actionId: "jump",
-            priority: 9,
-          },
-          // Strafe opposite direction after cooldown
-          {
-            triggerId: "same-row",
-            actionId: "strafe-left",
-            priority: 8,
-          },
-          // Advance when far back
-          {
-            triggerId: "at-back",
-            actionId: "dash-forward",
-            priority: 7,
-          },
-          // Move forward when enemy is far
-          {
-            triggerId: "enemy-far",
-            actionId: "move-forward",
-            priority: 6,
-          },
-          // Retreat when too close
-          {
-            triggerId: "enemy-close",
-            actionId: "move-backward",
-            priority: 5,
-          },
-          // Emergency retreat at low HP
-          {
-            triggerId: "low-hp",
-            actionId: "retreat-shot",
-            priority: 4,
-          },
-          // Dodge as fallback
-          {
-            triggerId: "always",
             actionId: "dodge",
-            priority: 3,
-          },
-          // Vertical movement variety
-          {
-            triggerId: "always",
-            actionId: "move-up",
-            priority: 2,
-          },
-          {
-            triggerId: "always",
-            actionId: "move-down",
             priority: 1,
           },
         ]),
@@ -221,10 +169,6 @@ export function Simulacrum({
       playerHP: classData.constructStats?.maxHp || 100,
       playerArmor: classData.constructStats?.maxArmor || 0,
       playerShields: classData.constructStats?.maxShields || 0,
-      enemyPos: { x: 4, y: 1 },
-      enemyHP: 999999,
-      enemyShields: shieldAmount,
-      enemyArmor: armorAmount,
       projectiles: [],
       justTookDamage: false,
       enemyImmuneToStatus: immuneToStatus,
@@ -249,20 +193,13 @@ export function Simulacrum({
           triggerActionPairs: [...enemyMovementPairs, ...enemyTacticalPairs],
         },
       ],
-      enemyBurnStacks: [],
-      enemyViralStacks: [],
-      enemyEMPStacks: [],
-      enemyLagStacks: [],
-      enemyDisplaceStacks: [],
-      enemyCorrosiveStacks: [],
-      shieldRegenDisabled: false,
     };
 
     battleEngineRef.current = new BattleEngine(
       initialState,
       playerMovementPairs,
       playerTacticalPairs,
-      [], // Empty enemy pairs - protocols are embedded in enemy.triggerActionPairs
+      [[...enemyMovementPairs, ...enemyTacticalPairs]],
       customization,
       undefined,
     );
@@ -301,7 +238,7 @@ export function Simulacrum({
 
   const resetTest = () => {
     stopTest();
-    damageTrackingRef.current = { total: 0, hits: 0, executions: 0 };
+    damageTrackingRef.current = { total: 0, hits: 0 };
     recentDamageRef.current = [];
     peakDpsRef.current = 0;
     setArmorStrips(0);
@@ -317,7 +254,6 @@ export function Simulacrum({
       dps: 0,
       peakDps: 0,
       hits: 0,
-      protocolExecutions: 0,
       testDuration: 0,
     });
     setGameState({
@@ -366,10 +302,6 @@ export function Simulacrum({
         });
       }
 
-      if (update.pairExecuted) {
-        damageTrackingRef.current.executions += 1;
-      }
-
       const newState = battleEngineRef.current!.getState();
 
       const enemy = newState.enemies && newState.enemies[0];
@@ -386,28 +318,28 @@ export function Simulacrum({
         }
       }
 
-      if (update.burnStacks !== undefined) {
-        setBurnStacks(update.burnStacks);
+      if (enemy.burnStacks !== undefined) {
+        setBurnStacks(enemy.burnStacks.length);
       }
 
-      if (update.viralStacks !== undefined) {
-        setViralStacks(update.viralStacks);
+      if (enemy.viralStacks !== undefined) {
+        setViralStacks(enemy.viralStacks.length);
       }
 
-      if (update.empStacks !== undefined) {
-        setEmpStacks(update.empStacks);
+      if (enemy.empStacks !== undefined) {
+        setEmpStacks(enemy.empStacks.length);
       }
 
-      if (update.lagStacks !== undefined) {
-        setLagStacks(update.lagStacks);
+      if (enemy.lagStacks !== undefined) {
+        setLagStacks(enemy.lagStacks.length);
       }
 
-      if (update.displaceStacks !== undefined) {
-        setDisplaceStacks(update.displaceStacks);
+      if (enemy.displaceStacks !== undefined) {
+        setDisplaceStacks(enemy.displaceStacks.length);
       }
 
-      if (update.corrosiveStacks !== undefined) {
-        setCorrosiveStacks(update.corrosiveStacks);
+      if (enemy.corrosiveStacks !== undefined) {
+        setCorrosiveStacks(enemy.corrosiveStacks.length);
       }
 
       setGameState({
@@ -463,7 +395,6 @@ export function Simulacrum({
         dps: currentDps,
         peakDps: peakDpsRef.current,
         hits: damageTrackingRef.current.hits,
-        protocolExecutions: damageTrackingRef.current.executions,
         testDuration: Math.round(elapsedSeconds * 10) / 10,
       });
 
@@ -541,16 +472,6 @@ export function Simulacrum({
           <p className="text-[10px] text-green-300/50">{metrics.hits} hits</p>
         </Card>
 
-        <Card className="shrink-0 min-w-40 bg-gradient-to-br from-purple-950/50 to-black/50 border border-purple-500/50 p-2 md:p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
-            <h3 className="text-xs text-purple-300/70 font-mono">PROTOCOLS</h3>
-          </div>
-          <p className="text-xl md:text-2xl font-bold text-purple-400 font-mono">
-            {metrics.protocolExecutions}
-          </p>
-        </Card>
-
         <Card className="shrink-0 min-w-40 bg-gradient-to-br from-yellow-950/50 to-black/50 border border-yellow-500/50 p-2 md:p-3">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
@@ -613,30 +534,34 @@ export function Simulacrum({
             maxShields={enableShield ? 200 : 0}
             armor={isRunning ? gameState.enemy.armor : enableArmor ? 150 : 0}
             maxArmor={enableArmor ? 150 : 0}
+            corrosiveStacks={corrosiveStacks}
+            lagStacks={lagStacks}
+            burnStacks={burnStacks}
+            viralStacks={viralStacks}
+            empStacks={empStacks}
+            displaceStacks={displaceStacks}
           />
 
           <Projectiles projectiles={gameState.projectiles} />
         </Canvas>
 
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-black/80 border border-yellow-500/50 px-2 py-1 md:px-4 md:py-2 rounded">
-          <p className="text-yellow-400 text-xs md:text-sm font-mono">
-            ⚠ DUMMY - INVINCIBLE
+          <p className="text-yellow-400 text-xs font-mono mt-1 flex items-center gap-1">
+            <TriangleAlert />
+            DUMMY - INVINCIBLE
           </p>
           {enableMovement && (
             <p className="text-cyan-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <Move className="w-3 h-3" />
-              Moving
+              Moving Active
             </p>
           )}
           {enableShield && (
             <p className="text-blue-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full border-2 border-blue-400 bg-blue-400/20" />
               Shield Active
             </p>
           )}
           {enableArmor && (
             <p className="text-orange-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded border-2 border-orange-400 bg-orange-400/20" />
               Armor Active
             </p>
           )}
@@ -648,13 +573,13 @@ export function Simulacrum({
           )}
           {burnStacks > 0 && (
             <p className="text-orange-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+              <Flame className="w-3 h-3" />
               {burnStacks}x Burn (DoT)
             </p>
           )}
           {viralStacks > 0 && (
             <p className="text-green-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-3 h-3" />
               {viralStacks}x Viral Infection (+
               {(1.0 +
                 (viralStacks === 1
@@ -673,7 +598,7 @@ export function Simulacrum({
           )}
           {empStacks > 0 && (
             <p className="text-blue-400 text-xs font-mono mt-1 flex items-center gap-1">
-              <Zap className="w-3 h-3 text-blue-400 animate-pulse" />
+              <Zap className="w-3 h-3 animate-pulse" />
               {empStacks}x EMP (Shield Disabled)
             </p>
           )}
