@@ -136,60 +136,7 @@ export function Simulacrum({
           // Constant repositioning - strafe every opportunity
           {
             triggerId: "always",
-            actionId: "strafe-right",
-            priority: 10,
-          },
-          // Align rows quickly with jump
-          {
-            triggerId: "different-row",
-            actionId: "jump",
-            priority: 9,
-          },
-          // Strafe opposite direction after cooldown
-          {
-            triggerId: "same-row",
-            actionId: "strafe-left",
-            priority: 8,
-          },
-          // Advance when far back
-          {
-            triggerId: "at-back",
-            actionId: "dash-forward",
-            priority: 7,
-          },
-          // Move forward when enemy is far
-          {
-            triggerId: "enemy-far",
-            actionId: "move-forward",
-            priority: 6,
-          },
-          // Retreat when too close
-          {
-            triggerId: "enemy-close",
-            actionId: "move-backward",
-            priority: 5,
-          },
-          // Emergency retreat at low HP
-          {
-            triggerId: "low-hp",
-            actionId: "retreat-shot",
-            priority: 4,
-          },
-          // Dodge as fallback
-          {
-            triggerId: "always",
             actionId: "dodge",
-            priority: 3,
-          },
-          // Vertical movement variety
-          {
-            triggerId: "always",
-            actionId: "move-up",
-            priority: 2,
-          },
-          {
-            triggerId: "always",
-            actionId: "move-down",
             priority: 1,
           },
         ]),

@@ -686,6 +686,7 @@ export class BattleEngine {
         : this.state.enemies[0];
 
     return {
+      enemies: this.state.enemies,
       playerPos: this.state.playerPos,
       enemyPos: nearestEnemy?.position || this.state.playerPos,
       playerHP: this.state.playerHP,
@@ -704,6 +705,7 @@ export class BattleEngine {
    */
   private createEnemyContext(enemy: EnemyState): BattleContext {
     return {
+      enemies: this.state.enemies,
       playerPos: enemy.position,
       enemyPos: this.state.playerPos,
       playerHP: enemy.hp,

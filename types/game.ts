@@ -275,6 +275,7 @@ export interface TriggerActionPair {
 }
 
 export interface BattleContext {
+  enemies: EnemyState[];
   playerPos: Position;
   enemyPos: Position;
   playerHP: number;
@@ -413,7 +414,7 @@ export interface EnemyState {
   corrosiveStacks: CorrosiveStack[];
   shieldRegenDisabled: boolean;
   isPawn: boolean; // Flag for guardian pawns
-  triggerActionPairs?: TriggerActionPair[]; // Added to potentially embed protocols in enemy object
+  triggerActionPairs?: TriggerActionPair[];
 }
 
 export interface GameState {
