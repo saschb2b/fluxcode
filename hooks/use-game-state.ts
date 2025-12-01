@@ -1171,6 +1171,8 @@ export function useGameState(): GameState {
       ...prev,
       position: { x: 1, y: 1 },
       hp: prev.maxHp,
+      shields: prev.maxShields,
+      armor: prev.maxArmor,
     }));
 
     setProjectiles([]);
