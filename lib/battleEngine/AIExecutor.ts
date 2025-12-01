@@ -76,9 +76,6 @@ export class AIExecutor {
       ? StatusEffectManager.getLagCooldownMultiplier(enemy)
       : 1.0;
 
-    // Update cooldown timers for this frame
-    this.updateCooldowns(deltaTime);
-
     // Evaluate pairs in priority order
     for (const pair of corePairs) {
       const cooldownKey = `${entityId}-${pair.action.id}`;
@@ -121,10 +118,10 @@ export class AIExecutor {
    * Removes cooldowns that have expired (reached zero or below).
    * Called once per frame to ensure frame-rate-independent timing.
    *
-   * @private
+   * @public
    * @param {number} deltaTime - Time elapsed since last frame (milliseconds)
    */
-  private updateCooldowns(deltaTime: number): void {
+  public updateCooldowns(deltaTime: number): void {
     for (const [key, time] of this.cooldowns.entries()) {
       const newTime = time - deltaTime;
       if (newTime <= 0) {

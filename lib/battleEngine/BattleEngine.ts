@@ -135,6 +135,7 @@ export class BattleEngine {
     const update: BattleUpdate = {};
 
     this.battleTime += deltaTime;
+    this.aiExecutor.updateCooldowns(deltaTime);
     this.recordBattleHistory();
     this.processBurnDamage();
     this.cleanupExpiredEffects();
