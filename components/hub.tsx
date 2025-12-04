@@ -41,6 +41,7 @@ interface HubProps {
   onOpenSlotManager: () => void;
   onOpenCalibration: () => void;
   onOpenClassManager: () => void;
+  onOpenBattleArena: () => void;
   bgmAudioRef?: React.RefObject<HTMLAudioElement | null>;
   isInHub?: boolean;
 }
@@ -60,6 +61,7 @@ export function Hub({
   onOpenContracts,
   onOpenSlotManager,
   onOpenCalibration,
+  onOpenBattleArena,
   onOpenClassManager,
   bgmAudioRef,
   isInHub = true,
@@ -348,6 +350,17 @@ export function Hub({
                 >
                   <BookOpen className="w-4 h-4 mr-2 text-cyan-400" />
                   <span>Data Archive</span>
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={onOpenBattleArena}
+                  variant="ghost"
+                  size="default"
+                  className="justify-start border border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-500/50 active:scale-95 h-10 opacity-80"
+                >
+                  <BookOpen className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Battle Arena</span>
                 </Button>
               </div>
             </div>

@@ -26,13 +26,19 @@ import type { CustomFighterClass } from "@/lib/meta-progression";
 import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
 import { AVAILABLE_ACTIONS } from "@/lib/actions";
 import { GameView, useGameStore } from "@/lib/store/gameStore";
+import { BenchmarkArena } from "@/components/battle/BenchmarkArena";
 
 export default function Home() {
   const { setView } = useGameStore();
 
   const gameState = useGameState();
   const [gamePhase, setGamePhase] = useState<
-    "start" | "hub" | "class-manager" | "construct-select" | "game"
+    | "start"
+    | "hub"
+    | "class-manager"
+    | "construct-select"
+    | "game"
+    | "battle-arena"
   >("start");
   const [fighterCustomization, setFighterCustomization] =
     useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION);
@@ -219,6 +225,10 @@ export default function Home() {
     setGamePhase("class-manager");
   };
 
+  function handleOpenBattleArena(): void {
+    setGamePhase("battle-arena");
+  }
+
   const handleSaveCustomClasses = (classes: CustomFighterClass[]) => {
     gameState.updatePlayerProgress({
       ...gameState.playerProgress,
@@ -353,6 +363,7 @@ export default function Home() {
             onOpenSlotManager={handleOpenSlotManager}
             onOpenCalibration={handleOpenCalibration}
             onOpenClassManager={handleOpenClassManager}
+            onOpenBattleArena={handleOpenBattleArena}
             bgmAudioRef={audioRef}
             isInHub={true}
           />
@@ -379,6 +390,15 @@ export default function Home() {
             onSaveClasses={handleSaveCustomClasses}
             onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
+          />
+        </main>
+      )}
+
+      {gamePhase === "battle-arena" && gameState.player && (
+        <main className="relative w-full h-dvh overflow-hidden bg-background">
+          <BenchmarkArena
+            classData={gameState.player}
+            onClose={() => setGamePhase("hub")}
           />
         </main>
       )}

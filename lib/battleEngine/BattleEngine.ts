@@ -189,6 +189,16 @@ export class BattleEngine {
     this.executePlayerAI(update, deltaTime);
     this.executeEnemyAI(update, deltaTime);
 
+    // Clean up attack states
+    this.state.enemies.forEach((enemy) => {
+      if (enemy.lastAttackTime && enemy.attackDuration) {
+        if (this.battleTime > enemy.lastAttackTime + enemy.attackDuration) {
+          enemy.lastAttackTime = undefined;
+          enemy.attackDuration = undefined;
+        }
+      }
+    });
+
     return update;
   }
 
@@ -402,6 +412,26 @@ export class BattleEngine {
   ): void {
     const sourcePos = isPlayer ? this.state.playerPos : enemy!.position;
     const targetPos = isPlayer ? enemy?.position : this.state.playerPos;
+
+    // FLAG ATTACK STATE
+    if (!isPlayer && enemy) {
+      // Only flag "attacking" for offensive actions, not movement/healing
+      const offensiveTypes: ActionResult["type"][] = [
+        "shoot",
+        "rapid-fire",
+        "triple-shot",
+        "bomb",
+        "melee",
+      ];
+
+      if (offensiveTypes.includes(action.type)) {
+        enemy.lastAttackTime = this.battleTime;
+
+        // Default animation window is 500ms, or longer for rapid fire
+        // You could add a 'visualDuration' to ActionResult later for precision
+        enemy.attackDuration = action.type === "rapid-fire" ? 1000 : 500;
+      }
+    }
 
     switch (action.type) {
       case "shoot":
