@@ -1,6 +1,7 @@
 import { EnemyDefinition } from "./types";
 import { SENTRY_VARIANTS } from "./definitions/sentry";
 import { EnemyState } from "@/types/game";
+import { FLOATER_VARIANTS } from "./definitions/floater";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -17,6 +18,7 @@ const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
  */
 export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   ...normalizeVariants(SENTRY_VARIANTS),
+  ...normalizeVariants(FLOATER_VARIANTS),
 };
 
 /**

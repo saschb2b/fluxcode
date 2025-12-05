@@ -8,14 +8,13 @@ import { X, Zap, Swords } from "lucide-react";
 import { BattleGrid } from "../battle-grid";
 import { CustomizableFighter } from "../customizable-fighter";
 import { Projectiles } from "../projectiles";
-import { EnemyVisuals } from "./EnemyVisuals"; // Import the bridge
+import { EnemyVisuals } from "../enemies/EnemyVisuals";
 import {
   FloatingGeometry,
   StarField,
   AmbientParticles,
 } from "../cyberpunk-background";
 
-// Logic Imports
 import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
 import { createEnemyState } from "@/lib/enemies/registry";
 import { buildTriggerActionPairs } from "@/lib/protocol-builder";
@@ -175,7 +174,7 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
               <EnemyVisuals
                 key={enemy.id}
                 // The crucial link: ID tells us which renderer to use
-                definitionId={"sentry-alpha"}
+                definitionId={"floater-alpha"}
                 position={enemy.position}
                 // Runtime props for the renderer
                 isAttacking={isAttacking} // Connect this to BattleEngine state later
