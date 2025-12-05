@@ -16,7 +16,7 @@ import {
   Flame,
   TriangleAlert,
 } from "lucide-react";
-import { BattleGrid } from "../battle-grid";
+import { BattleGrid } from "../battle/BattleGrid";
 import { CustomizableFighter } from "../customizable-fighter";
 import { Projectiles } from "../projectiles";
 import {

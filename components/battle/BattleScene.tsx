@@ -1,5 +1,5 @@
 import { Html } from "@react-three/drei";
-import { BattleGrid } from "../battle-grid";
+import { BattleGrid } from "./BattleGrid";
 import { CustomizableFighter } from "../customizable-fighter";
 import { Projectiles } from "../projectiles";
 import { EnemyVisuals } from "../enemies/EnemyVisuals";
