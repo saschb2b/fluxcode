@@ -72,7 +72,7 @@ export function BattleScene({
             hpPercentage={enemy.hp / enemy.maxHp}
           >
             {/* Health Bar Overlay */}
-            <Html position={[0, 1.8, 0]} center zIndexRange={[0, 0]}>
+            <Html position={[0, 1.5, 0]} center zIndexRange={[0, 0]}>
               <UnifiedIntegrityBar
                 entityName={"ENEMY"}
                 isPlayer={false}

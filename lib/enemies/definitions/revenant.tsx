@@ -5,7 +5,6 @@ import { RevenantModel } from "@/components/enemies/models/RevenantModel";
 
 export const REVENANT_VARIANTS: Record<string, EnemyDefinition> = {
   omega: {
-    // Designating it as an Omega (Boss) tier enemy
     id: "revenant-omega",
     name: "The Revenant",
     description: "A rogue program. Warps the arena with dark energy.",

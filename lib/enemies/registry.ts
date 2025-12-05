@@ -8,6 +8,7 @@ import { PITCHER_VARIANTS } from "./definitions/pitcher";
 import { REVENANT_VARIANTS } from "./definitions/revenant";
 import { CYBERZILLA_VARIANTS } from "./definitions/cyberZilla";
 import { HEISENBUG_VARIANTS } from "./definitions/heisebug";
+import { GITHYDRA_VARIANTS } from "./definitions/gitHydra";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -32,6 +33,7 @@ export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   // Bosses
   ...normalizeVariants(WARDEN_VARIANTS),
   ...normalizeVariants(REVENANT_VARIANTS),
+  ...normalizeVariants(GITHYDRA_VARIANTS),
 };
 
 /**
