@@ -174,7 +174,7 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
               <EnemyVisuals
                 key={enemy.id}
                 // The crucial link: ID tells us which renderer to use
-                definitionId={"floater-alpha"}
+                definitionId={"warden-boss"}
                 position={enemy.position}
                 // Runtime props for the renderer
                 isAttacking={isAttacking} // Connect this to BattleEngine state later
