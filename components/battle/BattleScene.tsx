@@ -6,6 +6,12 @@ import { EnemyVisuals } from "../enemies/EnemyVisuals";
 import { UnifiedIntegrityBar } from "../unified-integrity-bar";
 import type { GameState } from "@/types/game";
 import type { FighterCustomization } from "@/lib/fighter-parts";
+import { ArenaEnvironment } from "./ArenaEnvironment";
+import {
+  AmbientParticles,
+  FloatingGeometry,
+  StarField,
+} from "../cyberpunk-background";
 
 interface BattleSceneProps {
   gameState: GameState;
@@ -21,6 +27,10 @@ export function BattleScene({
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
 
+      <StarField />
+      <AmbientParticles />
+      <FloatingGeometry />
+      <ArenaEnvironment />
       <BattleGrid />
 
       {/* PLAYER RENDERER */}

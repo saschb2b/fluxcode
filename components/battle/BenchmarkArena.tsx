@@ -161,7 +161,6 @@ export function BenchmarkArena({
 
   return (
     <div className="fixed inset-0 z-[110] bg-black flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/50 bg-black/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-cyan-400 font-mono flex items-center gap-2">
@@ -186,18 +185,11 @@ export function BenchmarkArena({
         </Button>
       </div>
 
-      {/* 3D Scene Wrapper */}
       <div className="flex-1 relative min-h-0 bg-[#0a0015]">
         <Canvas shadows className="crt-effect">
           <PerspectiveCamera makeDefault position={[0, 8, 12]} fov={50} />
           <OrbitControls target={[0, 0, 0]} />
 
-          <color attach="background" args={["#0a0015"]} />
-          <StarField />
-          <AmbientParticles />
-          <FloatingGeometry />
-
-          {/* THE CLEAN SCENE */}
           <BattleScene
             gameState={gameState}
             playerCustomization={customization}
