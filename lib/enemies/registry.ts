@@ -5,6 +5,7 @@ import { FLOATER_VARIANTS } from "./definitions/floater";
 import { SCRAPPER_VARIANTS } from "./definitions/scrapper";
 import { WARDEN_VARIANTS } from "./definitions/warden";
 import { PITCHER_VARIANTS } from "./definitions/pitcher";
+import { REVENANT_VARIANTS } from "./definitions/revenant";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -26,6 +27,7 @@ export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   ...normalizeVariants(PITCHER_VARIANTS),
   // Bosses
   ...normalizeVariants(WARDEN_VARIANTS),
+  ...normalizeVariants(REVENANT_VARIANTS),
 };
 
 /**
