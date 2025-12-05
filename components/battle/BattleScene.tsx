@@ -28,7 +28,6 @@ export function BattleScene({
       <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
 
       <StarField />
-      <AmbientParticles />
       <FloatingGeometry />
 
       <VisualEffects />
