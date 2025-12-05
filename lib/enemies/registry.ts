@@ -6,6 +6,7 @@ import { SCRAPPER_VARIANTS } from "./definitions/scrapper";
 import { WARDEN_VARIANTS } from "./definitions/warden";
 import { PITCHER_VARIANTS } from "./definitions/pitcher";
 import { REVENANT_VARIANTS } from "./definitions/revenant";
+import { CYBERZILLA_VARIANTS } from "./definitions/cyberZilla";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -25,6 +26,7 @@ export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   ...normalizeVariants(FLOATER_VARIANTS),
   ...normalizeVariants(SCRAPPER_VARIANTS),
   ...normalizeVariants(PITCHER_VARIANTS),
+  ...normalizeVariants(CYBERZILLA_VARIANTS),
   // Bosses
   ...normalizeVariants(WARDEN_VARIANTS),
   ...normalizeVariants(REVENANT_VARIANTS),
