@@ -79,7 +79,7 @@ export function BattleGrid() {
   const totalDepth = 3 * SPACING;
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, -0.05, 0]}>
       {gridData.map((data) => (
         <Tile
           key={`tile-${data.x}-${data.z}`}
