@@ -63,10 +63,11 @@ export function EnemyVisuals({
     );
   }
 
-  // 4. Render the factory component
   return (
     <group ref={groupRef}>
-      {definition.renderer(props)}
+      <mesh rotation={[0, -(Math.PI / 2), 0]}>
+        {definition.renderer(props)}
+      </mesh>
       {children}
     </group>
   );
