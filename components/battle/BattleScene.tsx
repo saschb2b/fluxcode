@@ -12,6 +12,7 @@ import {
   FloatingGeometry,
   StarField,
 } from "../cyberpunk-background";
+import { VisualEffects } from "./VisualEffects";
 
 interface BattleSceneProps {
   gameState: GameState;
@@ -24,12 +25,13 @@ export function BattleScene({
 }: BattleSceneProps) {
   return (
     <>
-      <ambientLight intensity={0.3} />
       <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
 
       <StarField />
       <AmbientParticles />
       <FloatingGeometry />
+
+      <VisualEffects />
       <ArenaEnvironment />
       <BattleGrid />
 

@@ -186,8 +186,11 @@ export function BenchmarkArena({
       </div>
 
       <div className="flex-1 relative min-h-0 bg-[#0a0015]">
-        <Canvas shadows className="crt-effect">
-          <PerspectiveCamera makeDefault position={[0, 8, 12]} fov={50} />
+        <Canvas
+          shadows
+          className="crt-effect"
+          camera={{ position: [0, 3, 5], fov: 60 }}
+        >
           <OrbitControls target={[0, 0, 0]} />
 
           <BattleScene
