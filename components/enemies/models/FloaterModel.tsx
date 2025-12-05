@@ -33,7 +33,7 @@ export function FloaterModel({
   const offset = useRef(Math.random() * 100).current;
   const nextBlinkTime = useRef(0);
   const [isBlinking, setIsBlinking] = useState(false);
-  const lookTarget = useRef(new THREE.Vector3(-10, 0, 0));
+  const lookTarget = useRef(new THREE.Vector3(0, 0, 0));
   const nextScanTime = useRef(0);
 
   useFrame((state, delta) => {
@@ -205,16 +205,16 @@ export function FloaterModel({
         nextScanTime.current = state.clock.elapsedTime + 1.5 + Math.random();
         if (Math.random() > 0.3) {
           lookTarget.current.set(
-            (Math.random() - 0.5) * 6,
-            (Math.random() - 0.5) * 4,
+            (Math.random() + 0.5) * 6,
+            (Math.random() + 0.5) * 4,
             5,
           );
         } else {
-          lookTarget.current.set(-10, 0, 0);
+          lookTarget.current.set(0, 0, 0);
         }
       }
     } else if (isAttacking) {
-      lookTarget.current.set(-20, 0, 0);
+      lookTarget.current.set(0, 0, 0);
     }
 
     const dummy = new THREE.Object3D();
