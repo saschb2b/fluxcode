@@ -1,33 +1,42 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Html, OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
-import { X, Zap, Swords } from "lucide-react";
-import { BattleGrid } from "../battle-grid";
-import { CustomizableFighter } from "../customizable-fighter";
-import { Projectiles } from "../projectiles";
-import { EnemyVisuals } from "../enemies/EnemyVisuals";
+import { X, Zap, Swords, RotateCcw } from "lucide-react";
 import {
   FloatingGeometry,
   StarField,
   AmbientParticles,
 } from "../cyberpunk-background";
 
+// Logic Imports
 import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
 import { createEnemyState } from "@/lib/enemies/registry";
 import { buildTriggerActionPairs } from "@/lib/protocol-builder";
 import type { Fighter, GameState } from "@/types/game";
-import { UnifiedIntegrityBar } from "../unified-integrity-bar";
+import type { FighterCustomization } from "@/lib/fighter-parts";
 
-interface BattleArenaProps {
+// Component Imports
+import { EnemySelector } from "./EnemySelector";
+import { BattleScene } from "./BattleScene";
+
+interface BenchmarkArenaProps {
   classData: Fighter;
+  customization?: FighterCustomization;
   onClose: () => void;
 }
 
-export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
+export function BenchmarkArena({
+  classData,
+  customization,
+  onClose,
+}: BenchmarkArenaProps) {
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedEnemyId, setSelectedEnemyId] =
+    useState<string>("sentry-alpha");
+
   const battleEngineRef = useRef<BattleEngine | null>(null);
   const animationFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
@@ -43,19 +52,48 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
       shields: classData.maxShields || 0,
       maxShields: classData.maxShields || 0,
     },
-    // We start with an empty array or a placeholder
     enemies: [],
     projectiles: [],
   });
 
+  const resetBattle = useCallback(() => {
+    setIsRunning(false);
+    if (animationFrameRef.current)
+      cancelAnimationFrame(animationFrameRef.current);
+
+    // Create a fresh preview state (Player + Selected Enemy at spawn)
+    try {
+      const previewEnemy = createEnemyState(selectedEnemyId, { x: 4, y: 1 }, 0);
+      setGameState((prev) => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          position: { x: 1, y: 1 },
+          hp: prev.player.maxHp,
+          shields: prev.player.maxShields,
+          armor: prev.player.maxArmor,
+        },
+        enemies: [previewEnemy],
+        projectiles: [],
+      }));
+    } catch (e) {
+      console.error("Failed to preview enemy:", e);
+    }
+  }, [selectedEnemyId]);
+
+  // Reset whenever enemy selection changes
+  useEffect(() => {
+    resetBattle();
+  }, [resetBattle]);
+
   const startBattle = () => {
-    // 1. Build Player Logic
+    // 1. Build Player Logic (In a real app, pass this in props)
+    // For benchmark, we might use the class default protocols
     const playerMovement = buildTriggerActionPairs([]);
     const playerTactical = buildTriggerActionPairs([]);
 
-    // 2. SPAWN THE SENTRY USING THE REGISTRY
-    // This pulls HP, Shields, Visuals, and AI from sentry.tsx
-    const sentryState = createEnemyState("sentry-alpha", { x: 4, y: 1 }, 0);
+    // 2. Spawn Logic
+    const enemyState = createEnemyState(selectedEnemyId, { x: 4, y: 1 }, 0);
 
     // 3. Initialize Engine
     battleEngineRef.current = new BattleEngine(
@@ -64,15 +102,14 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
         playerHP: classData.maxHp || 100,
         playerShields: classData.maxShields || 0,
         playerArmor: classData.maxArmor || 0,
-        enemies: [sentryState], // Pass our new Sentry
+        enemies: [enemyState],
         projectiles: [],
         justTookDamage: false,
         enemyImmuneToStatus: false,
       },
       playerMovement,
       playerTactical,
-      // Extract protocols from the state we just created
-      [sentryState.triggerActionPairs || []],
+      [enemyState.triggerActionPairs || []], // Pass enemy logic
     );
 
     setIsRunning(true);
@@ -85,6 +122,7 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
       cancelAnimationFrame(animationFrameRef.current);
   };
 
+  // The Game Loop
   useEffect(() => {
     if (!isRunning || !battleEngineRef.current) return;
 
@@ -93,11 +131,9 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
       const deltaTime = now - lastTimeRef.current;
       lastTimeRef.current = now;
 
-      // Tick Engine
       const update = battleEngineRef.current!.tick(deltaTime);
       const newState = battleEngineRef.current!.getState();
 
-      // Sync React State
       setGameState({
         player: {
           position: newState.playerPos,
@@ -108,7 +144,7 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
           maxHp: classData.maxHp ?? 100,
           maxShields: classData.maxShields ?? 0,
         },
-        enemies: newState.enemies, // Syncs full enemy array
+        enemies: newState.enemies,
         projectiles: newState.projectiles,
       });
 
@@ -121,22 +157,37 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(animationFrameRef.current);
-  }, [classData.maxArmor, classData.maxHp, classData.maxShields, isRunning]);
+  }, [isRunning, classData]);
 
   return (
     <div className="fixed inset-0 z-[110] bg-black flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/50 bg-black/80">
-        <h2 className="text-xl font-bold text-cyan-400 font-mono flex items-center gap-2">
-          <Swords className="w-5 h-5" /> BATTLE ARENA
-        </h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-5 h-5 text-red-400" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/50 bg-black/80 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-cyan-400 font-mono flex items-center gap-2">
+            <Swords className="w-5 h-5" /> BENCHMARK
+          </h2>
+          <div className="h-6 w-px bg-cyan-500/30" />
+
+          {/* THE ENEMY SELECTOR */}
+          <EnemySelector
+            value={selectedEnemyId}
+            onChange={setSelectedEnemyId}
+            disabled={isRunning}
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="hover:text-red-400"
+        >
+          <X className="w-5 h-5" />
         </Button>
       </div>
 
-      {/* 3D Scene */}
-      <div className="flex-1 relative min-h-0">
+      {/* 3D Scene Wrapper */}
+      <div className="flex-1 relative min-h-0 bg-[#0a0015]">
         <Canvas shadows className="crt-effect">
           <PerspectiveCamera makeDefault position={[0, 8, 12]} fov={50} />
           <OrbitControls target={[0, 0, 0]} />
@@ -146,80 +197,39 @@ export function BenchmarkArena({ classData, onClose }: BattleArenaProps) {
           <AmbientParticles />
           <FloatingGeometry />
 
-          <ambientLight intensity={0.3} />
-          <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
-
-          <BattleGrid />
-
-          {/* PLAYER RENDERER (Legacy) */}
-          <CustomizableFighter
-            position={gameState.player.position}
-            isPlayer={true}
-            hp={gameState.player.hp}
-            maxHp={gameState.player.maxHp}
-            shields={gameState.player.shields}
-            maxShields={gameState.player.maxShields}
-            armor={gameState.player.armor}
-            maxArmor={gameState.player.maxArmor}
+          {/* THE CLEAN SCENE */}
+          <BattleScene
+            gameState={gameState}
+            playerCustomization={customization}
           />
-
-          {/* NEW ENEMY RENDERER LOOP */}
-          {gameState.enemies?.map((enemy) => {
-            /**
-             * Mocks isAttacking for 500ms and switches back and forth based on current date now
-             */
-            const isAttacking = Date.now() % 1000 < 500;
-
-            return (
-              <EnemyVisuals
-                key={enemy.id}
-                // The crucial link: ID tells us which renderer to use
-                definitionId={"warden-boss"}
-                position={enemy.position}
-                // Runtime props for the renderer
-                isAttacking={isAttacking} // Connect this to BattleEngine state later
-                isHit={false} // Connect this later
-                isDead={enemy.hp <= 0}
-                hpPercentage={enemy.hp / enemy.maxHp}
-              >
-                <Html position={[0, 1.5, 0]} center zIndexRange={[0, 0]}>
-                  <UnifiedIntegrityBar
-                    entityName={"ENEMY"}
-                    isPlayer={false}
-                    hp={enemy.hp}
-                    maxHp={enemy.maxHp}
-                    shields={enemy.shields || 0}
-                    maxShields={enemy.maxShields || 0}
-                    armor={enemy.armor || 0}
-                    maxArmor={enemy.maxArmor || 0}
-                    compact={true}
-                  />
-                </Html>
-              </EnemyVisuals>
-            );
-          })}
-
-          <Projectiles projectiles={gameState.projectiles} />
         </Canvas>
       </div>
 
       {/* Footer Controls */}
-      <div className="p-4 bg-gray-900 border-t border-cyan-500/50 flex gap-4 justify-center">
+      <div className="p-4 bg-gray-900 border-t border-cyan-500/50 flex gap-4 justify-center items-center">
         {!isRunning ? (
           <Button
             onClick={startBattle}
-            className="bg-green-500 hover:bg-green-400 text-black font-bold h-12 w-40"
+            className="bg-green-500 hover:bg-green-400 text-black font-bold h-12 w-48 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
           >
-            <Zap className="w-4 h-4 mr-2" /> SPAWN & FIGHT
+            <Zap className="w-4 h-4 mr-2" /> ENGAGE
           </Button>
         ) : (
           <Button
             onClick={stopBattle}
-            className="bg-red-500 hover:bg-red-400 text-black font-bold h-12 w-40"
+            className="bg-red-500 hover:bg-red-400 text-black font-bold h-12 w-48"
           >
-            STOP
+            HALT SIMULATION
           </Button>
         )}
+
+        <Button
+          onClick={resetBattle}
+          variant="outline"
+          className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20 h-12 w-12 p-0"
+        >
+          <RotateCcw className="w-5 h-5" />
+        </Button>
       </div>
     </div>
   );
