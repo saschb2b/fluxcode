@@ -11,6 +11,8 @@ import { HEISENBUG_VARIANTS } from "./definitions/heisebug";
 import { GITHYDRA_VARIANTS } from "./definitions/gitHydra";
 import { MOBILE_PHONE_VARIANTS } from "./definitions/mobilePhones";
 import { COOLING_VARIANTS } from "./definitions/cooling";
+import { HUMAN_VARIANTS } from "./definitions/humans";
+import { AQUATIC_VARIANTS } from "./definitions/aquatic";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -34,6 +36,8 @@ export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   ...normalizeVariants(HEISENBUG_VARIANTS),
   ...normalizeVariants(MOBILE_PHONE_VARIANTS),
   ...normalizeVariants(COOLING_VARIANTS),
+  ...normalizeVariants(HUMAN_VARIANTS),
+  ...normalizeVariants(AQUATIC_VARIANTS),
   // Bosses
   ...normalizeVariants(WARDEN_VARIANTS),
   ...normalizeVariants(REVENANT_VARIANTS),
