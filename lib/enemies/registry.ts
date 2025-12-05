@@ -4,6 +4,7 @@ import { EnemyState } from "@/types/game";
 import { FLOATER_VARIANTS } from "./definitions/floater";
 import { SCRAPPER_VARIANTS } from "./definitions/scrapper";
 import { WARDEN_VARIANTS } from "./definitions/warden";
+import { PITCHER_VARIANTS } from "./definitions/pitcher";
 
 const normalizeVariants = (variants: Record<string, EnemyDefinition>) => {
   return Object.values(variants).reduce(
@@ -22,6 +23,7 @@ export const ENEMY_REGISTRY: Record<string, EnemyDefinition> = {
   ...normalizeVariants(SENTRY_VARIANTS),
   ...normalizeVariants(FLOATER_VARIANTS),
   ...normalizeVariants(SCRAPPER_VARIANTS),
+  ...normalizeVariants(PITCHER_VARIANTS),
   // Bosses
   ...normalizeVariants(WARDEN_VARIANTS),
 };
