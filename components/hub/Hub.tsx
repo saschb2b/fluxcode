@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useState, useRef, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
 import {
   Html,
   Text,
@@ -10,11 +10,8 @@ import {
   Grid,
   Sparkles,
   CameraControls,
-  RoundedBox,
-  Image,
   Line,
 } from "@react-three/drei";
-import * as THREE from "three";
 import { motion, AnimatePresence } from "motion/react";
 import {
   EffectComposer,
