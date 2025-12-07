@@ -59,6 +59,8 @@ export interface Fighter {
   statusEffects?: StatusEffect[]; // Optional for now
   resistances?: Partial<Record<DamageType, number>>; // Added resistances
   isPawn?: boolean; // Added flag for guardian pawns
+  /** Link to the EnemyDefinition in the registry (e.g., "sentry-alpha") */
+  definitionId?: string;
 }
 
 export interface Projectile {
@@ -415,6 +417,24 @@ export interface EnemyState {
   shieldRegenDisabled: boolean;
   isPawn: boolean; // Flag for guardian pawns
   triggerActionPairs?: TriggerActionPair[];
+  /** Link to the EnemyDefinition in the registry (e.g., "sentry-alpha") */
+  definitionId?: string;
+  /**
+   * Link to the current phase of an enemy definition in the registry (e.g., "panic")
+   */
+  currentPhaseId?: string;
+  name?: string;
+  resistances?: Partial<Record<DamageType, number>>;
+  /**
+   * Timestamp (battleTime) when the current attack animation started.
+   * If 0 or undefined, the enemy is idle.
+   */
+  lastAttackTime?: number;
+  /**
+   * Duration in ms to keep the "isAttacking" flag true.
+   * Usually matches the action's cast time or a fixed visual window.
+   */
+  attackDuration?: number;
 }
 
 export interface GameState {
