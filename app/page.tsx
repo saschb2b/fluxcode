@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { BattleArena } from "@/components/battle-arena";
 import { GameUI } from "@/components/game-ui";
 import { StartScreen } from "@/components/start-screen";
-import { Hub } from "@/components/hub";
+import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/construct-selection";
 import { FighterCustomization } from "@/components/fighter-customization";
 import { MetaShop } from "@/components/meta-shop";
@@ -349,23 +349,14 @@ export default function Home() {
 
           <Hub
             selectedConstruct={gameState.selectedConstruct}
-            fighterCustomization={fighterCustomization}
-            playerProgress={gameState.playerProgress}
-            playerMaxHp={gameState.player.maxHp}
-            playerMaxShields={gameState.player.maxShields}
-            playerMaxArmor={gameState.player.maxArmor}
             onStartRun={handleStartRun}
             onSelectConstruct={handleOpenConstructSelect}
-            onCustomizeFighter={handleOpenCustomization}
             onOpenShop={handleOpenMetaShop}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
-            onOpenSlotManager={handleOpenSlotManager}
             onOpenCalibration={handleOpenCalibration}
             onOpenClassManager={handleOpenClassManager}
             onOpenBattleArena={handleOpenBattleArena}
-            bgmAudioRef={audioRef}
-            isInHub={true}
           />
         </main>
       )}
