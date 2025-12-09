@@ -7,41 +7,13 @@ import {
   Vignette,
   Noise,
 } from "@react-three/postprocessing";
-import { motion } from "motion/react";
-
-// Import our new components
-// Adjust paths as needed based on where you put them
 import { Tab, GameMode } from "./types";
 import { CameraRig } from "./CameraRig";
 import { PlayMap } from "./PlayMap";
 import { HubUI } from "./HubUI";
+import ConstructTab from "./ConstructTab";
 
-// Define the other simple tabs here or move them to files too
-const ConstructTab = ({ onCalibrate, onSelectConstruct }: any) => (
-  <group>
-    {/* Visual Placeholder for Character */}
-    <mesh position={[0, 1, 0]}>
-      <boxGeometry args={[1, 2, 1]} />
-      <meshStandardMaterial color="#10b981" wireframe />
-    </mesh>
-    <Html position={[1.5, 1.5, 0]}>
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="w-64 bg-black/80 border-l-2 border-emerald-500 p-4 backdrop-blur-md"
-      >
-        <h1 className="text-white font-bold">VANGUARD</h1>
-        <button
-          onClick={onCalibrate}
-          className="mt-2 w-full bg-emerald-600/50 border border-emerald-500 text-white text-xs py-2 uppercase"
-        >
-          Calibrate
-        </button>
-      </motion.div>
-    </Html>
-  </group>
-);
-
+// --- OPERATIONS TAB (Placeholder) ---
 const OperationsTab = ({ onOpenShop }: any) => (
   <group position={[-4, 0, 0]}>
     <Instances range={5}>
@@ -51,13 +23,24 @@ const OperationsTab = ({ onOpenShop }: any) => (
         <Instance key={i} position={[(i - 2) * 1.5, 1.5, -2]} />
       ))}
     </Instances>
-    <Html position={[0, 1.5, 0]} center>
+    <Html position={[0, 1.5, 0]} transform scale={0.25}>
       <button
         onClick={onOpenShop}
-        className="bg-purple-600 px-6 py-3 text-white font-bold uppercase shadow-lg hover:scale-105 transition-transform"
+        className="bg-purple-600 px-6 py-3 text-white font-bold uppercase shadow-lg hover:scale-105 transition-transform whitespace-nowrap"
       >
         Protocol Vault
       </button>
+    </Html>
+  </group>
+);
+
+// --- ARCHIVE TAB (Placeholder) ---
+const ArchiveTab = () => (
+  <group position={[4, 0, 0]}>
+    <Html transform scale={0.25}>
+      <div className="bg-black/50 p-4 border border-white/20 text-white font-mono">
+        ARCHIVE :: OFFLINE
+      </div>
     </Html>
   </group>
 );
@@ -91,7 +74,10 @@ export default function Hub(props: any) {
       {/* 2D LAYER */}
       <HubUI
         activeTab={activeTab}
-        onSwitchTab={setActiveTab}
+        onSwitchTab={(t) => {
+          setActiveTab(t);
+          setSelectedMode("NONE");
+        }}
         selectedMode={selectedMode}
         onCloseMode={() => setSelectedMode("NONE")}
         onStartRun={props.onStartRun}
@@ -103,28 +89,44 @@ export default function Hub(props: any) {
         <color attach="background" args={["#020617"]} />
         <fog attach="fog" args={["#020617", 5, 30]} />
 
+        {/* Camera Controller */}
         <CameraRig activeTab={activeTab} selectedMode={selectedMode} />
 
-        {/* --- SCENE CONTENT --- */}
-        <group visible={activeTab === "PLAY"}>
+        {/*
+           STRICT CONDITIONAL RENDERING
+           We use JS { && } syntax. This completely UNMOUNTS the components.
+           This ensures click listeners in PlayMap do not exist when you are in Construct tab.
+        */}
+
+        {activeTab === "PLAY" && (
           <PlayMap activeMode={selectedMode} onSelectMode={setSelectedMode} />
-        </group>
+        )}
 
         {activeTab === "CONSTRUCT" && (
-          <ConstructTab onCalibrate={props.onOpenCalibration} />
+          <ConstructTab
+            selectedConstruct={props.selectedConstruct}
+            onOpenCalibration={props.onOpenCalibration}
+            onSelectConstruct={props.onSelectConstruct}
+          />
         )}
 
         {activeTab === "OPERATIONS" && (
           <OperationsTab onOpenShop={props.onOpenShop} />
         )}
 
-        {/* EFFECTS */}
-        <EffectComposer>
+        {activeTab === "ARCHIVE" && <ArchiveTab />}
+
+        {/* GLOBAL EFFECTS */}
+        <EffectComposer disableNormalPass>
           <Bloom luminanceThreshold={0.5} intensity={1.5} mipmapBlur />
           <Vignette eskil={false} offset={0.1} darkness={0.8} />
           <Noise opacity={0.06} />
         </EffectComposer>
-        <Sparkles count={50} scale={15} size={2} speed={0.1} opacity={0.2} />
+
+        {/* Only show global sparkles if not in Construct tab (which has its own) */}
+        {activeTab !== "CONSTRUCT" && (
+          <Sparkles count={50} scale={15} size={2} speed={0.1} opacity={0.2} />
+        )}
       </Canvas>
     </div>
   );

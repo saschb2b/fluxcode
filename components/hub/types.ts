@@ -5,7 +5,7 @@ export const VIEW_CONFIG = {
   // --- TABS ---
   // Main Map View (High up, centered)
   PLAY: { pos: [0, 8, 8], look: [0, 0, 1] },
-  CONSTRUCT: { pos: [0, 1.5, 4.5], look: [0, 1, 0] },
+  CONSTRUCT: { pos: [0, 2, 8], look: [0, 1, 0] },
   OPERATIONS: { pos: [-4, 1.5, 4.5], look: [-4, 1, 0] },
   ARCHIVE: { pos: [4, 1.5, 4.5], look: [4, 1, 0] },
 
