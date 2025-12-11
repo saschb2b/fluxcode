@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { BattleGrid } from "../battle/BattleGrid";
 import { CustomizableFighter } from "../customizable-fighter";
-import { Projectiles } from "../projectiles";
+import { Projectiles } from "@/components/bullets/projectiles";
 import {
   FloatingGeometry,
   CircuitLayer,
