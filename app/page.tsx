@@ -5,13 +5,13 @@ import { BattleArena } from "@/components/battle-arena";
 import { GameUI } from "@/components/game-ui";
 import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
-import { ConstructSelection } from "@/components/construct-selection";
-import { FighterCustomization } from "@/components/fighter-customization";
+import { ConstructSelection } from "@/components/hub/construct/construct-selection";
+import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
 import { MetaShop } from "@/components/meta-shop";
 import { Codex } from "@/components/hub/codex/Codex";
 import { NetworkContractsView } from "@/components/network-contracts-view";
-import { FighterClassManager } from "@/components/fighter-class-manager";
-import { ConstructSlotManager } from "@/components/construct-slot-manager";
+import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
+import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
 import { WelcomeDialog } from "@/components/welcome-dialog";
 import { useGameState } from "@/hooks/use-game-state";
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts";
@@ -457,8 +457,6 @@ export default function Home() {
                 },
               },
             ]}
-            selectedClassId={gameState.selectedConstruct.id}
-            skipSelection={true}
             onSaveClasses={(classes) => {
               const updatedClass = classes[0];
 
@@ -568,7 +566,6 @@ export default function Home() {
               }
               handleCloseCalibration();
             }}
-            onSelectClass={() => {}}
             onClose={handleCloseCalibration}
           />
         )}
@@ -594,9 +591,6 @@ export default function Home() {
           onClose={handleCloseContracts}
           onClaimReward={handleClaimContractReward}
           onForceRefresh={handleForceRefreshContracts}
-          completedContractIds={
-            gameState.playerProgress.contractProgress.completedContractIds
-          }
         />
       )}
     </>
