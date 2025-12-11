@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BattleArena } from "@/components/battle-arena";
 import { GameUI } from "@/components/game-ui";
-import { StartScreen } from "@/components/start-screen";
+import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/construct-selection";
 import { FighterCustomization } from "@/components/fighter-customization";
@@ -221,10 +221,6 @@ export default function Home() {
     setView(GameView.HUB);
   };
 
-  const handleOpenClassManager = () => {
-    setGamePhase("class-manager");
-  };
-
   function handleOpenBattleArena(): void {
     setGamePhase("battle-arena");
   }
@@ -350,13 +346,12 @@ export default function Home() {
           <Hub
             selectedConstruct={gameState.selectedConstruct}
             onStartRun={handleStartRun}
-            onSelectConstruct={handleOpenConstructSelect}
             onOpenShop={handleOpenMetaShop}
+            onOpenCalibration={handleOpenCalibration}
+            onOpenSlotManager={handleOpenSlotManager}
+            onOpenBattleArena={handleOpenBattleArena}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
-            onOpenCalibration={handleOpenCalibration}
-            onOpenClassManager={handleOpenClassManager}
-            onOpenBattleArena={handleOpenBattleArena}
           />
         </main>
       )}

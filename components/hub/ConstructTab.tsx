@@ -12,7 +12,7 @@ import { motion } from "motion/react";
 // --- PROPS ---
 interface ConstructTabProps {
   onOpenCalibration: () => void;
-  onSelectConstruct: () => void;
+  onOpenSlotManager: () => void;
   selectedConstruct: any;
 }
 
@@ -174,7 +174,7 @@ function ConstructModel() {
 }
 
 // --- UI (Unchanged logic, just layout) ---
-function ConstructUI({ onCalibrate, onSelectConstruct }: any) {
+function ConstructUI({ onCalibrate, onOpenSlotManager }: any) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const MenuButton = ({ label, sub, onClick, id }: any) => (
@@ -202,28 +202,8 @@ function ConstructUI({ onCalibrate, onSelectConstruct }: any) {
     </motion.button>
   );
 
-  const StatRow = ({ label, value, barColor }: any) => (
-    <div className="flex flex-col gap-1 mb-3">
-      <div className="flex justify-between items-end">
-        <span className="text-xs text-gray-400 font-mono uppercase tracking-wider">
-          {label}
-        </span>
-        <span className="text-sm text-white font-bold font-mono">{value}</span>
-      </div>
-      <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min(parseInt(value) / 10, 100)}%` }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className={`h-full ${barColor}`}
-        />
-      </div>
-    </div>
-  );
-
   return (
     <>
-      {/* LEFT PANEL */}
       <Html
         position={[-4, 1.5, 0]}
         rotation={[0, 0.3, 0]}
@@ -240,66 +220,18 @@ function ConstructUI({ onCalibrate, onSelectConstruct }: any) {
             </span>
           </div>
           <MenuButton
-            id="proto"
-            label="Protocols"
-            sub="Edit Logic Chain"
-            onClick={onCalibrate}
-          />
-          <MenuButton
             id="equip"
             label="Equipment"
             sub="Hardware & Mods"
             onClick={onCalibrate}
-          />
-          <MenuButton
-            id="paint"
-            label="Appearance"
-            sub="Skins & Colors"
-            onClick={() => {}}
           />
           <div className="h-6" />
           <MenuButton
             id="swap"
             label="Swap Frame"
             sub="Select Construct"
-            onClick={onSelectConstruct}
+            onClick={onOpenSlotManager}
           />
-        </div>
-      </Html>
-
-      {/* RIGHT PANEL */}
-      <Html
-        position={[4, 1.5, 0]}
-        rotation={[0, -0.3, 0]}
-        transform
-        scale={0.2}
-      >
-        <div className="w-[320px] bg-black/80 backdrop-blur-xl p-6 border-t-2 border-emerald-500 pointer-events-auto select-none rounded-b-lg shadow-2xl">
-          <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 border-b border-gray-700 pb-2">
-            System Diagnostics
-          </h3>
-          <StatRow label="Integrity (HP)" value="850" barColor="bg-red-500" />
-          <StatRow
-            label="Barrier (Shield)"
-            value="420"
-            barColor="bg-blue-500"
-          />
-          <StatRow label="CPU Load" value="64%" barColor="bg-yellow-500" />
-          <StatRow label="Mobility" value="1.2" barColor="bg-purple-500" />
-          <div className="mt-6 flex gap-2">
-            <div className="flex-1 bg-white/5 p-3 text-center rounded border border-white/10">
-              <div className="text-2xl text-white font-bold">4</div>
-              <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">
-                Modules
-              </div>
-            </div>
-            <div className="flex-1 bg-white/5 p-3 text-center rounded border border-white/10">
-              <div className="text-2xl text-white font-bold">12</div>
-              <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">
-                Logic
-              </div>
-            </div>
-          </div>
         </div>
       </Html>
     </>
@@ -335,7 +267,7 @@ export default function ConstructTab(props: ConstructTabProps) {
       <ConstructModel />
       <ConstructUI
         onCalibrate={props.onOpenCalibration}
-        onSelectConstruct={props.onSelectConstruct}
+        onOpenSlotManager={props.onOpenSlotManager}
       />
 
       {/* Floating Data Particles */}

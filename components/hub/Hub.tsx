@@ -47,7 +47,18 @@ const ArchiveTab = () => (
 
 // --- MAIN COMPONENT ---
 
-export default function Hub(props: any) {
+interface HubProps {
+  selectedConstruct: any;
+  onOpenShop: () => void;
+  onOpenCalibration: () => void;
+  onOpenSlotManager: () => void;
+  onStartRun: () => void;
+  onOpenBattleArena: () => void;
+  onOpenCodex: () => void;
+  onOpenContracts: () => void;
+}
+
+export default function Hub(props: HubProps) {
   const [activeTab, setActiveTab] = useState<Tab>("PLAY");
   const [selectedMode, setSelectedMode] = useState<GameMode>("NONE");
   const TABS: Tab[] = ["PLAY", "CONSTRUCT", "OPERATIONS", "ARCHIVE"];
@@ -106,7 +117,7 @@ export default function Hub(props: any) {
           <ConstructTab
             selectedConstruct={props.selectedConstruct}
             onOpenCalibration={props.onOpenCalibration}
-            onSelectConstruct={props.onSelectConstruct}
+            onOpenSlotManager={props.onOpenSlotManager}
           />
         )}
 
@@ -117,7 +128,7 @@ export default function Hub(props: any) {
         {activeTab === "ARCHIVE" && <ArchiveTab />}
 
         {/* GLOBAL EFFECTS */}
-        <EffectComposer disableNormalPass>
+        <EffectComposer>
           <Bloom luminanceThreshold={0.5} intensity={1.5} mipmapBlur />
           <Vignette eskil={false} offset={0.1} darkness={0.8} />
           <Noise opacity={0.06} />
