@@ -8,7 +8,7 @@ import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/construct-selection";
 import { FighterCustomization } from "@/components/fighter-customization";
 import { MetaShop } from "@/components/meta-shop";
-import { Codex } from "@/components/codex";
+import { Codex } from "@/components/hub/codex/Codex";
 import { NetworkContractsView } from "@/components/network-contracts-view";
 import { FighterClassManager } from "@/components/fighter-class-manager";
 import { ConstructSlotManager } from "@/components/construct-slot-manager";

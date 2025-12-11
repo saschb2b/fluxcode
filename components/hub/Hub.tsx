@@ -12,6 +12,7 @@ import { CameraRig } from "./CameraRig";
 import { PlayMap } from "./PlayMap";
 import { HubUI } from "./HubUI";
 import ConstructTab from "./ConstructTab";
+import { ArchiveTab } from "./ArchiveTab";
 
 // --- OPERATIONS TAB (Placeholder) ---
 const OperationsTab = ({ onOpenShop }: any) => (
@@ -30,17 +31,6 @@ const OperationsTab = ({ onOpenShop }: any) => (
       >
         Protocol Vault
       </button>
-    </Html>
-  </group>
-);
-
-// --- ARCHIVE TAB (Placeholder) ---
-const ArchiveTab = () => (
-  <group position={[4, 0, 0]}>
-    <Html transform scale={0.25}>
-      <div className="bg-black/50 p-4 border border-white/20 text-white font-mono">
-        ARCHIVE :: OFFLINE
-      </div>
     </Html>
   </group>
 );

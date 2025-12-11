@@ -1,25 +1,23 @@
 "use client";
 
-import type React from "react";
-
 import { useState } from "react";
+import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
-import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react";
-import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
-import { AVAILABLE_ACTIONS } from "@/lib/actions";
 import { DamageType } from "@/types/game";
 import type { Trigger, Action } from "@/types/game";
 import { ElementalProjectileVisual } from "@/components/elemental-projectile-visual";
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
+import { AVAILABLE_ACTIONS } from "@/lib/actions";
 import { AVAILABLE_ELEMENTALS } from "@/lib/elementals/elementals";
 
 interface CodexProps {
   isOpen: boolean;
   onClose: () => void;
+  embedded?: boolean;
 }
 
-// ... existing 3D visualization components remain the same ...
 function TriggerVisualization({ trigger }: { trigger: Trigger }) {
   const isDistance =
     trigger.id.includes("enemy") &&
@@ -697,7 +695,7 @@ function RotatingVisualization({ children }: { children: React.ReactNode }) {
   return <group rotation={[0, Date.now() * 0.001, 0]}>{children}</group>;
 }
 
-export function Codex({ isOpen, onClose }: CodexProps) {
+export function Codex({ isOpen, onClose, embedded }: CodexProps) {
   const [activeTab, setActiveTab] = useState<
     "triggers" | "actions" | "damage-types"
   >("triggers");
@@ -765,8 +763,20 @@ export function Codex({ isOpen, onClose }: CodexProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4">
-      <div className="w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden">
+    <div
+      className={
+        embedded
+          ? "w-full h-full flex flex-col bg-black/80 backdrop-blur-md overflow-hidden border-2 border-primary/50"
+          : "fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4"
+      }
+    >
+      <div
+        className={
+          embedded
+            ? "w-full h-full flex flex-col"
+            : "w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden"
+        }
+      >
         <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-primary/50 bg-background/80">
           <div className="flex items-center gap-3 sm:gap-4 flex-1">
             {showMobileDetail && (
@@ -785,7 +795,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">
-                  BREACH TERMINAL
+                  Codex
                 </h2>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 mt-0.5 sm:mt-1 text-[9px] sm:text-xs text-muted-foreground font-mono">
@@ -795,14 +805,16 @@ export function Codex({ isOpen, onClose }: CodexProps) {
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="hover:bg-destructive/20 h-8 w-8 sm:h-10 sm:w-10 border border-border flex-shrink-0"
-          >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-          </Button>
+          {!embedded && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-destructive/20 h-8 w-8 sm:h-10 sm:w-10 border border-border flex-shrink-0"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+          )}
         </div>
 
         <div
