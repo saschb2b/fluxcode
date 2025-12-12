@@ -132,7 +132,7 @@ export class BattleEngine {
    * }
    */
   tick(deltaTime: number): BattleUpdate {
-    const update: BattleUpdate = {};
+    const update: BattleUpdate = { executedProtocols: [] };
 
     this.battleTime += deltaTime;
     this.aiExecutor.updateCooldowns(deltaTime);
@@ -225,7 +225,16 @@ export class BattleEngine {
     );
 
     if (movementAction) {
-      this.applyAction(movementAction, true, update);
+      this.applyAction(movementAction.result, true, update);
+      if (!update.executedProtocols) update.executedProtocols = [];
+      update.executedProtocols.push({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        source: "movement",
+        triggerName: movementAction.metadata.triggerName, // <--- Access .metadata
+        actionName: movementAction.metadata.actionName,
+        cooldown: movementAction.metadata.cooldown,
+      });
       return;
     }
 
@@ -238,7 +247,16 @@ export class BattleEngine {
     );
 
     if (tacticalAction) {
-      this.applyAction(tacticalAction, true, update);
+      this.applyAction(tacticalAction.result, true, update);
+      if (!update.executedProtocols) update.executedProtocols = [];
+      update.executedProtocols.push({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        source: "tactical",
+        triggerName: tacticalAction.metadata.triggerName,
+        actionName: tacticalAction.metadata.actionName,
+        cooldown: tacticalAction.metadata.cooldown,
+      });
     }
   }
 

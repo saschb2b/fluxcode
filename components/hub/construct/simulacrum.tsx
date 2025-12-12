@@ -37,6 +37,7 @@ import {
   FloatingGeometry,
   StarField,
 } from "../../cyberpunk-background";
+import { LogicLogEntry, LogicStream } from "@/components/battle/LogicStream";
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
@@ -83,6 +84,7 @@ export function Simulacrum({
     [],
   );
   const peakDpsRef = useRef<number>(0);
+  const [logicLogs, setLogicLogs] = useState<LogicLogEntry[]>([]);
 
   const [metrics, setMetrics] = useState({
     totalDamage: 0,
@@ -291,6 +293,19 @@ export function Simulacrum({
       lastTimeRef.current = now;
 
       const update = battleEngineRef.current!.tick(deltaTime);
+
+      if (update.executedProtocols && update.executedProtocols.length > 0) {
+        const newLogs: LogicLogEntry[] = update.executedProtocols.map((p) => ({
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          type: p.source === "movement" ? "movement" : "tactical",
+          name: p.actionName,
+          triggerName: p.triggerName,
+          cooldown: p.cooldown,
+        }));
+
+        setLogicLogs((prev) => [...prev, ...newLogs].slice(-10)); // Keep history manageable
+      }
 
       if (update.damageDealt && update.damageDealt.amount > 0) {
         console.log("[v0] Damage dealt:", update.damageDealt);
@@ -544,7 +559,9 @@ export function Simulacrum({
 
           <Projectiles projectiles={gameState.projectiles} />
         </Canvas>
-
+        <div className="absolute top-0 right-0 h-full w-[300px] pointer-events-none z-50 p-4">
+          <LogicStream logs={logicLogs} />
+        </div>
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-black/80 border border-yellow-500/50 px-2 py-1 md:px-4 md:py-2 rounded">
           <p className="text-yellow-400 text-xs font-mono mt-1 flex items-center gap-1">
             <TriangleAlert />

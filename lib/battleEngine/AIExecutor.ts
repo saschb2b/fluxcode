@@ -3,6 +3,7 @@ import type {
   BattleContext,
   ActionResult,
   EnemyState,
+  AIExecutionResult,
 } from "@/types/game";
 import { StatusEffectManager } from "./StatusEffectManager";
 
@@ -48,7 +49,7 @@ export class AIExecutor {
    * @param {"movement" | "tactical"} coreType - Which protocol core to execute from
    * @param {string} entityId - Unique identifier for this entity (for cooldown tracking)
    * @param {EnemyState} [enemy] - The enemy entity (if executing enemy AI)
-   * @returns {ActionResult | null} The executed action, or null if no triggers matched
+   * @returns {AIExecutionResult | null} The executed action, or null if no triggers matched
    *
    * @example
    * const action = executor.execute(
@@ -67,7 +68,7 @@ export class AIExecutor {
     coreType: "movement" | "tactical",
     entityId: string,
     enemy?: EnemyState,
-  ): ActionResult | null {
+  ): AIExecutionResult | null {
     // Filter to only the requested core type
     const corePairs = pairs.filter((p) => p.action.coreType === coreType);
 
@@ -102,9 +103,15 @@ export class AIExecutor {
         const adjustedCooldown = pair.action.cooldown * lagMultiplier;
         this.cooldowns.set(cooldownKey, adjustedCooldown);
 
-        // Return the executed action
+        const actionResult = pair.action.execute(context);
+
         return {
-          ...pair.action.execute(context),
+          result: { ...actionResult },
+          metadata: {
+            triggerName: pair.trigger.name,
+            actionName: pair.action.name,
+            cooldown: adjustedCooldown,
+          },
         };
       }
     }
