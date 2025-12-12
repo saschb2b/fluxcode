@@ -11,44 +11,25 @@ import { Tab, GameMode } from "./types";
 import { CameraRig } from "./CameraRig";
 import { PlayMap } from "./PlayMap";
 import { HubUI } from "./HubUI";
-import ConstructTab from "./ConstructTab";
-import { ArchiveTab } from "./ArchiveTab";
-
-// --- OPERATIONS TAB (Placeholder) ---
-const OperationsTab = ({ onOpenShop }: any) => (
-  <group position={[-4, 0, 0]}>
-    <Instances range={5}>
-      <boxGeometry args={[1, 3, 1]} />
-      <meshStandardMaterial color="#a855f7" />
-      {[...Array(5)].map((_, i) => (
-        <Instance key={i} position={[(i - 2) * 1.5, 1.5, -2]} />
-      ))}
-    </Instances>
-    <Html position={[0, 1.5, 0]} transform scale={0.25}>
-      <button
-        onClick={onOpenShop}
-        className="bg-purple-600 px-6 py-3 text-white font-bold uppercase shadow-lg hover:scale-105 transition-transform whitespace-nowrap"
-      >
-        Protocol Vault
-      </button>
-    </Html>
-  </group>
-);
-
-// --- MAIN COMPONENT ---
+import ConstructTab from "./construct/ConstructTab";
+import { ArchiveTab } from "./archive/ArchiveTab";
+import ShopTab from "./shop/ShopTab";
+import { PlayerProgress } from "@/lib/meta-progression";
 
 interface HubProps {
-  selectedConstruct: any;
-  onOpenShop: () => void;
   onOpenCalibration: () => void;
   onOpenSlotManager: () => void;
   onStartRun: () => void;
   onOpenBattleArena: () => void;
   onOpenCodex: () => void;
+  progress: PlayerProgress;
+  onProgressUpdate: (progress: PlayerProgress) => void;
+  // legacy
+  selectedConstruct: any;
   onOpenContracts: () => void;
 }
 
-const TABS: Tab[] = ["PLAY", "CONSTRUCT", "OPERATIONS", "ARCHIVE"];
+const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "ARCHIVE"];
 
 export default function Hub(props: HubProps) {
   const [activeTab, setActiveTab] = useState<Tab>("PLAY");
@@ -135,8 +116,11 @@ export default function Hub(props: HubProps) {
           />
         )}
 
-        {activeTab === "OPERATIONS" && (
-          <OperationsTab onOpenShop={props.onOpenShop} />
+        {activeTab === "SHOP" && (
+          <ShopTab
+            playerProgress={props.progress}
+            onPurchase={props.onProgressUpdate}
+          />
         )}
 
         {activeTab === "ARCHIVE" && <ArchiveTab />}

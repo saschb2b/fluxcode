@@ -1,4 +1,4 @@
-export type Tab = "PLAY" | "CONSTRUCT" | "OPERATIONS" | "ARCHIVE";
+export type Tab = "PLAY" | "CONSTRUCT" | "SHOP" | "ARCHIVE";
 export type GameMode = "NONE" | "BREACH" | "OVERLOAD" | "MIRROR" | "ARENA";
 
 export const VIEW_CONFIG = {
@@ -6,7 +6,7 @@ export const VIEW_CONFIG = {
   // Main Map View (High up, centered)
   PLAY: { pos: [0, 8, 9], look: [0, 0, 0] },
   CONSTRUCT: { pos: [0, 2, 8], look: [0, 1, 0] },
-  OPERATIONS: { pos: [-4, 1.5, 4.5], look: [-4, 1, 0] },
+  SHOP: { pos: [0, 2, 14], look: [0, 2, 0] },
   ARCHIVE: { pos: [0, 2, 14], look: [0, 2, 0] },
 
   // --- GAME MODES (Zoomed In) ---

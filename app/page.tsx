@@ -7,8 +7,8 @@ import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/hub/construct/construct-selection";
 import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
-import { MetaShop } from "@/components/meta-shop";
-import { Codex } from "@/components/hub/codex/Codex";
+import { MetaShop } from "@/components/hub/shop/Shop";
+import { Codex } from "@/components/hub/archive/Codex";
 import { NetworkContractsView } from "@/components/network-contracts-view";
 import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
 import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
@@ -346,12 +346,13 @@ export default function Home() {
           <Hub
             selectedConstruct={gameState.selectedConstruct}
             onStartRun={handleStartRun}
-            onOpenShop={handleOpenMetaShop}
             onOpenCalibration={handleOpenCalibration}
             onOpenSlotManager={handleOpenSlotManager}
             onOpenBattleArena={handleOpenBattleArena}
             onOpenCodex={handleOpenCodex}
             onOpenContracts={handleOpenContracts}
+            progress={gameState.playerProgress}
+            onProgressUpdate={gameState.updatePlayerProgress}
           />
         </main>
       )}
@@ -575,8 +576,8 @@ export default function Home() {
       {showMetaShop && (
         <MetaShop
           progress={gameState.playerProgress}
-          onClose={handleCloseMetaShop}
           onPurchase={gameState.updatePlayerProgress}
+          onClose={handleCloseMetaShop}
         />
       )}
 

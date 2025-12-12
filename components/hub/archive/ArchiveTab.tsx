@@ -1,5 +1,5 @@
 import { Html } from "@react-three/drei";
-import { Codex } from "@/components/hub/codex/Codex";
+import { Codex } from "@/components/hub/archive/Codex";
 
 export function ArchiveTab() {
   return (
@@ -36,7 +36,7 @@ export function ArchiveTab() {
         transform
         position={[0, 2.5, 0]}
         scale={0.65}
-        style={{ width: "1920px", height: "1080px" }} // Explicit dimensions are CRITICAL
+        style={{ width: "1920px", height: "900px" }}
       >
         <div className="w-full h-full pointer-events-auto select-none shadow-[0_0_50px_rgba(14,165,233,0.3)]">
           <Codex isOpen={true} onClose={() => {}} embedded={true} />

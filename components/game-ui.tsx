@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProgrammingPanel } from "@/components/programming-panel";
 import { RewardSelection } from "@/components/reward-selection";
-import { Codex } from "./hub/codex/Codex";
+import { Codex } from "./hub/archive/Codex";
 import { BattleStatsChart } from "@/components/battle-stats-chart";
 import { EnemyIntroduction } from "@/components/enemy-introduction";
 import { LayerProgressWidget } from "@/components/layer-progress-widget";
