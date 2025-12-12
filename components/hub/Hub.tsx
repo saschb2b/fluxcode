@@ -48,10 +48,11 @@ interface HubProps {
   onOpenContracts: () => void;
 }
 
+const TABS: Tab[] = ["PLAY", "CONSTRUCT", "OPERATIONS", "ARCHIVE"];
+
 export default function Hub(props: HubProps) {
   const [activeTab, setActiveTab] = useState<Tab>("PLAY");
   const [selectedMode, setSelectedMode] = useState<GameMode>("NONE");
-  const TABS: Tab[] = ["PLAY", "CONSTRUCT", "OPERATIONS", "ARCHIVE"];
 
   // Keyboard navigation
   useEffect(() => {
@@ -70,6 +71,29 @@ export default function Hub(props: HubProps) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [activeTab]);
 
+  const handleStartGameMode = (mode: GameMode) => {
+    console.log("Initiating Mode:", mode);
+
+    switch (mode) {
+      case "BREACH":
+        props.onStartRun();
+        break;
+      case "ARENA":
+        props.onOpenBattleArena();
+        break;
+      case "OVERLOAD":
+        // TODO: Implement Overload handler
+        console.warn("Overload not implemented yet");
+        break;
+      case "MIRROR":
+        // TODO: Implement PvP handler
+        console.warn("Mirror Protocol not implemented yet");
+        break;
+      default:
+        console.error("Unknown game mode:", mode);
+    }
+  };
+
   return (
     <div className="w-full h-dvh bg-black relative overflow-hidden">
       {/* 2D LAYER */}
@@ -81,7 +105,7 @@ export default function Hub(props: HubProps) {
         }}
         selectedMode={selectedMode}
         onCloseMode={() => setSelectedMode("NONE")}
-        onStartRun={props.onStartRun}
+        onStartMode={handleStartGameMode}
         selectedConstruct={props.selectedConstruct}
       />
 

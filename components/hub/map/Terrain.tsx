@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useLayoutEffect } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Instances, Instance, Sparkles } from "@react-three/drei";
+import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import {
   GRID_SIZE,
@@ -11,7 +11,6 @@ import {
 } from "./config";
 import { GameMode } from "../types";
 
-// --- OCEAN (Unchanged) ---
 function CyberOcean({ tiles }: { tiles: any[] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const wireRef = useRef<THREE.InstancedMesh>(null);
@@ -25,6 +24,7 @@ function CyberOcean({ tiles }: { tiles: any[] }) {
       const x = tile.position[0];
       const z = tile.position[2];
       const dist = Math.sqrt(x * x + z * z);
+      // Wave calculation
       const waveY =
         Math.sin(dist * 0.6 - time * 0.8) * 0.15 +
         Math.cos(x * 0.3 + time * 0.5) * 0.1;
@@ -33,8 +33,8 @@ function CyberOcean({ tiles }: { tiles: any[] }) {
       dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
 
-      meshRef.current.setMatrixAt(i, dummy.matrix);
-      wireRef.current.setMatrixAt(i, dummy.matrix);
+      meshRef.current!.setMatrixAt(i, dummy.matrix);
+      wireRef.current!.setMatrixAt(i, dummy.matrix);
     });
     meshRef.current.instanceMatrix.needsUpdate = true;
     wireRef.current.instanceMatrix.needsUpdate = true;
@@ -77,34 +77,74 @@ function CyberOcean({ tiles }: { tiles: any[] }) {
   );
 }
 
-// --- INTERACTIVE TILE ---
-// This wrapper handles the hover logic per tile
-const TileInstance = ({
-  data,
+const BiomeMesh = ({
+  tiles,
   mode,
-  isHighlighted,
+  geometry,
+  material,
+  activeMode,
+  hoveredMode,
   onSelect,
   onHover,
-}: any) => {
-  // We calculate the color once based on state to avoid re-creating objects every frame
-  const displayColor = useMemo(() => {
-    const base = new THREE.Color(data.color);
+}: {
+  tiles: any[];
+  mode: GameMode;
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  activeMode: GameMode;
+  hoveredMode: GameMode;
+  onSelect: (m: GameMode) => void;
+  onHover: (m: GameMode) => void;
+}) => {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  const isHighlighted = activeMode === mode || hoveredMode === mode;
+
+  // Memoize the material so it only changes when highlight state changes
+  const displayMaterial = useMemo(() => {
+    const mat = material.clone();
     if (isHighlighted) {
-      // Brighten and saturate the color on hover
-      base.offsetHSL(0, 0.1, 0.2);
-      // Add a specific tint based on mode
-      if (mode === "BREACH") base.lerp(new THREE.Color("#ef4444"), 0.3);
-      if (mode === "OVERLOAD") base.lerp(new THREE.Color("#fbbf24"), 0.3);
-      if (mode === "MIRROR") base.lerp(new THREE.Color("#22d3ee"), 0.3);
+      // @ts-ignore
+      if (mat.emissive) {
+        // @ts-ignore
+        mat.emissiveIntensity = 2.0;
+        // @ts-ignore
+        mat.color.offsetHSL(0, 0, 0.1);
+      }
     }
-    return base;
-  }, [data.color, isHighlighted, mode]);
+    return mat;
+  }, [material, isHighlighted]);
+
+  useLayoutEffect(() => {
+    if (!meshRef.current) return;
+    const tempObject = new THREE.Object3D();
+    const tempColor = new THREE.Color();
+
+    tiles.forEach((data, i) => {
+      // Set Position/Scale
+      tempObject.position.set(
+        data.position[0],
+        data.position[1],
+        data.position[2],
+      );
+      tempObject.scale.set(1, data.height, 1);
+      tempObject.updateMatrix();
+      meshRef.current!.setMatrixAt(i, tempObject.matrix);
+
+      // Set Color
+      tempColor.set(data.color);
+      meshRef.current!.setColorAt(i, tempColor);
+    });
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor)
+      meshRef.current.instanceColor.needsUpdate = true;
+  }, [tiles, displayMaterial]);
 
   return (
-    <Instance
-      position={data.position}
-      scale={[1, data.height, 1]}
-      color={displayColor}
+    <instancedMesh
+      ref={meshRef}
+      args={[geometry, displayMaterial, tiles.length]}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(mode);
@@ -118,6 +158,44 @@ const TileInstance = ({
         onHover("NONE");
       }}
     />
+  );
+};
+
+const PropsMesh = ({
+  items,
+  geometry,
+  material,
+}: {
+  items: any[];
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+}) => {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  useLayoutEffect(() => {
+    if (!meshRef.current) return;
+    const tempObject = new THREE.Object3D();
+
+    items.forEach((data, i) => {
+      tempObject.position.set(
+        data.position[0],
+        data.position[1],
+        data.position[2],
+      );
+      tempObject.rotation.set(
+        data.rotation[0],
+        data.rotation[1],
+        data.rotation[2],
+      );
+      tempObject.scale.set(data.scale, data.scale, data.scale);
+      tempObject.updateMatrix();
+      meshRef.current!.setMatrixAt(i, tempObject.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [items]);
+
+  return (
+    <instancedMesh ref={meshRef} args={[geometry, material, items.length]} />
   );
 };
 
@@ -135,9 +213,22 @@ export function Terrain({
   onSelectMode,
   onHoverMode,
 }: TerrainProps) {
-  const data = useMemo(() => {
-    const tiles = { breach: [], overload: [], mirror: [], ocean: [] } as any;
-    const props = { breach: [], overload: [], mirror: [] } as any;
+  // Pre-calculate all data points ONCE.
+  // This is pure math (fast). The React Node creation was the slow part.
+  const { tiles, props } = useMemo(() => {
+    const _tiles = {
+      breach: [],
+      overload: [],
+      mirror: [],
+      arena: [],
+      ocean: [],
+    } as any;
+    const _props = {
+      breach: [],
+      overload: [],
+      mirror: [],
+      arena: [],
+    } as any;
 
     for (let q = -GRID_SIZE; q <= GRID_SIZE; q++) {
       for (let r = -GRID_SIZE; r <= GRID_SIZE; r++) {
@@ -148,13 +239,21 @@ export function Terrain({
         if (!d) continue;
 
         if (d.biome === "ocean") {
-          tiles.ocean.push(d);
+          _tiles.ocean.push(d);
         } else {
-          tiles[d.biome].push(d);
+          // Push to specific biome array
+          if (_tiles[d.biome]) {
+            _tiles[d.biome].push(d);
+          } else {
+            // Fallback
+            _tiles.ocean.push(d);
+          }
+
+          // Generate Prop data
           const rand = Math.random();
-          if (d.height > 0.4 && rand > 0.7) {
+          if (d.height > 0.4 && rand > 0.75 && _props[d.biome]) {
             const pScale = 0.2 + Math.random() * 0.3;
-            props[d.biome].push({
+            _props[d.biome].push({
               position: [x, d.height, z],
               scale: pScale,
               rotation: [rand, rand, rand],
@@ -163,106 +262,147 @@ export function Terrain({
         }
       }
     }
-    return { tiles, props };
+    return { tiles: _tiles, props: _props };
   }, []);
 
-  // Helper to determine if a specific biome group should glow
-  const checkHighlight = (biomeMode: GameMode) => {
-    return hoveredMode === biomeMode || activeMode === biomeMode;
-  };
+  // -- GEOMETRIES & MATERIALS --
+  // We create them once here to pass into the InstancedMeshes
+  const hexGeo = useMemo(
+    () =>
+      new THREE.CylinderGeometry(HEX_RADIUS * 0.95, HEX_RADIUS * 0.95, 1, 6),
+    [],
+  );
+
+  // Materials
+  const matBreach = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#1a0505",
+        roughness: 0.9,
+        flatShading: true,
+      }),
+    [],
+  );
+  const matOverload = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#451a03",
+        roughness: 0.8,
+        metalness: 0.5,
+      }),
+    [],
+  );
+  const matMirror = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: "#0e7490",
+        roughness: 0.1,
+        metalness: 0.1,
+        transmission: 0.6,
+        thickness: 1.5,
+      }),
+    [],
+  );
+  const matArena = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#1e1b4b",
+        roughness: 0.3,
+        metalness: 0.8,
+      }),
+    [],
+  );
+
+  // Props Geometries/Materials
+  const geoCone = useMemo(() => new THREE.ConeGeometry(0.2, 0.4, 4), []);
+  const matCone = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#000",
+        emissive: "#ef4444",
+        emissiveIntensity: 2,
+      }),
+    [],
+  );
+
+  const geoBox = useMemo(() => new THREE.BoxGeometry(0.3, 0.3, 0.3), []);
+  const matBox = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#d97706", wireframe: true }),
+    [],
+  );
+
+  const geoStream = useMemo(() => new THREE.BoxGeometry(0.05, 1, 0.05), []);
+  const matStream = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: "#a5f3fc" }),
+    [],
+  );
+
+  const geoCube = useMemo(() => new THREE.BoxGeometry(0.2, 0.2, 0.2), []);
+  const matCube = useMemo(
+    () => new THREE.MeshStandardMaterial({ color: "#a855f7", wireframe: true }),
+    [],
+  );
 
   return (
     <group position={[0, -1, 0]}>
-      {/* BREACH */}
-      <Instances range={data.tiles.breach.length}>
-        <cylinderGeometry args={[HEX_RADIUS * 0.95, HEX_RADIUS * 0.95, 1, 6]} />
-        <meshStandardMaterial color="#1a0505" roughness={0.9} flatShading />
-        {data.tiles.breach.map((d: any, i: number) => (
-          <TileInstance
-            key={i}
-            data={d}
-            mode="BREACH"
-            isHighlighted={checkHighlight("BREACH")}
-            onSelect={onSelectMode}
-            onHover={onHoverMode}
-          />
-        ))}
-      </Instances>
-      <Instances range={data.props.breach.length}>
-        <coneGeometry args={[0.2, 0.4, 4]} />
-        <meshStandardMaterial
-          color="#000"
-          emissive="#ef4444"
-          emissiveIntensity={checkHighlight("BREACH") ? 3 : 1}
-        />
-        {data.props.breach.map((d: any, i: number) => (
-          <Instance key={i} position={d.position} scale={d.scale} />
-        ))}
-      </Instances>
+      {/* --- BREACH --- */}
+      <BiomeMesh
+        mode="BREACH"
+        tiles={tiles.breach}
+        geometry={hexGeo}
+        material={matBreach}
+        activeMode={activeMode}
+        hoveredMode={hoveredMode}
+        onSelect={onSelectMode}
+        onHover={onHoverMode}
+      />
+      <PropsMesh items={props.breach} geometry={geoCone} material={matCone} />
 
-      {/* OVERLOAD */}
-      <Instances range={data.tiles.overload.length}>
-        <cylinderGeometry args={[HEX_RADIUS * 0.9, HEX_RADIUS * 0.8, 1, 6]} />
-        <meshStandardMaterial color="#451a03" roughness={0.8} metalness={0.5} />
-        {data.tiles.overload.map((d: any, i: number) => (
-          <TileInstance
-            key={i}
-            data={d}
-            mode="OVERLOAD"
-            isHighlighted={checkHighlight("OVERLOAD")}
-            onSelect={onSelectMode}
-            onHover={onHoverMode}
-          />
-        ))}
-      </Instances>
-      <Instances range={data.props.overload.length}>
-        <boxGeometry args={[0.3, 0.3, 0.3]} />
-        <meshStandardMaterial color="#d97706" wireframe />
-        {data.props.overload.map((d: any, i: number) => (
-          <Instance
-            key={i}
-            position={[d.position[0], d.position[1] + 0.3, d.position[2]]}
-            rotation={d.rotation}
-            scale={d.scale}
-          />
-        ))}
-      </Instances>
+      {/* --- OVERLOAD --- */}
+      <BiomeMesh
+        mode="OVERLOAD"
+        tiles={tiles.overload}
+        geometry={hexGeo}
+        material={matOverload}
+        activeMode={activeMode}
+        hoveredMode={hoveredMode}
+        onSelect={onSelectMode}
+        onHover={onHoverMode}
+      />
+      <PropsMesh items={props.overload} geometry={geoBox} material={matBox} />
 
-      {/* MIRROR */}
-      <Instances range={data.tiles.mirror.length}>
-        <cylinderGeometry args={[HEX_RADIUS * 0.9, HEX_RADIUS * 0.9, 1, 6]} />
-        <meshPhysicalMaterial
-          color="#0e7490"
-          roughness={0.1}
-          metalness={0.1}
-          transmission={0.6}
-          thickness={1.5}
-          ior={1.5}
-        />
-        {data.tiles.mirror.map((d: any, i: number) => (
-          <TileInstance
-            key={i}
-            data={d}
-            mode="MIRROR"
-            isHighlighted={checkHighlight("MIRROR")}
-            onSelect={onSelectMode}
-            onHover={onHoverMode}
-          />
-        ))}
-      </Instances>
-      <Instances range={data.props.mirror.length}>
-        <boxGeometry args={[0.05, 1, 0.05]} />
-        <meshBasicMaterial color="#a5f3fc" />
-        {data.props.mirror.map((d: any, i: number) => (
-          <Instance
-            key={i}
-            position={[d.position[0], d.position[1] + 0.5, d.position[2]]}
-            scale={[1, d.scale, 1]}
-          />
-        ))}
-      </Instances>
+      {/* --- MIRROR --- */}
+      <BiomeMesh
+        mode="MIRROR"
+        tiles={tiles.mirror}
+        geometry={hexGeo}
+        material={matMirror}
+        activeMode={activeMode}
+        hoveredMode={hoveredMode}
+        onSelect={onSelectMode}
+        onHover={onHoverMode}
+      />
+      <PropsMesh
+        items={props.mirror}
+        geometry={geoStream}
+        material={matStream}
+      />
 
-      <CyberOcean tiles={data.tiles.ocean} />
+      {/* --- ARENA --- */}
+      <BiomeMesh
+        mode="ARENA"
+        tiles={tiles.arena}
+        geometry={hexGeo}
+        material={matArena}
+        activeMode={activeMode}
+        hoveredMode={hoveredMode}
+        onSelect={onSelectMode}
+        onHover={onHoverMode}
+      />
+      <PropsMesh items={props.arena} geometry={geoCube} material={matCube} />
+
+      {/* --- OCEAN --- */}
+      <CyberOcean tiles={tiles.ocean} />
     </group>
   );
 }

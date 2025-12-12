@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useCursor } from "@react-three/drei";
 import { GameMode } from "./types";
 import { Terrain } from "./map/Terrain";
-import { BreachCastle, OverloadCastle, MirrorCastle } from "./map/Castles";
+import {
+  BreachCastle,
+  OverloadCastle,
+  MirrorCastle,
+  ArenaCastle,
+} from "./map/Castles";
 import { DataCable } from "./map/MapUtils";
 import { POS_BREACH, POS_OVERLOAD, POS_MIRROR } from "./map/config";
 
@@ -52,6 +57,13 @@ export function PlayMap({ activeMode, onSelectMode }: PlayMapProps) {
         isHovered={hoveredMode === "MIRROR"}
         onClick={() => onSelectMode("MIRROR")}
         onHover={(h) => setHoveredMode(h ? "MIRROR" : "NONE")}
+      />
+
+      <ArenaCastle
+        isSelected={activeMode === "ARENA"}
+        isHovered={hoveredMode === "ARENA"}
+        onClick={() => onSelectMode("ARENA")}
+        onHover={(h) => setHoveredMode(h ? "ARENA" : "NONE")}
       />
 
       {/* 3. CABLES (We can also make these glow if needed) */}

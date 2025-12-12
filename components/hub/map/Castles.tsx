@@ -11,7 +11,7 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import { FloatingLabel } from "./MapUtils";
-import { POS_BREACH, POS_OVERLOAD, POS_MIRROR } from "./config";
+import { POS_BREACH, POS_OVERLOAD, POS_MIRROR, POS_ARENA } from "./config";
 
 // Interface for controlled props
 interface CastleProps {
@@ -231,6 +231,93 @@ export function MirrorCastle({
         label="MIRROR"
         sub="PVP DUEL"
         color="#22d3ee"
+        hovered={isHovered || isSelected}
+      />
+    </group>
+  );
+}
+
+export function ArenaCastle({
+  isSelected,
+  isHovered,
+  onClick,
+  onHover,
+}: CastleProps) {
+  const interactionProps = {
+    onClick: (e: any) => {
+      e.stopPropagation();
+      onClick();
+    },
+    onPointerOver: (e: any) => {
+      e.stopPropagation();
+      onHover(true);
+    },
+    onPointerOut: (e: any) => {
+      e.stopPropagation();
+      onHover(false);
+    },
+  };
+
+  const ringRef1 = useRef<THREE.Mesh>(null);
+  const ringRef2 = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (ringRef1.current) ringRef1.current.rotation.x = t * 0.5;
+    if (ringRef2.current) ringRef2.current.rotation.y = t * 0.3;
+  });
+
+  return (
+    <group position={[POS_ARENA.x, 0.5, POS_ARENA.y]} {...interactionProps}>
+      <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
+        {/* Holographic Rings */}
+        <mesh ref={ringRef1}>
+          <torusGeometry args={[1.0, 0.05, 16, 32]} />
+          <meshBasicMaterial color={isSelected ? "#fff" : "#a855f7"} />
+        </mesh>
+        <mesh ref={ringRef2} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.8, 0.05, 16, 32]} />
+          <meshBasicMaterial color="#d8b4fe" />
+        </mesh>
+
+        {/* Central Core */}
+        <mesh>
+          <octahedronGeometry args={[0.4, 0]} />
+          <meshStandardMaterial
+            color="#7e22ce"
+            emissive="#a855f7"
+            emissiveIntensity={2}
+          />
+        </mesh>
+      </Float>
+
+      {/* Base Projector */}
+      <mesh position={[0, -0.8, 0]}>
+        <cylinderGeometry args={[1.2, 1.5, 0.5, 8]} />
+        <meshStandardMaterial color="#3b0764" />
+      </mesh>
+
+      <pointLight
+        position={[0, 0, 0]}
+        color="#a855f7"
+        intensity={isSelected ? 10 : 5}
+        distance={5}
+      />
+
+      {/* Digital Matrix Particles */}
+      <Sparkles
+        count={40}
+        color="#d8b4fe"
+        scale={[2.5, 2.5, 2.5]}
+        size={3}
+        speed={0.5}
+        noise={0}
+      />
+
+      <FloatingLabel
+        label="ARENA"
+        sub="SIMULATION"
+        color="#a855f7"
         hovered={isHovered || isSelected}
       />
     </group>

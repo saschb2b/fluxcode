@@ -1,49 +1,17 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Tab, GameMode } from "./types";
+import { MODE_DETAILS } from "./modeData";
 
 interface HubUIProps {
   activeTab: Tab;
   onSwitchTab: (t: Tab) => void;
   selectedMode: GameMode;
   onCloseMode: () => void;
-  onStartRun: () => void;
+  onStartMode: (mode: GameMode) => void;
   selectedConstruct: any;
 }
 
 const TABS: Tab[] = ["PLAY", "CONSTRUCT", "OPERATIONS", "ARCHIVE"];
-
-const MODE_DETAILS: Record<
-  string,
-  {
-    title: string;
-    desc: string;
-    difficulty: string;
-    reward: string;
-    color: string;
-  }
-> = {
-  BREACH: {
-    title: "CORE CAMPAIGN",
-    desc: "Navigate through 5 layers of increasing security density. Sustain your construct's integrity to reach the Boss Layer.",
-    difficulty: "STANDARD",
-    reward: "DATA FRAGMENTS",
-    color: "text-red-500",
-  },
-  OVERLOAD: {
-    title: "SYSTEM STRESS TEST",
-    desc: "Endless swarms. System instability increases per second. Kill enemies rapidly to vent heat and prevent system crash.",
-    difficulty: "HIGH INTENSITY",
-    reward: "HIGH SCORE",
-    color: "text-amber-500",
-  },
-  MIRROR: {
-    title: "ASYNC PVP DUEL",
-    desc: "Engage against a Ghost Construct from the network. Adapt to unknown enemy logic patterns and random environmental hazards.",
-    difficulty: "VARIABLE",
-    reward: "RANKING",
-    color: "text-cyan-500",
-  },
-};
 
 export function HubUI(props: HubUIProps) {
   const details =
@@ -147,7 +115,7 @@ export function HubUI(props: HubUIProps) {
 
               {/* Main Action Button */}
               <button
-                onClick={props.onStartRun}
+                onClick={() => props.onStartMode(props.selectedMode)}
                 className={`mt-6 px-8 py-5 bg-white text-black font-black text-xl uppercase tracking-[0.2em] hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]`}
               >
                 INITIATE

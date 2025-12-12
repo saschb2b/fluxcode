@@ -22,6 +22,7 @@ export function CameraRig({ activeTab, selectedMode }: CameraRigProps) {
         if (selectedMode === "BREACH") config = VIEW_CONFIG.BREACH_FOCUS;
         if (selectedMode === "OVERLOAD") config = VIEW_CONFIG.OVERLOAD_FOCUS;
         if (selectedMode === "MIRROR") config = VIEW_CONFIG.MIRROR_FOCUS;
+        if (selectedMode === "ARENA") config = VIEW_CONFIG.ARENA_FOCUS;
       }
 
       // --- RESPONSIVE LOGIC ---
