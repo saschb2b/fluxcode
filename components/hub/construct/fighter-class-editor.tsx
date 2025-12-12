@@ -58,7 +58,6 @@ export function FighterClassEditor({
   onSave,
   onCancel,
 }: FighterClassEditorProps) {
-  const [name, setName] = useState(classData.name);
   const [movementProtocols, setMovementProtocols] = useState(
     classData.startingMovementPairs || [],
   );
@@ -86,12 +85,6 @@ export function FighterClassEditor({
     classData.constructStats?.maxShields || construct?.baseShields || 0;
   const constructMaxArmor =
     classData.constructStats?.maxArmor || construct?.baseArmor || 0;
-
-  useEffect(() => {
-    setName(classData.name);
-    setMovementProtocols(classData.startingMovementPairs || []);
-    setTacticalProtocols(classData.startingTacticalPairs || []);
-  }, [classData]);
 
   const addMovementProtocol = () => {
     if (movementProtocols.length >= MAX_MOVEMENT_PROTOCOLS) {
@@ -237,7 +230,6 @@ export function FighterClassEditor({
 
     onSave({
       ...classData,
-      name: name.trim() || classData.name,
       startingMovementPairs: orderedMovementProtocols,
       startingTacticalPairs: orderedTacticalProtocols,
       customization,
@@ -292,7 +284,6 @@ export function FighterClassEditor({
       <Simulacrum
         classData={{
           ...classData,
-          name,
           startingMovementPairs: movementProtocols,
           startingTacticalPairs: tacticalProtocols,
           customization,
@@ -315,10 +306,10 @@ export function FighterClassEditor({
                   className="text-xl sm:text-3xl font-bold text-cyan-400 truncate"
                   style={{ fontFamily: "monospace" }}
                 >
-                  EDIT FIGHTER CLASS
+                  {classData.name}
                 </h2>
                 <p className="text-xs sm:text-sm text-cyan-300/70 mt-1 hidden sm:block">
-                  Customize combat protocols, loadout, and class name
+                  Customize the way your fighter class operates in combat
                 </p>
               </div>
               <Button
@@ -369,42 +360,27 @@ export function FighterClassEditor({
 
           {/* Content */}
           <div className="p-3 sm:p-6">
-            {/* Basic Info - Always visible */}
-            <div className="mb-6">
-              <label className="text-xs sm:text-sm text-cyan-300/70 mb-2 block uppercase tracking-wider">
-                Class Name
-              </label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="bg-black/50 border-cyan-500/50 text-white text-lg h-12"
-                placeholder="Enter class name"
-              />
-            </div>
-
             {activeTab === "protocols" && (
               <div className="space-y-8">
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3
-                          className="text-xl sm:text-2xl font-bold text-purple-400"
-                          style={{ fontFamily: "monospace" }}
-                        >
-                          // MOVEMENT CORE DIRECTIVES
-                        </h3>
                         <Badge
                           variant="outline"
                           className="bg-purple-950/50 border-purple-500/50 text-purple-300"
                         >
-                          POSITIONING
+                          {movementProtocols.length}/{MAX_MOVEMENT_PROTOCOLS}
                         </Badge>
+                        <h3
+                          className="text-xl sm:text-2xl font-bold text-purple-400"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          MOVEMENT PROTOCOLS
+                        </h3>
                       </div>
                       <p className="text-xs sm:text-sm text-purple-300/70 mt-1">
-                        Controls movement, evasion, and positioning actions (
-                        {movementProtocols.length}/{MAX_MOVEMENT_PROTOCOLS}{" "}
-                        protocols)
+                        Controls movement, evasion, and positioning actions
                       </p>
                     </div>
                     <Button
@@ -612,23 +588,21 @@ export function FighterClassEditor({
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3
-                          className="text-xl sm:text-2xl font-bold text-orange-400"
-                          style={{ fontFamily: "monospace" }}
-                        >
-                          // TACTICAL CORE DIRECTIVES
-                        </h3>
                         <Badge
                           variant="outline"
                           className="bg-orange-950/50 border-orange-500/50 text-orange-300"
                         >
-                          COMBAT
+                          {tacticalProtocols.length}/{MAX_TACTICAL_PROTOCOLS}
                         </Badge>
+                        <h3
+                          className="text-xl sm:text-2xl font-bold text-orange-400"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          TACTICAL PROTOCOLS
+                        </h3>
                       </div>
                       <p className="text-xs sm:text-sm text-orange-300/70 mt-1">
-                        Controls attacks, buffs, debuffs, and healing (
-                        {tacticalProtocols.length}/{MAX_TACTICAL_PROTOCOLS}{" "}
-                        protocols)
+                        Controls attacks, buffs, debuffs, and healing
                       </p>
                     </div>
                     <Button
@@ -1141,7 +1115,7 @@ export function FighterClassEditor({
               className="flex-1 bg-green-500 hover:bg-green-400 text-black font-bold text-sm"
             >
               <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-              Save Class
+              Apply modifications
             </Button>
           </div>
         </div>
