@@ -7,8 +7,6 @@ import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/hub/construct/construct-selection";
 import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
-import { MetaShop } from "@/components/hub/shop/Shop";
-import { Codex } from "@/components/hub/archive/Codex";
 import { NetworkContractsView } from "@/components/network-contracts-view";
 import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
 import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
@@ -43,8 +41,6 @@ export default function Home() {
   const [fighterCustomization, setFighterCustomization] =
     useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION);
   const [showCustomization, setShowCustomization] = useState(false);
-  const [showMetaShop, setShowMetaShop] = useState(false);
-  const [showCodex, setShowCodex] = useState(false);
   const [showContracts, setShowContracts] = useState(false);
   const [showSlotManager, setShowSlotManager] = useState(false);
   const [showFighterClassEditor, setShowFighterClassEditor] = useState(false);
@@ -120,10 +116,6 @@ export default function Home() {
     setShowCustomization(false);
   };
 
-  const handleBackToStart = () => {
-    setGamePhase("start");
-  };
-
   const handleBackToHub = () => {
     setGamePhase("hub");
   };
@@ -139,39 +131,6 @@ export default function Home() {
       gameState.resetGame();
       setGamePhase("game");
     }
-  };
-
-  const handleOpenConstructSelect = () => {
-    setPendingSlotAssignment("slot-1"); // Default to slot-1 if opened from hub
-    setGamePhase("construct-select");
-  };
-
-  const handleOpenCustomization = () => {
-    setShowCustomization(true);
-  };
-
-  const handleOpenMetaShop = () => {
-    setShowMetaShop(true);
-  };
-
-  const handleCloseMetaShop = () => {
-    setShowMetaShop(false);
-  };
-
-  const handleOpenCodex = () => {
-    setShowCodex(true);
-  };
-
-  const handleCloseCodex = () => {
-    setShowCodex(false);
-  };
-
-  const handleOpenContracts = () => {
-    setShowContracts(true);
-  };
-
-  const handleCloseContracts = () => {
-    setShowContracts(false);
   };
 
   const handleOpenSlotManager = () => {
@@ -349,8 +308,6 @@ export default function Home() {
             onOpenCalibration={handleOpenCalibration}
             onOpenSlotManager={handleOpenSlotManager}
             onOpenBattleArena={handleOpenBattleArena}
-            onOpenCodex={handleOpenCodex}
-            onOpenContracts={handleOpenContracts}
             progress={gameState.playerProgress}
             onProgressUpdate={gameState.updatePlayerProgress}
           />
@@ -570,16 +527,6 @@ export default function Home() {
             onClose={handleCloseCalibration}
           />
         )}
-
-      {showCodex && <Codex isOpen={showCodex} onClose={handleCloseCodex} />}
-
-      {showMetaShop && (
-        <MetaShop
-          progress={gameState.playerProgress}
-          onPurchase={gameState.updatePlayerProgress}
-          onClose={handleCloseMetaShop}
-        />
-      )}
 
       {showContracts && gameState.playerProgress.contractProgress && (
         <NetworkContractsView

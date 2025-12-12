@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Sparkles, Html, Instance, Instances } from "@react-three/drei";
+import { Sparkles } from "@react-three/drei";
 import {
   EffectComposer,
   Bloom,
@@ -21,12 +21,10 @@ interface HubProps {
   onOpenSlotManager: () => void;
   onStartRun: () => void;
   onOpenBattleArena: () => void;
-  onOpenCodex: () => void;
   progress: PlayerProgress;
   onProgressUpdate: (progress: PlayerProgress) => void;
   // legacy
   selectedConstruct: any;
-  onOpenContracts: () => void;
 }
 
 const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "ARCHIVE"];
