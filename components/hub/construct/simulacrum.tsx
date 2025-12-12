@@ -1,42 +1,42 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { Projectiles } from "@/components/bullets/projectiles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
+import type { FighterCustomization } from "@/lib/fighter-parts";
 import {
-  X,
-  RotateCcw,
-  TrendingUp,
-  Zap,
-  Target,
+  ARM_SHAPES,
+  BODY_SHAPES,
+  CHASSIS_TYPES,
+  HEAD_SHAPES,
+} from "@/lib/fighter-parts";
+import type { CustomFighterClass } from "@/lib/meta-progression";
+import { buildTriggerActionPairs } from "@/lib/protocol-builder";
+import type { BattleState, GameState } from "@/types/game";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import {
   Clock,
-  Move,
   Flame,
+  Move,
+  RotateCcw,
+  Target,
+  TrendingUp,
   TriangleAlert,
+  X,
+  Zap,
 } from "lucide-react";
-import { BattleGrid } from "../battle/BattleGrid";
-import { CustomizableFighter } from "../customizable-fighter";
-import { Projectiles } from "@/components/bullets/projectiles";
+import { useEffect, useRef, useState } from "react";
+import { BattleGrid } from "../../battle/BattleGrid";
+import { CustomizableFighter } from "../../customizable-fighter";
 import {
-  FloatingGeometry,
+  AmbientParticles,
   CircuitLayer,
   DataStreams,
+  FloatingGeometry,
   StarField,
-  AmbientParticles,
-} from "../cyberpunk-background";
-import { buildTriggerActionPairs } from "@/lib/protocol-builder";
-import type { CustomFighterClass } from "@/lib/meta-progression";
-import type { FighterCustomization } from "@/lib/fighter-parts";
-import type { BattleState, GameState } from "@/types/game";
-import {
-  HEAD_SHAPES,
-  BODY_SHAPES,
-  ARM_SHAPES,
-  CHASSIS_TYPES,
-} from "@/lib/fighter-parts";
-import { BattleEngine } from "@/lib/battleEngine/BattleEngine";
+} from "../../cyberpunk-background";
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
@@ -487,8 +487,8 @@ export function Simulacrum({
         <Canvas shadows className="crt-effect">
           <PerspectiveCamera makeDefault position={[0, 8, 12]} fov={50} />
           <OrbitControls
-            enablePan={false}
-            enableZoom={false}
+            enablePan
+            enableZoom
             minPolarAngle={Math.PI / 4}
             maxPolarAngle={Math.PI / 2.5}
             target={[0, 0, 0]}

@@ -7,7 +7,6 @@ import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/hub/construct/construct-selection";
 import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
-import { NetworkContractsView } from "@/components/hub/network/NetworkPass";
 import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
 import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
 import { WelcomeDialog } from "@/components/welcome-dialog";
@@ -41,7 +40,6 @@ export default function Home() {
   const [fighterCustomization, setFighterCustomization] =
     useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION);
   const [showCustomization, setShowCustomization] = useState(false);
-  const [showContracts, setShowContracts] = useState(false);
   const [showSlotManager, setShowSlotManager] = useState(false);
   const [showFighterClassEditor, setShowFighterClassEditor] = useState(false);
   const [pendingSlotAssignment, setPendingSlotAssignment] = useState<
@@ -368,11 +366,7 @@ export default function Home() {
             />
           </div>
 
-          <GameUI
-            gameState={gameState}
-            onNewRun={handleNewRun}
-            onOpenMetaShop={() => {}}
-          />
+          <GameUI gameState={gameState} onNewRun={handleNewRun} />
         </main>
       )}
 
@@ -535,20 +529,6 @@ export default function Home() {
             onClose={handleCloseCalibration}
           />
         )}
-
-      {showContracts && gameState.playerProgress.contractProgress && (
-        <NetworkContractsView
-          dailyContracts={
-            gameState.playerProgress.contractProgress.dailyContracts
-          }
-          weeklyContracts={
-            gameState.playerProgress.contractProgress.weeklyContracts
-          }
-          onClaimReward={handleClaimContractReward}
-          onForceRefresh={handleForceRefreshContracts}
-          onClose={handleCloseContracts}
-        />
-      )}
     </>
   );
 }

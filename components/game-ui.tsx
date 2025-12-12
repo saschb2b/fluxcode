@@ -17,10 +17,9 @@ import { calculateCipherFragmentReward } from "@/lib/meta-progression";
 interface GameUIProps {
   gameState: GameState;
   onNewRun: () => void;
-  onOpenMetaShop: () => void;
 }
 
-export function GameUI({ gameState, onNewRun, onOpenMetaShop }: GameUIProps) {
+export function GameUI({ gameState, onNewRun }: GameUIProps) {
   const [isProgrammingOpen, setIsProgrammingOpen] = useState(false);
   const [isCodexOpen, setIsCodexOpen] = useState(false);
   const [isNetworkMapOpen, setIsNetworkMapOpen] = useState(false);
