@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Tab, GameMode } from "./types";
-import { MODE_DETAILS } from "./modeData";
+import { MODE_DETAILS } from "./map/modeData";
 
 interface HubUIProps {
   activeTab: Tab;

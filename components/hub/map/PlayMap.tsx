@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useCursor } from "@react-three/drei";
-import { GameMode } from "./types";
-import { Terrain } from "./map/Terrain";
+import { GameMode } from "../types";
+import { Terrain } from "./Terrain";
 import {
   BreachCastle,
   OverloadCastle,
   MirrorCastle,
   ArenaCastle,
-} from "./map/Castles";
-import { DataCable } from "./map/MapUtils";
-import { POS_BREACH, POS_OVERLOAD, POS_MIRROR } from "./map/config";
+} from "./Castles";
+import { DataCable } from "./MapUtils";
+import { POS_BREACH, POS_OVERLOAD, POS_MIRROR } from "./config";
 
 interface PlayMapProps {
   activeMode: GameMode;

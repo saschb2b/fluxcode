@@ -9,7 +9,7 @@ import {
 } from "@react-three/postprocessing";
 import { Tab, GameMode } from "./types";
 import { CameraRig } from "./CameraRig";
-import { PlayMap } from "./PlayMap";
+import { PlayMap } from "./map/PlayMap";
 import { HubUI } from "./HubUI";
 import ConstructTab from "./construct/ConstructTab";
 import { ArchiveTab } from "./archive/ArchiveTab";

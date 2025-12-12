@@ -1,4 +1,4 @@
-import { GameMode } from "./types";
+import { GameMode } from "../types";
 
 export const MODE_DETAILS: Record<
   GameMode,
