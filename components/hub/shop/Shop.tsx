@@ -26,6 +26,7 @@ interface MetaShopProps {
   progress: PlayerProgress;
   onClose: () => void;
   onPurchase: (progress: PlayerProgress) => void;
+  embedded?: boolean;
 }
 
 type FilterMode = "all" | "affordable" | "purchased";
@@ -213,7 +214,12 @@ function UpgradeCard({
   );
 }
 
-export function MetaShop({ progress, onClose, onPurchase }: MetaShopProps) {
+export function MetaShop({
+  progress,
+  onClose,
+  onPurchase,
+  embedded,
+}: MetaShopProps) {
   const [filterMode, setFilterMode] = useState<FilterMode>("affordable");
   const [installingUpgrade, setInstallingUpgrade] = useState<string | null>(
     null,
@@ -307,9 +313,20 @@ export function MetaShop({ progress, onClose, onPurchase }: MetaShopProps) {
           onComplete={() => setInstallingUpgrade(null)}
         />
       )}
-
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
-        <div className="w-full max-w-5xl h-[90dvh] bg-gradient-to-br from-purple-900/90 via-black/90 to-cyan-900/90 border-2 border-cyan-500 shadow-2xl shadow-cyan-500/20 flex flex-col overflow-hidden">
+      <div
+        className={
+          embedded
+            ? "w-full h-full flex flex-col bg-black/80 backdrop-blur-md overflow-hidden border-2 border-cyan-500 shadow-2xl shadow-cyan-500/20"
+            : "fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4"
+        }
+      >
+        <div
+          className={
+            embedded
+              ? "w-full h-full flex flex-col overflow-hidden"
+              : "w-full max-w-5xl h-[90dvh] bg-gradient-to-br from-purple-900/90 via-black/90 to-cyan-900/90 border-2 border-cyan-500 shadow-2xl shadow-cyan-500/20 flex flex-col overflow-hidden"
+          }
+        >
           {/* Header */}
           <div className="p-3 sm:p-6 border-b border-cyan-500/30 flex-shrink-0">
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -375,7 +392,6 @@ export function MetaShop({ progress, onClose, onPurchase }: MetaShopProps) {
               </Button>
             </div>
           </div>
-
           <Tabs
             defaultValue="stats"
             className="flex-1 flex flex-col overflow-hidden"
@@ -585,7 +601,6 @@ export function MetaShop({ progress, onClose, onPurchase }: MetaShopProps) {
               </ScrollArea>
             </TabsContent>
           </Tabs>
-
           {/* Footer */}
           <div className="hidden sm:block p-4 border-t border-cyan-500/30 flex-shrink-0">
             <div className="text-xs text-gray-400 text-center font-mono">

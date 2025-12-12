@@ -43,7 +43,7 @@ import {
   DEFAULT_CUSTOMIZATION,
   type FighterCustomization,
 } from "@/lib/fighter-parts";
-import { Simulacrum } from "@/components/simulacrum/simulacrum";
+import { Simulacrum } from "@/components/hub/construct/simulacrum";
 import { Badge } from "@/components/ui/badge";
 import { getConstructById } from "@/lib/constructs";
 

@@ -1,137 +1,39 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Canvas } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
-import { Button } from "@/components/ui/button"
-import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react"
-import { AVAILABLE_TRIGGERS } from "@/lib/triggers"
-import { AVAILABLE_ACTIONS } from "@/lib/actions"
-import { DamageType } from "@/types/game"
-import type { Trigger, Action } from "@/types/game"
-import { ElementalProjectileVisual } from "@/components/elemental-projectile-visual"
+import { useState } from "react";
+import { X, Terminal, Shield, Lock, ArrowLeft } from "lucide-react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import { Button } from "@/components/ui/button";
+import { DamageType } from "@/types/game";
+import type { Trigger, Action } from "@/types/game";
+import { ElementalProjectileVisual } from "@/components/bullets/elemental-projectile-visual";
+import { AVAILABLE_TRIGGERS } from "@/lib/triggers";
+import { AVAILABLE_ACTIONS } from "@/lib/actions";
+import { AVAILABLE_ELEMENTALS } from "@/lib/elementals/elementals";
 
 interface CodexProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  embedded?: boolean;
 }
 
-const ELEMENTAL_DATA = [
-  {
-    type: DamageType.KINETIC,
-    name: "Kinetic",
-    color: "#94a3b8",
-    description: "Ballistic projectiles and physical impact",
-    effect: "Standard damage type. Strong vs armor plating, weak vs energy shields.",
-    statusEffect: "None",
-    narrative:
-      "Conventional ballistic weapons. Effective at penetrating physical armor but dispersed by energy shields.",
-    threat: "STANDARD",
-  },
-  {
-    type: DamageType.ENERGY,
-    name: "Energy",
-    color: "#22d3ee",
-    description: "Plasma beams and directed energy weaponry",
-    effect: "+100% damage vs shields, -50% damage vs armor. Best shield-breaker in the arsenal.",
-    statusEffect:
-      "EMP - Drains 8% of current shields instantly and disables shield regeneration for 5s (stacks up to 5x)",
-    narrative:
-      "Superheated plasma bursts designed for shield disruption. Each EMP proc cripples energy barriers and prevents recovery, leaving targets vulnerable. Ineffective against physical plating.",
-    threat: "HIGH",
-  },
-  {
-    type: DamageType.THERMAL,
-    name: "Thermal",
-    color: "#f97316",
-    description: "Incendiary and heat-based attacks",
-    effect: "Applies burn stacks that deal 2 damage per 0.5s directly to HP, bypassing all defenses.",
-    statusEffect:
-      "Burn - Each stack inflicts persistent heat damage to core systems every 0.5s for 4 seconds (stacks up to 5x independently)",
-    narrative:
-      "Ignition-based weaponry that bypasses external defenses entirely. Multiple burn stacks create devastating damage-over-time, cooking core processing systems from the inside.",
-    threat: "CRITICAL",
-  },
-  {
-    type: DamageType.VIRAL,
-    name: "Viral",
-    color: "#a855f7",
-    description: "Malware injection and system corruption",
-    effect:
-      "Amplifies ALL damage to HP. Scales progressively: 1 stack = +20%, 2 = +35%, 3 = +50%, 4 = +75%, 5 = +100%.",
-    statusEffect:
-      "Viral Infection - Corrupts structural integrity, making target take massively increased HP damage. Each stack lasts 10s independently (max 5 stacks)",
-    narrative:
-      "Corrupted data payloads that compromise system integrity at the fundamental level. A fully infected target takes double damage from all sources, making Viral essential for high-HP enemies.",
-    threat: "CRITICAL",
-  },
-  {
-    type: DamageType.CORROSIVE,
-    name: "Corrosive",
-    color: "#84cc16",
-    description: "Armor degradation protocols",
-    effect: "Each proc permanently strips 10% of current armor (minimum 1 point). Stacks until armor reaches 0.",
-    statusEffect:
-      "Degrade - Permanently dismantles armor plating. Each application strips more until defenses are completely eliminated (no stack limit)",
-    narrative:
-      "Nanite-based disassembly agents that systematically dissolve physical plating. Against heavily armored targets, Corrosive is essential—strip their defenses to expose vulnerable systems beneath.",
-    threat: "HIGH",
-  },
-  {
-    type: DamageType.EXPLOSIVE,
-    name: "Explosive",
-    color: "#ef4444",
-    description: "High-energy detonations",
-    effect: "Balanced damage vs all defense layers.",
-    statusEffect: "Stagger - Briefly disrupts enemy positioning and timing",
-    narrative: "Omnidirectional kinetic force. Effective against all system types through sheer destructive power.",
-    threat: "STANDARD",
-  },
-  {
-    type: DamageType.CONCUSSION,
-    name: "Concussion",
-    color: "#ef4444",
-    description: "Resonant pressure waves and concussive fields",
-    effect:
-      "Weak vs shields (-10%), moderate vs armor (100%), strong vs exposed HP (+25%). Creates battlefield control through forceful spatial manipulation.",
-    statusEffect:
-      "Displace - Immediately pushes enemy backward 1 tile (2 tiles with 2+ stacks). Corrupts next Move action, forcing random movement or failure. Lasts 5.5s (max 3 stacks)",
-    narrative:
-      "Deployment of resonant pressure waves designed to overwhelm enemy physical stability and disrupt their positional strategy. Specializes in breaking formations and denying tactical movement through sheer concussive force. Each Displace stack simultaneously repositions the target while corrupting their pathfinding protocols—forcing them to waste moves attempting random relocations or stranding them entirely if surrounded. Excellent for protecting allies, controlling engagement range, and creating tactical openings.",
-    threat: "HIGH",
-  },
-  {
-    type: DamageType.GLACIAL,
-    name: "Cryo-Flux",
-    color: "#06b6d4",
-    description: "Quantum-cooled time manipulation",
-    effect:
-      "-10% damage vs shields, moderate (100%) vs armor/HP. Impedes enemy processing cycles and creates tactical windows.",
-    statusEffect:
-      "Lag - Each stack increases enemy cooldowns by +15%, reduces movement by -10%, and adds 5% chance of action failure. Creates frame-drop stuttering (stacks up to 5x, 6s duration)",
-    narrative:
-      "Controlled injections of quantum-cooled Cryo-Flux agents. Doesn't directly disable protocols but critically destabilizes an enemy's internal clock cycles and processing environment, causing intermittent system hangs, cooldown delays, and movement restrictions. Synergizes with all elements by extending exposure windows.",
-    threat: "HIGH",
-  },
-]
-
-// ... existing 3D visualization components remain the same ...
 function TriggerVisualization({ trigger }: { trigger: Trigger }) {
   const isDistance =
     trigger.id.includes("enemy") &&
-    (trigger.id.includes("range") || trigger.id.includes("close") || trigger.id.includes("far"))
-  const isHP = trigger.id.includes("hp")
+    (trigger.id.includes("range") ||
+      trigger.id.includes("close") ||
+      trigger.id.includes("far"));
+  const isHP = trigger.id.includes("hp");
   const isPosition =
     trigger.id.includes("row") ||
     trigger.id.includes("front") ||
     trigger.id.includes("back") ||
     trigger.id.includes("top") ||
     trigger.id.includes("middle") ||
-    trigger.id.includes("bottom")
-  const isDamage = trigger.id.includes("damage")
-  const isAlways = trigger.id === "always"
+    trigger.id.includes("bottom");
+  const isDamage = trigger.id.includes("damage");
+  const isAlways = trigger.id === "always";
 
   return (
     <group>
@@ -151,11 +53,19 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh position={[0, 0.3, 0]}>
             <boxGeometry args={[1.5, 0.3, 0.1]} />
-            <meshStandardMaterial color="#ff0066" emissive="#ff0066" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#ff0066"
+              emissive="#ff0066"
+              emissiveIntensity={0.5}
+            />
           </mesh>
           <mesh position={[0, -0.3, 0]}>
             <boxGeometry args={[1.5, 0.3, 0.1]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={0.5}
+            />
           </mesh>
         </group>
       )}
@@ -163,7 +73,11 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh position={[0, 0.5, 0]}>
             <boxGeometry args={[0.4, 0.4, 0.1]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[0.4, 0.4, 0.1]} />
@@ -179,11 +93,20 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group>
           <mesh>
             <octahedronGeometry args={[0.6, 0]} />
-            <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff3333"
+              emissive="#ff3333"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh rotation={[0, Math.PI / 4, 0]}>
             <octahedronGeometry args={[0.8, 0]} />
-            <meshBasicMaterial color="#ff3333" transparent opacity={0.3} wireframe />
+            <meshBasicMaterial
+              color="#ff3333"
+              transparent
+              opacity={0.3}
+              wireframe
+            />
           </mesh>
         </group>
       )}
@@ -191,23 +114,33 @@ function TriggerVisualization({ trigger }: { trigger: Trigger }) {
         <group rotation={[0, 0, Math.PI / 2]}>
           <mesh position={[-0.3, 0, 0]}>
             <torusGeometry args={[0.3, 0.1, 16, 32]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive="#ffffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0.3, 0, 0]}>
             <torusGeometry args={[0.3, 0.1, 16, 32]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffffff"
+              emissive="#ffffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
       <ambientLight intensity={0.5} />
       <pointLight position={[2, 2, 2]} intensity={1} />
     </group>
-  )
+  );
 }
 
 function ActionVisualization({ action }: { action: Action }) {
   if (action.damageType) {
-    return <ElementalProjectileVisual damageType={action.damageType} scale={1.2} />
+    return (
+      <ElementalProjectileVisual damageType={action.damageType} scale={1.2} />
+    );
   }
 
   const mockContext = {
@@ -222,41 +155,51 @@ function ActionVisualization({ action }: { action: Action }) {
     enemyShield: 0,
     enemyMaxShield: 0,
     lastDamageTaken: 0,
-  }
+  };
 
-  const actionType = action.execute(mockContext)?.type
+  const actionType = action.execute(mockContext)?.type;
 
-  const isWave = actionType === "wave"
-  const isField = actionType === "field"
-  const isSpread = actionType === "spread"
-  const isRapidFire = actionType === "rapid-fire"
-  const isPiercing = actionType === "piercing-shot"
-  const isDrain = actionType === "drain"
-  const isHoming = actionType === "homing"
-  const isBomb = actionType === "bomb" || actionType === "cluster"
-  const isDashAttack = actionType === "dash-attack"
-  const isRetreatShot = actionType === "retreat-shot"
-  const isTripleShot = actionType === "triple-shot"
-  const isMelee = actionType === "melee" || actionType === "wide-melee"
+  const isWave = actionType === "wave";
+  const isField = actionType === "field";
+  const isSpread = actionType === "spread";
+  const isRapidFire = actionType === "rapid-fire";
+  const isPiercing = actionType === "piercing-shot";
+  const isDrain = actionType === "drain";
+  const isHoming = actionType === "homing";
+  const isBomb = actionType === "bomb" || actionType === "cluster";
+  const isDashAttack = actionType === "dash-attack";
+  const isRetreatShot = actionType === "retreat-shot";
+  const isTripleShot = actionType === "triple-shot";
+  const isMelee = actionType === "melee" || actionType === "wide-melee";
 
   const isShoot =
     actionType === "shoot" ||
     action.id.includes("shot") ||
     action.id.includes("shoot") ||
     action.id.includes("fire") ||
-    action.id.includes("cannon")
-  const isMove = actionType === "move" || action.id.includes("dodge") || action.id.includes("teleport")
-  const isHeal = actionType === "heal" || actionType === "heal-over-time"
+    action.id.includes("cannon");
+  const isMove =
+    actionType === "move" ||
+    action.id.includes("dodge") ||
+    action.id.includes("teleport");
+  const isHeal = actionType === "heal" || actionType === "heal-over-time";
   const isDefensive =
-    actionType === "barrier" || actionType === "counter" || actionType === "shield" || actionType === "invincible"
-  const isBuff = actionType === "buff"
+    actionType === "barrier" ||
+    actionType === "counter" ||
+    actionType === "shield" ||
+    actionType === "invincible";
+  const isBuff = actionType === "buff";
 
   return (
     <group>
       {isWave && (
         <group>
           {[0, 1, 2].map((i) => (
-            <mesh key={i} position={[i * 0.4 - 0.4, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh
+              key={i}
+              position={[i * 0.4 - 0.4, 0, 0]}
+              rotation={[0, 0, Math.PI / 2]}
+            >
               <torusGeometry args={[0.3 + i * 0.1, 0.1, 16, 32]} />
               <meshStandardMaterial
                 color="#00ffff"
@@ -284,7 +227,11 @@ function ActionVisualization({ action }: { action: Action }) {
           </mesh>
           <mesh>
             <torusGeometry args={[0.8, 0.05, 16, 32]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -329,7 +276,11 @@ function ActionVisualization({ action }: { action: Action }) {
           {[0, 1, 2, 3].map((i) => (
             <mesh key={i} position={[0.5 + i * 0.15, 0, 0]}>
               <sphereGeometry args={[0.08, 8, 8]} />
-              <meshStandardMaterial color="#ff9900" emissive="#ff9900" emissiveIntensity={1} />
+              <meshStandardMaterial
+                color="#ff9900"
+                emissive="#ff9900"
+                emissiveIntensity={1}
+              />
             </mesh>
           ))}
         </group>
@@ -339,11 +290,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <torusKnotGeometry args={[0.4, 0.12, 64, 8]} />
-            <meshStandardMaterial color="#a855f7" emissive="#a855f7" emissiveIntensity={0.7} />
+            <meshStandardMaterial
+              color="#a855f7"
+              emissive="#a855f7"
+              emissiveIntensity={0.7}
+            />
           </mesh>
           <mesh>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -352,12 +311,24 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <octahedronGeometry args={[0.3, 0]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={1}
+            />
           </mesh>
           {[0, 1, 2, 3].map((i) => (
-            <mesh key={i} rotation={[0, 0, (Math.PI * 2 * i) / 4]} position={[0.5, 0, 0]}>
+            <mesh
+              key={i}
+              rotation={[0, 0, (Math.PI * 2 * i) / 4]}
+              position={[0.5, 0, 0]}
+            >
               <coneGeometry args={[0.08, 0.2, 3]} />
-              <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={0.7} />
+              <meshStandardMaterial
+                color="#ff00ff"
+                emissive="#ff00ff"
+                emissiveIntensity={0.7}
+              />
             </mesh>
           ))}
         </group>
@@ -367,15 +338,27 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh position={[0.5, 0.3, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0.5, 0, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0.5, -0.3, 0]}>
             <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -384,11 +367,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, -Math.PI / 2]}>
           <mesh position={[0, 0.5, 0]}>
             <coneGeometry args={[0.08, 0.4, 6]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh>
             <cylinderGeometry args={[0.06, 0.06, 1.5, 8]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
@@ -397,11 +388,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh position={[0.5, 0, 0]}>
             <sphereGeometry args={[0.2, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh position={[0, 0, 0]}>
             <coneGeometry args={[0.15, 0.6, 8]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={0.5}
+            />
           </mesh>
         </group>
       )}
@@ -409,11 +408,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, -Math.PI / 2]}>
           <mesh position={[0.3, 0, 0]}>
             <coneGeometry args={[0.3, 0.5, 3]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[-0.2, 0, 0]}>
             <boxGeometry args={[0.6, 0.2, 0.2]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={0.8}
+            />
           </mesh>
         </group>
       )}
@@ -421,11 +428,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <boxGeometry args={[0.8, 0.2, 0.2]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
           <mesh>
             <boxGeometry args={[0.2, 0.8, 0.2]} />
-            <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -433,7 +448,11 @@ function ActionVisualization({ action }: { action: Action }) {
         <group rotation={[0, 0, Math.PI / 4]}>
           <mesh position={[0, 0.4, 0]}>
             <boxGeometry args={[0.15, 1, 0.05]} />
-            <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ff00ff"
+              emissive="#ff00ff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, -0.3, 0]}>
             <boxGeometry args={[0.25, 0.3, 0.1]} />
@@ -445,11 +464,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <sphereGeometry args={[0.4, 16, 16]} />
-            <meshStandardMaterial color="#ff6600" emissive="#ff6600" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#ff6600"
+              emissive="#ff6600"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh position={[0, 0.5, 0]}>
             <cylinderGeometry args={[0.05, 0.05, 0.3, 8]} />
-            <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#ffff00"
+              emissive="#ffff00"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -457,11 +484,19 @@ function ActionVisualization({ action }: { action: Action }) {
         <group>
           <mesh>
             <cylinderGeometry args={[0.6, 0.4, 0.1, 6]} />
-            <meshStandardMaterial color="#0088ff" emissive="#0088ff" emissiveIntensity={0.8} />
+            <meshStandardMaterial
+              color="#0088ff"
+              emissive="#0088ff"
+              emissiveIntensity={0.8}
+            />
           </mesh>
           <mesh>
             <torusGeometry args={[0.5, 0.08, 8, 6]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1} />
+            <meshStandardMaterial
+              color="#00ffff"
+              emissive="#00ffff"
+              emissiveIntensity={1}
+            />
           </mesh>
         </group>
       )}
@@ -470,7 +505,11 @@ function ActionVisualization({ action }: { action: Action }) {
           {[0, 1, 2, 3, 4].map((i) => (
             <mesh key={i} rotation={[0, 0, (Math.PI * 2 * i) / 5]}>
               <coneGeometry args={[0.15, 0.6, 3]} />
-              <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={1} />
+              <meshStandardMaterial
+                color="#ff00ff"
+                emissive="#ff00ff"
+                emissiveIntensity={1}
+              />
             </mesh>
           ))}
         </group>
@@ -478,193 +517,108 @@ function ActionVisualization({ action }: { action: Action }) {
       <ambientLight intensity={0.5} />
       <pointLight position={[2, 2, 2]} intensity={1} />
     </group>
-  )
+  );
 }
 
 function DamageTypeVisualization({
   damageType,
 }: {
-  damageType: (typeof ELEMENTAL_DATA)[0]
+  damageType: (typeof AVAILABLE_ELEMENTALS)[0];
 }) {
   return (
     <group>
-      <mesh>
-        <sphereGeometry args={[0.4, 32, 32]} />
-        <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.8} />
-      </mesh>
-
-      {damageType.type === DamageType.KINETIC && (
-        <>
-          <mesh position={[0.7, 0, 0]}>
-            <boxGeometry args={[0.15, 0.15, 0.15]} />
-            <meshStandardMaterial color={damageType.color} />
-          </mesh>
-          <mesh position={[-0.7, 0, 0]}>
-            <boxGeometry args={[0.15, 0.15, 0.15]} />
-            <meshStandardMaterial color={damageType.color} />
-          </mesh>
-        </>
-      )}
-
-      {damageType.type === DamageType.ENERGY && (
-        <>
-          <mesh position={[0, 0.8, 0]}>
-            <octahedronGeometry args={[0.2, 0]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={1} />
-          </mesh>
-          <mesh rotation={[0, Math.PI / 2, 0]}>
-            <torusGeometry args={[0.6, 0.05, 16, 32]} />
-            <meshBasicMaterial color={damageType.color} transparent opacity={0.6} />
-          </mesh>
-        </>
-      )}
-
-      {damageType.type === DamageType.THERMAL && (
-        <>
-          {[0, 1, 2].map((i) => (
-            <mesh key={i} position={[0, 0.5 + i * 0.2, 0]}>
-              <sphereGeometry args={[0.15 - i * 0.03, 16, 16]} />
-              <meshStandardMaterial
-                color={damageType.color}
-                emissive={damageType.color}
-                emissiveIntensity={1 - i * 0.2}
-                transparent
-                opacity={0.8 - i * 0.2}
-              />
-            </mesh>
-          ))}
-        </>
-      )}
-
-      {damageType.type === DamageType.CORROSIVE && (
-        <>
-          <mesh rotation={[Math.PI / 4, 0, 0]}>
-            <torusGeometry args={[0.5, 0.08, 8, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.6} />
-          </mesh>
-          <mesh rotation={[0, 0, Math.PI / 4]}>
-            <torusGeometry args={[0.6, 0.06, 8, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.4} />
-          </mesh>
-        </>
-      )}
-
-      {damageType.type === DamageType.EXPLOSIVE && (
-        <>
-          <mesh>
-            <icosahedronGeometry args={[0.7, 0]} />
-            <meshBasicMaterial color={damageType.color} transparent opacity={0.3} wireframe />
-          </mesh>
-          <mesh>
-            <dodecahedronGeometry args={[0.5, 0]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.6} />
-          </mesh>
-        </>
-      )}
-
-      {damageType.type === DamageType.GLACIAL && (
-        <>
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <mesh key={i} rotation={[0, (Math.PI * 2 * i) / 8, Math.PI / 4]} position={[0.55, 0, 0]}>
-              <coneGeometry args={[0.08, 0.25, 6]} />
-              <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.5} />
-            </mesh>
-          ))}
-        </>
-      )}
-
-      {damageType.type === DamageType.VIRAL && (
-        <group>
-          <mesh position={[0, 0, 0]}>
-            <torusKnotGeometry args={[0.4, 0.1, 64, 8]} />
-            <meshStandardMaterial color={damageType.color} emissive={damageType.color} emissiveIntensity={0.7} />
-          </mesh>
-        </group>
-      )}
-
-      {damageType.type === DamageType.CONCUSSION && (
-        <group>
-          <mesh rotation={[0, 0, Math.PI / 4]}>
-            <coneGeometry args={[0.4, 1, 8]} />
-            <meshStandardMaterial
-              color={damageType.color}
-              emissive={damageType.color}
-              emissiveIntensity={0.7}
-              transparent
-              opacity={0.6}
-            />
-          </mesh>
-          <mesh position={[0, 0.8, 0]}>
-            <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.8} />
-          </mesh>
-        </group>
-      )}
-
-      <ambientLight intensity={0.5} />
-      <pointLight position={[2, 2, 2]} intensity={1} />
+      <ElementalProjectileVisual damageType={damageType.type} scale={1.5} />
+      <ambientLight intensity={0.6} />
     </group>
-  )
+  );
 }
 
 function RotatingVisualization({ children }: { children: React.ReactNode }) {
-  return <group rotation={[0, Date.now() * 0.001, 0]}>{children}</group>
+  return <group rotation={[0, Date.now() * 0.001, 0]}>{children}</group>;
 }
 
-export function Codex({ isOpen, onClose }: CodexProps) {
-  const [activeTab, setActiveTab] = useState<"triggers" | "actions" | "damage-types">("triggers")
-  const [selectedItem, setSelectedItem] = useState<Trigger | Action | (typeof ELEMENTAL_DATA)[0] | null>(null)
-  const [showMobileDetail, setShowMobileDetail] = useState(false)
+export function Codex({ isOpen, onClose, embedded }: CodexProps) {
+  const [activeTab, setActiveTab] = useState<
+    "triggers" | "actions" | "damage-types"
+  >("triggers");
+  const [selectedItem, setSelectedItem] = useState<
+    Trigger | Action | (typeof AVAILABLE_ELEMENTALS)[0] | null
+  >(null);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const items =
     activeTab === "triggers"
       ? [...AVAILABLE_TRIGGERS].sort((a, b) => a.name.localeCompare(b.name))
       : activeTab === "actions"
         ? [...AVAILABLE_ACTIONS].sort((a, b) => a.name.localeCompare(b.name))
-        : [...ELEMENTAL_DATA].sort((a, b) => a.name.localeCompare(b.name))
+        : [...AVAILABLE_ELEMENTALS].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          );
 
-  const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false })
+  const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false });
 
   const getClearanceColor = () => {
     switch (activeTab) {
       case "triggers":
-        return "text-secondary"
+        return "text-secondary";
       case "actions":
-        return "text-accent"
+        return "text-accent";
       case "damage-types":
-        return "text-primary"
+        return "text-primary";
       default:
-        return "text-foreground"
+        return "text-foreground";
     }
-  }
+  };
 
   const getElementalData = (damageType: DamageType) => {
-    return ELEMENTAL_DATA.find((el) => el.type === damageType)
-  }
+    return AVAILABLE_ELEMENTALS.find((el) => el.type === damageType);
+  };
 
   const getCoreTypeInfo = (action: Action) => {
     if (action.coreType === "movement") {
-      return { label: "MOVEMENT CORE", color: "#a855f7", bgColor: "#a855f710", borderColor: "#a855f730" }
+      return {
+        label: "MOVEMENT CORE",
+        color: "#a855f7",
+        bgColor: "#a855f710",
+        borderColor: "#a855f730",
+      };
     } else {
-      return { label: "TACTICAL CORE", color: "#f97316", bgColor: "#f9731610", borderColor: "#f9731630" }
+      return {
+        label: "TACTICAL CORE",
+        color: "#f97316",
+        bgColor: "#f9731610",
+        borderColor: "#f9731630",
+      };
     }
-  }
+  };
 
   const handleItemSelect = (item: typeof selectedItem) => {
-    setSelectedItem(item)
-    setShowMobileDetail(true)
-  }
+    setSelectedItem(item);
+    setShowMobileDetail(true);
+  };
 
   const handleMobileBack = () => {
-    setShowMobileDetail(false)
-    setSelectedItem(null)
-  }
+    setShowMobileDetail(false);
+    setSelectedItem(null);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4">
-      <div className="w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden">
+    <div
+      className={
+        embedded
+          ? "w-full h-full flex flex-col bg-black/80 backdrop-blur-md overflow-hidden border-2 border-primary/50"
+          : "fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-2 sm:p-4"
+      }
+    >
+      <div
+        className={
+          embedded
+            ? "w-full h-full flex flex-col"
+            : "w-full h-full sm:w-[90vw] sm:h-[85vh] max-w-6xl bg-card/95 border-2 border-primary shadow-2xl flex flex-col overflow-hidden"
+        }
+      >
         <div className="flex items-center justify-between p-3 sm:p-4 border-b-2 border-primary/50 bg-background/80">
           <div className="flex items-center gap-3 sm:gap-4 flex-1">
             {showMobileDetail && (
@@ -682,7 +636,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">BREACH TERMINAL</h2>
+                <h2 className="text-sm sm:text-xl font-bold text-primary tracking-wider">
+                  Codex
+                </h2>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 mt-0.5 sm:mt-1 text-[9px] sm:text-xs text-muted-foreground font-mono">
                 <span>ACCESS: GRANTED</span>
@@ -691,14 +647,16 @@ export function Codex({ isOpen, onClose }: CodexProps) {
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="hover:bg-destructive/20 h-8 w-8 sm:h-10 sm:w-10 border border-border flex-shrink-0"
-          >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-          </Button>
+          {!embedded && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-destructive/20 h-8 w-8 sm:h-10 sm:w-10 border border-border flex-shrink-0"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
+          )}
         </div>
 
         <div
@@ -707,9 +665,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "triggers" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("triggers")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("triggers");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "triggers"
@@ -723,9 +681,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "actions" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("actions")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("actions");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "actions"
@@ -739,9 +697,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
           <Button
             variant={activeTab === "damage-types" ? "default" : "outline"}
             onClick={() => {
-              setActiveTab("damage-types")
-              setSelectedItem(null)
-              setShowMobileDetail(false)
+              setActiveTab("damage-types");
+              setSelectedItem(null);
+              setShowMobileDetail(false);
             }}
             className={`flex-1 h-10 sm:h-11 text-[10px] sm:text-sm font-mono border-2 ${
               activeTab === "damage-types"
@@ -759,12 +717,19 @@ export function Codex({ isOpen, onClose }: CodexProps) {
             className={`w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-border/50 bg-background/30 ${showMobileDetail ? "hidden md:block" : "block"} overflow-y-auto`}
           >
             {items.map((item) => {
-              const isDamageType = "color" in item
-              const key = isDamageType ? (item as (typeof ELEMENTAL_DATA)[0]).type : (item as Trigger | Action).id
+              const isDamageType = "color" in item;
+              const key = isDamageType
+                ? (item as (typeof AVAILABLE_ELEMENTALS)[0]).type
+                : (item as Trigger | Action).id;
 
-              const actionItem = !isDamageType ? (item as Action) : null
-              const elementalData = actionItem?.damageType ? getElementalData(actionItem.damageType) : null
-              const coreTypeInfo = actionItem && "coreType" in actionItem ? getCoreTypeInfo(actionItem) : null
+              const actionItem = !isDamageType ? (item as Action) : null;
+              const elementalData = actionItem?.damageType
+                ? getElementalData(actionItem.damageType)
+                : null;
+              const coreTypeInfo =
+                actionItem && "coreType" in actionItem
+                  ? getCoreTypeInfo(actionItem)
+                  : null;
 
               return (
                 <button
@@ -783,16 +748,18 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           <div
                             className="w-2 h-2 rounded-full animate-pulse"
                             style={{
-                              backgroundColor: (item as (typeof ELEMENTAL_DATA)[0]).color,
+                              backgroundColor: (
+                                item as (typeof AVAILABLE_ELEMENTALS)[0]
+                              ).color,
                             }}
                           />
                           <div className="font-bold text-xs sm:text-sm tracking-wide uppercase">
-                            {(item as (typeof ELEMENTAL_DATA)[0]).name}
+                            {(item as (typeof AVAILABLE_ELEMENTALS)[0]).name}
                           </div>
                         </div>
                       </div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">
-                        {(item as (typeof ELEMENTAL_DATA)[0]).description}
+                        {(item as (typeof AVAILABLE_ELEMENTALS)[0]).description}
                       </div>
                     </>
                   ) : (
@@ -836,7 +803,7 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                     </>
                   )}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -856,11 +823,17 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                   <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
                     <RotatingVisualization>
                       {activeTab === "triggers" ? (
-                        <TriggerVisualization trigger={selectedItem as Trigger} />
+                        <TriggerVisualization
+                          trigger={selectedItem as Trigger}
+                        />
                       ) : activeTab === "actions" ? (
                         <ActionVisualization action={selectedItem as Action} />
                       ) : (
-                        <DamageTypeVisualization damageType={selectedItem as (typeof ELEMENTAL_DATA)[0]} />
+                        <DamageTypeVisualization
+                          damageType={
+                            selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                          }
+                        />
                       )}
                     </RotatingVisualization>
                     <OrbitControls enableZoom={false} enablePan={false} />
@@ -877,7 +850,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                         <div
                           className="border-l-4 pl-3 sm:pl-4"
                           style={{
-                            borderColor: (selectedItem as (typeof ELEMENTAL_DATA)[0]).color,
+                            borderColor: (
+                              selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                            ).color,
                           }}
                         >
                           <div className="flex items-start justify-between gap-2 mb-2">
@@ -886,23 +861,38 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                                 DAMAGE CLASSIFICATION
                               </div>
                               <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-wider">
-                                {(selectedItem as (typeof ELEMENTAL_DATA)[0]).name}
+                                {
+                                  (
+                                    selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                                  ).name
+                                }
                               </h3>
                             </div>
                             <span
                               className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 rounded border-2 font-bold ${
-                                (selectedItem as (typeof ELEMENTAL_DATA)[0]).threat === "CRITICAL"
+                                (
+                                  selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                                ).threat === "CRITICAL"
                                   ? "border-destructive text-destructive bg-destructive/10"
-                                  : (selectedItem as (typeof ELEMENTAL_DATA)[0]).threat === "HIGH"
+                                  : (
+                                        selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                                      ).threat === "HIGH"
                                     ? "border-accent text-accent bg-accent/10"
                                     : "border-muted-foreground text-muted-foreground bg-muted/20"
                               }`}
                             >
-                              {(selectedItem as (typeof ELEMENTAL_DATA)[0]).threat}
+                              {
+                                (
+                                  selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                                ).threat
+                              }
                             </span>
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).description}
+                            {
+                              (selectedItem as (typeof AVAILABLE_ELEMENTALS)[0])
+                                .description
+                            }
                           </p>
                         </div>
 
@@ -911,28 +901,36 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                             [TACTICAL ANALYSIS]
                           </div>
                           <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).effect}
+                            {
+                              (selectedItem as (typeof AVAILABLE_ELEMENTALS)[0])
+                                .effect
+                            }
                           </div>
                         </div>
 
                         <div
                           className="p-3 sm:p-4 rounded border-2"
                           style={{
-                            backgroundColor: `${(selectedItem as (typeof ELEMENTAL_DATA)[0]).color}10`,
-                            borderColor: `${(selectedItem as (typeof ELEMENTAL_DATA)[0]).color}40`,
+                            backgroundColor: `${(selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]).color}10`,
+                            borderColor: `${(selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]).color}40`,
                           }}
                         >
                           <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
                             <span
                               style={{
-                                color: (selectedItem as (typeof ELEMENTAL_DATA)[0]).color,
+                                color: (
+                                  selectedItem as (typeof AVAILABLE_ELEMENTALS)[0]
+                                ).color,
                               }}
                             >
                               [STATUS EFFECT]
                             </span>
                           </div>
                           <div className="text-xs sm:text-sm text-foreground leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).statusEffect}
+                            {
+                              (selectedItem as (typeof AVAILABLE_ELEMENTALS)[0])
+                                .statusEffect
+                            }
                           </div>
                         </div>
 
@@ -944,7 +942,10 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                             </div>
                           </div>
                           <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-                            {(selectedItem as (typeof ELEMENTAL_DATA)[0]).narrative}
+                            {
+                              (selectedItem as (typeof AVAILABLE_ELEMENTALS)[0])
+                                .narrative
+                            }
                           </div>
                         </div>
                       </div>
@@ -955,7 +956,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           style={{ borderColor: "currentColor" }}
                         >
                           <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">
-                            {activeTab === "triggers" ? "CONDITIONAL PROTOCOL" : "EXECUTION PROTOCOL"}
+                            {activeTab === "triggers"
+                              ? "CONDITIONAL PROTOCOL"
+                              : "EXECUTION PROTOCOL"}
                           </div>
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h3 className="text-lg sm:text-2xl font-bold uppercase tracking-wider">
@@ -965,38 +968,54 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                               <div
                                 className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-[10px] sm:text-xs font-bold tracking-wider"
                                 style={{
-                                  backgroundColor: getCoreTypeInfo(selectedItem as Action).bgColor,
-                                  borderColor: getCoreTypeInfo(selectedItem as Action).borderColor,
-                                  color: getCoreTypeInfo(selectedItem as Action).color,
+                                  backgroundColor: getCoreTypeInfo(
+                                    selectedItem as Action,
+                                  ).bgColor,
+                                  borderColor: getCoreTypeInfo(
+                                    selectedItem as Action,
+                                  ).borderColor,
+                                  color: getCoreTypeInfo(selectedItem as Action)
+                                    .color,
                                 }}
                               >
                                 <div
                                   className="w-1.5 h-1.5 rounded-full"
                                   style={{
-                                    backgroundColor: getCoreTypeInfo(selectedItem as Action).color,
+                                    backgroundColor: getCoreTypeInfo(
+                                      selectedItem as Action,
+                                    ).color,
                                   }}
                                 />
                                 {getCoreTypeInfo(selectedItem as Action).label}
                               </div>
                             )}
-                            {"damageType" in selectedItem && (selectedItem as Action).damageType && (
-                              <div
-                                className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-xs font-bold"
-                                style={{
-                                  backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}15`,
-                                  borderColor: getElementalData((selectedItem as Action).damageType!)?.color,
-                                  color: getElementalData((selectedItem as Action).damageType!)?.color,
-                                }}
-                              >
+                            {"damageType" in selectedItem &&
+                              (selectedItem as Action).damageType && (
                                 <div
-                                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                  className="flex items-center gap-1.5 px-2 py-1 rounded border-2 text-xs font-bold"
                                   style={{
-                                    backgroundColor: getElementalData((selectedItem as Action).damageType!)?.color,
+                                    backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}15`,
+                                    borderColor: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
+                                    color: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
                                   }}
-                                />
-                                {getElementalData((selectedItem as Action).damageType!)?.name.toUpperCase()}
-                              </div>
-                            )}
+                                >
+                                  <div
+                                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                    style={{
+                                      backgroundColor: getElementalData(
+                                        (selectedItem as Action).damageType!,
+                                      )?.color,
+                                    }}
+                                  />
+                                  {getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.name.toUpperCase()}
+                                </div>
+                              )}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                             {(selectedItem as Trigger | Action).description}
@@ -1007,13 +1026,23 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           <div
                             className="p-3 sm:p-4 rounded border-2"
                             style={{
-                              backgroundColor: getCoreTypeInfo(selectedItem as Action).bgColor,
-                              borderColor: getCoreTypeInfo(selectedItem as Action).borderColor,
+                              backgroundColor: getCoreTypeInfo(
+                                selectedItem as Action,
+                              ).bgColor,
+                              borderColor: getCoreTypeInfo(
+                                selectedItem as Action,
+                              ).borderColor,
                             }}
                           >
                             <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
-                              <span style={{ color: getCoreTypeInfo(selectedItem as Action).color }}>
-                                [{getCoreTypeInfo(selectedItem as Action).label}]
+                              <span
+                                style={{
+                                  color: getCoreTypeInfo(selectedItem as Action)
+                                    .color,
+                                }}
+                              >
+                                [{getCoreTypeInfo(selectedItem as Action).label}
+                                ]
                               </span>
                             </div>
                             <div className="text-xs sm:text-sm text-foreground leading-relaxed">
@@ -1024,33 +1053,49 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                           </div>
                         )}
 
-                        {"damageType" in selectedItem && (selectedItem as Action).damageType && (
-                          <div
-                            className="p-3 sm:p-4 rounded border-2"
-                            style={{
-                              backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}10`,
-                              borderColor: `${getElementalData((selectedItem as Action).damageType!)?.color}40`,
-                            }}
-                          >
-                            <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
-                              <span
-                                style={{
-                                  color: getElementalData((selectedItem as Action).damageType!)?.color,
-                                }}
-                              >
-                                [ELEMENTAL DAMAGE:{" "}
-                                {getElementalData((selectedItem as Action).damageType!)?.name.toUpperCase()}]
-                              </span>
+                        {"damageType" in selectedItem &&
+                          (selectedItem as Action).damageType && (
+                            <div
+                              className="p-3 sm:p-4 rounded border-2"
+                              style={{
+                                backgroundColor: `${getElementalData((selectedItem as Action).damageType!)?.color}10`,
+                                borderColor: `${getElementalData((selectedItem as Action).damageType!)?.color}40`,
+                              }}
+                            >
+                              <div className="text-[10px] sm:text-xs font-bold tracking-wider mb-2">
+                                <span
+                                  style={{
+                                    color: getElementalData(
+                                      (selectedItem as Action).damageType!,
+                                    )?.color,
+                                  }}
+                                >
+                                  [ELEMENTAL DAMAGE:{" "}
+                                  {getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.name.toUpperCase()}
+                                  ]
+                                </span>
+                              </div>
+                              <div className="text-xs sm:text-sm text-foreground leading-relaxed mb-2">
+                                {
+                                  getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.effect
+                                }
+                              </div>
+                              <div className="text-[10px] sm:text-xs text-muted-foreground pt-2 border-t border-current/20">
+                                <span className="font-bold">
+                                  Status Effect:
+                                </span>{" "}
+                                {
+                                  getElementalData(
+                                    (selectedItem as Action).damageType!,
+                                  )?.statusEffect
+                                }
+                              </div>
                             </div>
-                            <div className="text-xs sm:text-sm text-foreground leading-relaxed mb-2">
-                              {getElementalData((selectedItem as Action).damageType!)?.effect}
-                            </div>
-                            <div className="text-[10px] sm:text-xs text-muted-foreground pt-2 border-t border-current/20">
-                              <span className="font-bold">Status Effect:</span>{" "}
-                              {getElementalData((selectedItem as Action).damageType!)?.statusEffect}
-                            </div>
-                          </div>
-                        )}
+                          )}
 
                         {"cooldown" in selectedItem && (
                           <div className="p-3 sm:p-4 rounded border-2 border-secondary/30 bg-secondary/10">
@@ -1061,7 +1106,9 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                               <div className="text-2xl sm:text-3xl font-bold text-foreground">
                                 {(selectedItem as Action).cooldown}
                               </div>
-                              <div className="text-xs sm:text-sm text-muted-foreground">MILLISECONDS</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground">
+                                MILLISECONDS
+                              </div>
                             </div>
                             <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                               Minimum interval between protocol executions
@@ -1110,10 +1157,16 @@ export function Codex({ isOpen, onClose }: CodexProps) {
                   </div>
                   <p className="text-xs sm:text-sm uppercase tracking-wider">
                     [SELECT{" "}
-                    {activeTab === "triggers" ? "CONDITIONAL" : activeTab === "actions" ? "EXECUTION" : "DAMAGE VECTOR"}
+                    {activeTab === "triggers"
+                      ? "CONDITIONAL"
+                      : activeTab === "actions"
+                        ? "EXECUTION"
+                        : "DAMAGE VECTOR"}
                     ]
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-1">Access clearance: ALPHA</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-1">
+                    Access clearance: ALPHA
+                  </p>
                 </div>
               </div>
             )}
@@ -1121,5 +1174,5 @@ export function Codex({ isOpen, onClose }: CodexProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

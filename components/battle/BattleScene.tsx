@@ -1,7 +1,7 @@
 import { Html } from "@react-three/drei";
 import { BattleGrid } from "./BattleGrid";
 import { CustomizableFighter } from "../customizable-fighter";
-import { Projectiles } from "../projectiles";
+import { Projectiles } from "@/components/bullets/projectiles";
 import { EnemyVisuals } from "../enemies/EnemyVisuals";
 import { UnifiedIntegrityBar } from "../unified-integrity-bar";
 import type { GameState } from "@/types/game";
