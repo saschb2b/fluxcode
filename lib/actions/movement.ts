@@ -1,4 +1,4 @@
-import { BattleContext } from "@/types/game";
+import { Action, BattleContext } from "@/types/game";
 
 // Helper: Checks if a tile is occupied by the Opponent or any other Enemy
 const isTileOccupied = (
@@ -25,7 +25,7 @@ const isTileOccupied = (
   });
 };
 
-export const MOVEMENT_ACTIONS = [
+export const MOVEMENT_ACTIONS: Action[] = [
   {
     id: "move-forward",
     name: "Step Forward",
