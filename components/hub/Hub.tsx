@@ -15,19 +15,27 @@ import ConstructTab from "./construct/ConstructTab";
 import { ArchiveTab } from "./archive/ArchiveTab";
 import ShopTab from "./shop/ShopTab";
 import { PlayerProgress } from "@/lib/meta-progression";
+import NetworkTab from "./network/NetworkTab";
+import { NetworkContractWithClaimed } from "@/lib/network-contracts";
 
 interface HubProps {
   onOpenCalibration: () => void;
   onOpenSlotManager: () => void;
   onStartRun: () => void;
   onOpenBattleArena: () => void;
+  // shop
   progress: PlayerProgress;
   onProgressUpdate: (progress: PlayerProgress) => void;
+  // network
+  dailyContracts: NetworkContractWithClaimed[];
+  weeklyContracts: NetworkContractWithClaimed[];
+  onClaimReward: (contractId: string, refreshType: "daily" | "weekly") => void;
+  onForceRefresh?: () => void;
   // legacy
   selectedConstruct: any;
 }
 
-const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "ARCHIVE"];
+const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "NETWORK", "ARCHIVE"];
 
 export default function Hub(props: HubProps) {
   const [activeTab, setActiveTab] = useState<Tab>("PLAY");
@@ -118,6 +126,15 @@ export default function Hub(props: HubProps) {
           <ShopTab
             playerProgress={props.progress}
             onPurchase={props.onProgressUpdate}
+          />
+        )}
+
+        {activeTab === "NETWORK" && (
+          <NetworkTab
+            dailyContracts={props.dailyContracts}
+            weeklyContracts={props.weeklyContracts}
+            onClaimReward={props.onClaimReward}
+            onForceRefresh={props.onForceRefresh}
           />
         )}
 

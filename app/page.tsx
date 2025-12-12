@@ -7,7 +7,7 @@ import { StartScreen } from "@/components/startScreen/StartScreen";
 import Hub from "@/components/hub/Hub";
 import { ConstructSelection } from "@/components/hub/construct/construct-selection";
 import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
-import { NetworkContractsView } from "@/components/network-contracts-view";
+import { NetworkContractsView } from "@/components/hub/network/NetworkPass";
 import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
 import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
 import { WelcomeDialog } from "@/components/welcome-dialog";
@@ -310,6 +310,14 @@ export default function Home() {
             onOpenBattleArena={handleOpenBattleArena}
             progress={gameState.playerProgress}
             onProgressUpdate={gameState.updatePlayerProgress}
+            dailyContracts={
+              gameState.playerProgress.contractProgress?.dailyContracts || []
+            }
+            weeklyContracts={
+              gameState.playerProgress.contractProgress?.weeklyContracts || []
+            }
+            onClaimReward={handleClaimContractReward}
+            onForceRefresh={handleForceRefreshContracts}
           />
         </main>
       )}
@@ -363,7 +371,7 @@ export default function Home() {
           <GameUI
             gameState={gameState}
             onNewRun={handleNewRun}
-            onOpenMetaShop={handleOpenMetaShop}
+            onOpenMetaShop={() => {}}
           />
         </main>
       )}
@@ -536,9 +544,9 @@ export default function Home() {
           weeklyContracts={
             gameState.playerProgress.contractProgress.weeklyContracts
           }
-          onClose={handleCloseContracts}
           onClaimReward={handleClaimContractReward}
           onForceRefresh={handleForceRefreshContracts}
+          onClose={handleCloseContracts}
         />
       )}
     </>

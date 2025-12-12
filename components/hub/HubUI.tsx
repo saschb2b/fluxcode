@@ -11,7 +11,7 @@ interface HubUIProps {
   selectedConstruct: any;
 }
 
-const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "ARCHIVE"];
+const TABS: Tab[] = ["PLAY", "CONSTRUCT", "SHOP", "NETWORK", "ARCHIVE"];
 
 export function HubUI(props: HubUIProps) {
   const details =
