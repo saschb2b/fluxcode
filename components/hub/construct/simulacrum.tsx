@@ -13,7 +13,7 @@ import {
 } from "@/lib/fighter-parts";
 import type { CustomFighterClass } from "@/lib/meta-progression";
 import { buildTriggerActionPairs } from "@/lib/protocol-builder";
-import type { BattleState, GameState } from "@/types/game";
+import type { BattleState, ExecutedProtocol, GameState } from "@/types/game";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import {
@@ -84,7 +84,7 @@ export function Simulacrum({
     [],
   );
   const peakDpsRef = useRef<number>(0);
-  const [logicLogs, setLogicLogs] = useState<LogicLogEntry[]>([]);
+  const [logicLogs, setLogicLogs] = useState<ExecutedProtocol[]>([]);
 
   const [metrics, setMetrics] = useState({
     totalDamage: 0,
@@ -295,16 +295,7 @@ export function Simulacrum({
       const update = battleEngineRef.current!.tick(deltaTime);
 
       if (update.executedProtocols && update.executedProtocols.length > 0) {
-        const newLogs: LogicLogEntry[] = update.executedProtocols.map((p) => ({
-          id: crypto.randomUUID(),
-          timestamp: Date.now(),
-          type: p.source === "movement" ? "movement" : "tactical",
-          name: p.actionName,
-          triggerName: p.triggerName,
-          cooldown: p.cooldown,
-        }));
-
-        setLogicLogs((prev) => [...prev, ...newLogs].slice(-10)); // Keep history manageable
+        setLogicLogs(update.executedProtocols);
       }
 
       if (update.damageDealt && update.damageDealt.amount > 0) {

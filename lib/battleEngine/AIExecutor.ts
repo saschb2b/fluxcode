@@ -108,6 +108,7 @@ export class AIExecutor {
         return {
           result: { ...actionResult },
           metadata: {
+            actionId: pair.action.id,
             triggerName: pair.trigger.name,
             actionName: pair.action.name,
             cooldown: adjustedCooldown,

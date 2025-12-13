@@ -231,7 +231,8 @@ export class BattleEngine {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
         source: "movement",
-        triggerName: movementAction.metadata.triggerName, // <--- Access .metadata
+        actionId: movementAction.metadata.actionId,
+        triggerName: movementAction.metadata.triggerName,
         actionName: movementAction.metadata.actionName,
         cooldown: movementAction.metadata.cooldown,
       });
@@ -253,6 +254,7 @@ export class BattleEngine {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
         source: "tactical",
+        actionId: tacticalAction.metadata.actionId,
         triggerName: tacticalAction.metadata.triggerName,
         actionName: tacticalAction.metadata.actionName,
         cooldown: tacticalAction.metadata.cooldown,

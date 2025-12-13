@@ -269,6 +269,7 @@ export type ActionResult =
 export interface AIExecutionResult {
   result: ActionResult;
   metadata: {
+    actionId: string;
     triggerName: string;
     actionName: string;
     cooldown: number;
@@ -326,6 +327,7 @@ export interface ExecutedProtocol {
   id: string; // UUID for React keys
   timestamp: number;
   source: "movement" | "tactical";
+  actionId: string;
   triggerName: string; // e.g. "Enemy < 50% HP"
   actionName: string; // e.g. "Heavy Shot"
   cooldown: number; // e.g. 1500 (ms)
