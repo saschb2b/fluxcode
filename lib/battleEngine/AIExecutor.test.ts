@@ -96,6 +96,7 @@ describe("AIExecutor", () => {
       enemyStatusEffects: [],
       justTookDamage: false,
       isPlayer: false,
+      enemies: [],
     };
     return context;
   };
@@ -144,9 +145,9 @@ describe("AIExecutor", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result?.type).toBe("shoot");
-      expect(result?.triggerId).toBe("t1");
-      expect(result?.actionId).toBe("a1");
+      expect(result?.result.type).toBe("shoot");
+      expect(result?.metadata.triggerName).toBe("Always True");
+      expect(result?.metadata.actionId).toBe("a1");
     });
 
     /**
@@ -208,7 +209,7 @@ describe("AIExecutor", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result?.triggerId).toBe("t1");
+      expect(result?.metadata.triggerName).toBe("Always True");
     });
 
     /**
@@ -236,7 +237,7 @@ describe("AIExecutor", () => {
         "player-1",
       );
 
-      expect(result?.actionId).toBe("a1");
+      expect(result?.metadata.actionId).toBe("a1");
     });
 
     /**
@@ -337,7 +338,7 @@ describe("AIExecutor", () => {
         "player-1",
       );
 
-      expect(result?.actionId).toBe("a1");
+      expect(result?.metadata.actionId).toBe("a1");
     });
 
     /**
@@ -568,7 +569,7 @@ describe("AIExecutor", () => {
 
       const pairs: TriggerActionPair[] = [
         {
-          trigger: createAlwaysTrueTrigger("t1"),
+          trigger: createAlwaysTrueTrigger(),
           action: customAction,
           priority: 1,
           enabled: true,
@@ -584,11 +585,11 @@ describe("AIExecutor", () => {
         "player-1",
       );
 
-      expect(result?.type).toBe("shoot");
-      expect(result?.damage).toBe(75);
-      expect(result?.damageType).toBe(DamageType.THERMAL);
-      expect(result?.triggerId).toBe("t1");
-      expect(result?.actionId).toBe("a1");
+      expect(result?.result.type).toBe("shoot");
+      expect(result?.result.damage).toBe(75);
+      expect(result?.result.damageType).toBe(DamageType.THERMAL);
+      expect(result?.metadata.triggerName).toBe("Always True");
+      expect(result?.metadata.actionId).toBe("a1");
     });
   });
 });
