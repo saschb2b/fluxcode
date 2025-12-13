@@ -288,7 +288,7 @@ export class BattleEngine {
       );
 
       if (movementAction) {
-        this.applyAction(movementAction, false, update, enemy);
+        this.applyAction(movementAction.result, false, update, enemy);
         return;
       }
 
@@ -302,7 +302,7 @@ export class BattleEngine {
       );
 
       if (tacticalAction) {
-        this.applyAction(tacticalAction, false, update, enemy);
+        this.applyAction(tacticalAction.result, false, update, enemy);
       }
     });
   }
