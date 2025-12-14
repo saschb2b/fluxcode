@@ -203,8 +203,6 @@ export function GameUI({ gameState, onNewRun }: GameUIProps) {
         unlockedActions={gameState.unlockedActions}
         onAddPair={gameState.addTriggerActionPair}
         onRemovePair={gameState.removeTriggerActionPair}
-        onUpdatePriority={gameState.updatePairPriority}
-        onTogglePair={gameState.togglePair}
         onAddMovementPair={gameState.addMovementPair}
         onAddTacticalPair={gameState.addTacticalPair}
         onRemoveMovementPair={gameState.removeMovementPair}

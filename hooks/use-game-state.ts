@@ -996,18 +996,6 @@ export function useGameState(): GameState {
     setTriggerActionPairs((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const updatePairPriority = useCallback((index: number, priority: number) => {
-    setTriggerActionPairs((prev) =>
-      prev.map((pair, i) => (i === index ? { ...pair, priority } : pair)),
-    );
-  }, []);
-
-  const togglePair = useCallback((index: number, enabled: boolean) => {
-    setTriggerActionPairs((prev) =>
-      prev.map((pair, i) => (i === index ? { ...pair, enabled } : pair)),
-    );
-  }, []);
-
   const addMovementPair = useCallback((trigger: Trigger, action: Action) => {
     setMovementPairs((prev) => [
       ...prev,
@@ -1379,8 +1367,6 @@ export function useGameState(): GameState {
     resetGame,
     addTriggerActionPair,
     removeTriggerActionPair,
-    updatePairPriority,
-    togglePair,
     showRewardSelection,
     availableRewardTriggers,
     availableRewardActions,

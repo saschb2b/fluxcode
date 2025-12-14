@@ -475,8 +475,6 @@ export interface GameState {
   resetGame: () => void;
   addTriggerActionPair: (trigger: Trigger, action: Action) => void;
   removeTriggerActionPair: (index: number) => void;
-  updatePairPriority: (index: number, priority: number) => void;
-  togglePair: (index: number, enabled: boolean) => void;
   addMovementPair?: (trigger: Trigger, action: Action) => void; // Added dual-core protocol management functions
   addTacticalPair?: (trigger: Trigger, action: Action) => void;
   removeMovementPair?: (index: number) => void;
