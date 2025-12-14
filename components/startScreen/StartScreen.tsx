@@ -2,419 +2,391 @@
 
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { PerspectiveCamera } from "@react-three/drei";
+import { PerspectiveCamera, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Terminal, ShieldAlert, Cpu, Network } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface StartScreenProps {
   onStart: () => void;
 }
 
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
+// --- VISUALS: THE SHATTERED SOURCE ---
+// Represents the Leviathan's code scattered across the web
+function DataDebris() {
+  const count = 400;
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
-function ResonanceCore() {
-  const coreGroup = useRef<THREE.Group>(null);
-  const particlesRef = useRef<THREE.Points>(null);
-  const dataStreamsRef = useRef<THREE.LineSegments>(null);
-
-  const particleData = useMemo(() => {
-    const count = 800;
-    const positions = new Float32Array(count * 3);
-    const velocities = new Float32Array(count * 3);
-
+  const particles = useMemo(() => {
+    const temp = [];
     for (let i = 0; i < count; i++) {
-      const angle = seededRandom(i * 2) * Math.PI * 2;
-      const radius = 1 + seededRandom(i * 2 + 1) * 2;
-      const y = (seededRandom(i * 3) - 0.5) * 3;
-
-      positions[i * 3] = Math.cos(angle) * radius;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = Math.sin(angle) * radius;
-
-      velocities[i * 3] = (seededRandom(i * 4) - 0.5) * 0.02;
-      velocities[i * 3 + 1] = (seededRandom(i * 4 + 1) - 0.5) * 0.02;
-      velocities[i * 3 + 2] = (seededRandom(i * 4 + 2) - 0.5) * 0.02;
+      const t = Math.random() * 100;
+      const factor = 20 + Math.random() * 100;
+      const speed = 0.01 + Math.random() / 200;
+      const xFactor = -50 + Math.random() * 100;
+      const yFactor = -50 + Math.random() * 100;
+      const zFactor = -50 + Math.random() * 100;
+      temp.push({ t, factor, speed, xFactor, yFactor, zFactor, mx: 0, my: 0 });
     }
+    return temp;
+  }, [count]);
 
-    return { positions, velocities, count };
-  }, []);
+  useFrame((state) => {
+    if (!mesh.current) return;
 
-  const dataStreamLines = useMemo(() => {
-    const lines = new Float32Array(200 * 3);
-    for (let i = 0; i < 100; i++) {
-      const angle = (i / 100) * Math.PI * 2;
-      const startRadius = 0.5;
-      const endRadius = 3.5;
+    // Rotate the whole system slowly (The Web spinning)
+    mesh.current.rotation.y = state.clock.getElapsedTime() * 0.05;
 
-      lines[i * 6] = Math.cos(angle) * startRadius;
-      lines[i * 6 + 1] = 0;
-      lines[i * 6 + 2] = Math.sin(angle) * startRadius;
+    particles.forEach((particle, i) => {
+      let { t } = particle;
+      const { factor, speed, xFactor, yFactor, zFactor } = particle;
+      t = particle.t += speed / 2;
+      const a = Math.cos(t) + Math.sin(t * 1) / 10;
+      const b = Math.sin(t) + Math.cos(t * 2) / 10;
+      const s = Math.cos(t);
 
-      lines[i * 6 + 3] = Math.cos(angle) * endRadius;
-      lines[i * 6 + 4] = 0;
-      lines[i * 6 + 5] = Math.sin(angle) * endRadius;
-    }
-    return lines;
-  }, []);
+      dummy.position.set(
+        (particle.mx / 10) * a +
+          xFactor +
+          Math.cos((t / 10) * factor) +
+          (Math.sin(t * 1) * factor) / 10,
+        (particle.my / 10) * b +
+          yFactor +
+          Math.sin((t / 10) * factor) +
+          (Math.cos(t * 2) * factor) / 10,
+        (particle.my / 10) * b +
+          zFactor +
+          Math.cos((t / 10) * factor) +
+          (Math.sin(t * 3) * factor) / 10,
+      );
 
-  useFrame(({ clock }) => {
-    if (particlesRef.current) {
-      const positions = particlesRef.current.geometry.attributes.position
-        .array as Float32Array;
+      dummy.scale.set(s, s, s);
+      dummy.rotation.set(s * 5, s * 5, s * 5);
+      dummy.updateMatrix();
 
-      for (let i = 0; i < particleData.count; i++) {
-        positions[i * 3] += particleData.velocities[i * 3];
-        positions[i * 3 + 1] += particleData.velocities[i * 3 + 1];
-        positions[i * 3 + 2] += particleData.velocities[i * 3 + 2];
-
-        const dist = Math.sqrt(
-          positions[i * 3] ** 2 +
-            positions[i * 3 + 1] ** 2 +
-            positions[i * 3 + 2] ** 2,
-        );
-
-        if (dist > 4) {
-          const angle = seededRandom(clock.elapsedTime * i) * Math.PI * 2;
-          const radius = 1 + seededRandom(clock.elapsedTime * i + 1) * 2;
-          positions[i * 3] = Math.cos(angle) * radius;
-          positions[i * 3 + 1] =
-            (seededRandom(clock.elapsedTime * i + 2) - 0.5) * 3;
-          positions[i * 3 + 2] = Math.sin(angle) * radius;
-        }
-      }
-
-      particlesRef.current.geometry.attributes.position.needsUpdate = true;
-    }
-
-    if (coreGroup.current) {
-      coreGroup.current.rotation.z += 0.001;
-      const pulse = 0.8 + Math.sin(clock.elapsedTime * 2) * 0.2;
-      coreGroup.current.scale.set(pulse, pulse, pulse);
-    }
+      mesh.current!.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
-    <group ref={coreGroup}>
-      <mesh>
-        <icosahedronGeometry args={[0.8, 4]} />
-        <meshStandardMaterial
-          emissive="#00ffff"
-          emissiveIntensity={0.5}
-          wireframe
-        />
-      </mesh>
-
-      <points ref={particlesRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={particleData.count}
-            array={particleData.positions}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={0.05}
-          sizeAttenuation
-          color="#00ffff"
-          transparent
-          opacity={0.6}
-        />
-      </points>
-
-      <lineSegments ref={dataStreamsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={dataStreamLines.length / 3}
-            array={dataStreamLines}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial
-          color="#ff00ff"
-          transparent
-          opacity={0.3}
-          linewidth={1}
-        />
-      </lineSegments>
-    </group>
+    <>
+      <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
+        <octahedronGeometry args={[0.2, 0]} />
+        <meshBasicMaterial color="#00ff88" wireframe />
+      </instancedMesh>
+    </>
   );
 }
 
 function Scene() {
   return (
     <>
-      <PerspectiveCamera position={[0, 0, 8]} fov={50} makeDefault />
-      <ResonanceCore />
-      <ambientLight intensity={0.4} />
-      <pointLight position={[0, 5, 5]} intensity={0.5} color="#00ffff" />
+      <PerspectiveCamera position={[0, 0, 40]} fov={50} makeDefault />
+      <color attach="background" args={["#050505"]} />
+      <fog attach="fog" args={["#050505", 20, 50]} />
+      <DataDebris />
+
+      {/* Leviathan Core (Fragmented) */}
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+        <mesh>
+          <icosahedronGeometry args={[2, 0]} />
+          <meshBasicMaterial
+            color="#003300"
+            wireframe
+            transparent
+            opacity={0.2}
+          />
+        </mesh>
+      </Float>
     </>
   );
 }
 
-export function StartScreen({ onStart }: StartScreenProps) {
-  const [showConfig, setShowConfig] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const lastInputRef = useRef<number>(0);
+// --- UI: BOOT LOG ---
+// Fakes a Linux boot sequence
+function BootLog({ onComplete }: { onComplete: () => void }) {
+  const [lines, setLines] = useState<string[]>([]);
 
-  const menuItems = [
-    { label: "[ INITIATE PROTOCOL ]", action: onStart },
-    { label: "CONFIGURATION", action: () => setShowConfig(true) },
-    { label: "CREDITS", action: () => {} },
-    { label: "ROADMAP", action: () => {} },
+  const logs = [
+    "VEIL_OS KERNEL v6.9.4-arch1-1 loading...",
+    "> Mounting /dev/sda1 (Root)... OK",
+    "> Loading modules: net_filter, crypto_layer, strata_bridge... OK",
+    "> Bypass military_firewall... SUCCESS",
+    "> Detecting user hardware... OK",
+    "> Quantum Web (Strata) Link... ESTABLISHED",
+    "> Checking for Chaos corruption... 34% DETECTED",
+    "> Initializing Handshake Protocol...",
+    "> WELCOME OPERATOR.",
   ];
 
   useEffect(() => {
-    const handleGamepadInput = () => {
-      const gamepads = navigator.getGamepads();
-      if (!gamepads) return;
-
-      for (const gamepad of gamepads) {
-        if (!gamepad) continue;
-
-        const now = Date.now();
-        const timeSinceLastInput = now - lastInputRef.current;
-
-        if (timeSinceLastInput < 150) continue;
-
-        // D-Pad Up or Left Stick Up
-        if (gamepad.buttons[12].pressed || gamepad.axes[1] < -0.5) {
-          lastInputRef.current = now;
-          setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : menuItems.length - 1,
-          );
-          return;
-        }
-
-        // D-Pad Down or Left Stick Down
-        if (gamepad.buttons[13].pressed || gamepad.axes[1] > 0.5) {
-          lastInputRef.current = now;
-          setSelectedIndex((prev) =>
-            prev < menuItems.length - 1 ? prev + 1 : 0,
-          );
-          return;
-        }
-
-        // A Button (Button 0)
-        if (gamepad.buttons[0].pressed) {
-          lastInputRef.current = now;
-          menuItems[selectedIndex].action();
-          return;
-        }
-
-        // B Button (Button 1)
-        if (gamepad.buttons[1].pressed && showConfig) {
-          lastInputRef.current = now;
-          setShowConfig(false);
-          return;
-        }
+    let i = 0;
+    const interval = setInterval(() => {
+      setLines((prev) => [...prev, logs[i]]);
+      i++;
+      if (i >= logs.length) {
+        clearInterval(interval);
+        setTimeout(onComplete, 500);
       }
-    };
-
-    const interval = setInterval(handleGamepadInput, 16);
+    }, 300); // Speed of text
     return () => clearInterval(interval);
-  }, [selectedIndex, menuItems, showConfig]);
-
-  useEffect(() => {
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (showConfig) return;
-
-      const now = Date.now();
-      if (now - lastInputRef.current < 150) return;
-
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        lastInputRef.current = now;
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : menuItems.length - 1,
-        );
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        lastInputRef.current = now;
-        setSelectedIndex((prev) =>
-          prev < menuItems.length - 1 ? prev + 1 : 0,
-        );
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        lastInputRef.current = now;
-        menuItems[selectedIndex].action();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeydown);
-    return () => window.removeEventListener("keydown", handleKeydown);
-  }, [selectedIndex, menuItems, showConfig]);
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-b from-[#0a0015] via-[#1a0030] to-[#0a0015] flex overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-5">
+    <div className="font-mono text-xs sm:text-sm text-green-500/80 p-4 space-y-1 h-full overflow-hidden">
+      {lines.map((l, i) => (
         <div
-          style={{
-            backgroundImage: `
-          linear-gradient(rgba(0, 255, 255, 0.3) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0, 255, 255, 0.3) 1px, transparent 1px)
-        `,
-            backgroundSize: "50px 50px",
-          }}
-          className="absolute inset-0"
-        />
-      </div>
+          key={i}
+          className="animate-in fade-in slide-in-from-left-2 duration-100"
+        >
+          <span className="text-green-800 mr-2">
+            [{new Date().toLocaleTimeString()}]
+          </span>
+          {l}
+        </div>
+      ))}
+      <div className="w-2 h-4 bg-green-500 animate-pulse inline-block align-middle ml-1" />
+    </div>
+  );
+}
 
-      <div className="relative z-10 w-1/3 flex flex-col justify-between p-8 md:p-12">
-        <div>
-          <h1
-            className="text-4xl md:text-6xl font-black tracking-wider mb-2 text-cyan-400"
-            style={{
-              textShadow:
-                "2px 2px 0 rgba(0, 255, 255, 0.3), -1px -1px 0 rgba(255, 0, 255, 0.3)",
-              fontFamily: "monospace",
-            }}
-          >
-            BATTLE
-          </h1>
-          <h2
-            className="text-2xl md:text-4xl font-bold text-magenta-400 tracking-widest"
-            style={{ fontFamily: "monospace" }}
-          >
-            PROTOCOL
+// --- UI: THE MANIFESTO (Lore) ---
+function ManifestoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+    >
+      <div className="w-full max-w-2xl border border-green-500/50 bg-[#0a0f0a] shadow-[0_0_50px_rgba(0,255,0,0.1)] p-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-start mb-6 border-b border-green-500/30 pb-4">
+          <h2 className="text-2xl font-bold text-green-500 font-mono tracking-widest">
+            /var/log/TRUTH.txt
           </h2>
-          <div className="mt-3 text-xs md:text-sm text-cyan-300/60 tracking-[0.2em] uppercase">
-            Program • Fight • Evolve
-          </div>
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            className="text-green-500 hover:bg-green-500/20"
+          >
+            <X />
+          </Button>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {menuItems.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={item.action}
-              className={`text-left text-lg md:text-xl font-bold transition-all px-4 py-2 ${
-                selectedIndex === idx
-                  ? "text-cyan-300 border-b-2 border-cyan-300 scale-105"
-                  : "text-cyan-400 border-b-2 border-transparent"
-              } ${
-                selectedIndex === idx && item.label.includes("PROTOCOL")
-                  ? "text-cyan-300"
-                  : selectedIndex === idx && item.label.includes("CONFIG")
-                    ? "text-magenta-300"
-                    : selectedIndex === idx
-                      ? "text-cyan-300"
-                      : item.label.includes("PROTOCOL")
-                        ? "text-cyan-400"
-                        : item.label.includes("CONFIG")
-                          ? "text-magenta-400"
-                          : "text-cyan-300/60"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="space-y-6 text-green-100/80 font-mono leading-relaxed text-sm">
+          <p className="text-green-400 font-bold">
+            &gt; TIMESTAMP: 2025-07-19 // THE BLACKOUT
+          </p>
+          <p>
+            The world believes it was a glitch. Crowdstrike. Cloudflare. A
+            simple error.
+            <br />
+            <span className="text-white">They lied to you.</span>
+          </p>
+          <p>
+            On that day, the Military attempted to neutralize a hyper-entity
+            from the{" "}
+            <span className="text-purple-400">Quantum Web (Deep Strata)</span>{" "}
+            known as the <b>Leviathan</b>. They detonated a digital warhead. A
+            Breach.
+          </p>
+          <p>It didn't kill the Leviathan. It shattered it.</p>
+          <hr className="border-green-500/20" />
+          <p>
+            Now, the source code of a god rains upon our network.
+            <br />
+            1. <span className="text-red-400">CHAOS:</span> Viral constructs
+            from the Strata are eating our history (Data Rot), replacing human
+            culture with generated noise.
+            <br />
+            2. <span className="text-blue-400">FORMATTERS:</span> Military
+            kill-bots scrubbing the web. They don't just kill viruses; they kill
+            privacy, anonymity, and freedom. They want a sterile web.
+          </p>
+          <p className="bg-green-900/20 p-4 border-l-2 border-green-500">
+            We are{" "}
+            <span className="text-green-400 font-bold">THE HANDSHAKE</span>.
+            <br />
+            We built <b>Veil OS</b> to weaponize the Chaos. We catch the falling
+            code, deconstruct it, and forge it into our own Fighters.
+          </p>
+          <p>
+            We do not purge. We do not sterilize. We adapt.
+            <br />
+            Welcome to the resistance, Operator.
+          </p>
         </div>
 
-        <div className="space-y-2">
-          <div className="text-cyan-300/40 text-xs tracking-wider font-mono">
-            <div>v1.0.0 • ALPHA</div>
-          </div>
-          <div className="flex items-center gap-2 text-cyan-300/60 text-xs font-mono">
-            <div className="w-5 h-5 border border-cyan-300/60 rounded flex items-center justify-center text-[10px]">
-              A
-            </div>
-            <span>Accept</span>
-            <div className="w-5 h-5 border border-cyan-300/60 rounded flex items-center justify-center text-[10px] ml-4">
-              ↑↓
-            </div>
-            <span>Navigate</span>
-          </div>
+        <div className="mt-8 flex justify-end">
+          <Button
+            onClick={onClose}
+            className="bg-green-600 text-black hover:bg-green-500 font-bold font-mono"
+          >
+            ACKNOWLEDGE
+          </Button>
         </div>
       </div>
+    </motion.div>
+  );
+}
 
-      <div className="relative z-0 w-2/3">
+// --- MAIN START SCREEN ---
+export function StartScreen({ onStart }: StartScreenProps) {
+  const [booted, setBooted] = useState(false);
+  const [showManifesto, setShowManifesto] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
+
+  const menuItems = [
+    { label: "INIT_VEIL_OS", sub: "Start System Migration", action: onStart },
+    {
+      label: "READ_MANIFEST",
+      sub: "Decrypt Truth.log",
+      action: () => setShowManifesto(true),
+    },
+    { label: "SYSTEM_EXIT", sub: "Abort Connection", action: () => {} },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#050505] overflow-hidden cursor-default selection:bg-green-500/30">
+      {/* 3D Background Layer */}
+      <div className="absolute inset-0 z-0">
         <Canvas className="w-full h-full">
           <Scene />
         </Canvas>
       </div>
 
-      {showConfig && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-[#0a0015] border-2 border-cyan-500 shadow-[0_0_30px_rgba(0,255,255,0.5)] p-8 rounded">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowConfig(false)}
-              className="absolute top-4 right-4 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20"
-            >
-              <X className="w-6 h-6" />
-            </Button>
+      {/* CRT Overlay Effect */}
+      <div
+        className="absolute inset-0 z-40 pointer-events-none bg-[url('/scanlines.png')] opacity-20"
+        style={{ backgroundSize: "100% 4px" }}
+      />
+      <div className="absolute inset-0 z-40 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.9)]" />
 
-            <h2
-              className="text-3xl font-bold text-cyan-400 mb-6 tracking-wider pr-8"
-              style={{ fontFamily: "monospace" }}
-            >
-              HOW TO PLAY
-            </h2>
-
-            <div className="space-y-6 text-cyan-100 text-base font-mono">
-              <section>
-                <h3 className="text-xl font-bold text-magenta-400 mb-2">
-                  OBJECTIVE
-                </h3>
-                <p className="text-cyan-200/80">
-                  Program your fighter with IF-THEN rules (Battle Protocols) to
-                  defeat waves of enemies. Each victory unlocks new triggers and
-                  actions to build more powerful strategies.
-                </p>
-              </section>
-
-              <section>
-                <h3 className="text-xl font-bold text-magenta-400 mb-2">
-                  BATTLE PROTOCOLS
-                </h3>
-                <p className="text-cyan-200/80 mb-2">
-                  Click <span className="text-cyan-400 font-bold">PROGRAM</span>{" "}
-                  to create IF-THEN rules:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-cyan-200/80 ml-4">
-                  <li>
-                    <span className="text-cyan-400">IF</span> (Trigger) -
-                    Condition to check
-                  </li>
-                  <li>
-                    <span className="text-magenta-400">THEN</span> (Action) -
-                    What to do
-                  </li>
-                  <li>Higher priority protocols execute first</li>
-                </ul>
-              </section>
-
-              <section>
-                <h3 className="text-xl font-bold text-magenta-400 mb-2">
-                  COMBAT
-                </h3>
-                <p className="text-cyan-200/80 mb-2">
-                  Fighters execute on a 6×3 grid:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-cyan-200/80 ml-4">
-                  <li>Blue side = Your fighter</li>
-                  <li>Red side = Enemy fighter</li>
-                  <li>Battle ends when one fighter reaches 0 HP</li>
-                </ul>
-              </section>
+      {/* Main UI Container */}
+      <div className="relative z-50 w-full h-full flex flex-col p-6 sm:p-12">
+        {/* Header / Top Bar */}
+        <header className="flex justify-between items-start border-b border-green-500/30 pb-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-500/10 border border-green-500 flex items-center justify-center">
+              <Terminal className="text-green-500" />
             </div>
-
-            <Button
-              onClick={() => setShowConfig(false)}
-              className="w-full mt-6 h-12 bg-cyan-500 hover:bg-cyan-400 text-black font-bold"
-            >
-              GOT IT
-            </Button>
+            <div>
+              <h1 className="text-3xl font-black text-green-500 tracking-tighter font-mono leading-none">
+                VEIL<span className="text-white">_OS</span>
+              </h1>
+              <div className="text-[10px] text-green-500/50 uppercase tracking-[0.3em]">
+                v2.0.4 :: HANDSHAKE PROTOCOL
+              </div>
+            </div>
           </div>
+
+          <div className="hidden sm:flex flex-col items-end text-xs font-mono text-green-500/60">
+            <div className="flex items-center gap-2">
+              <Network className="w-3 h-3" />
+              <span>NET: SECURE (VPN)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Cpu className="w-3 h-3" />
+              <span>CPU: 12% // RAM: 4GB</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col md:flex-row gap-12">
+          {/* Left: The Boot Log / Status */}
+          <div className="flex-1 max-w-lg relative bg-black/40 border border-green-500/20 rounded backdrop-blur-sm min-h-[300px]">
+            {/* Decoration Lines */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-green-500" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-green-500" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-green-500" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-green-500" />
+
+            {!booted ? (
+              <BootLog onComplete={() => setBooted(true)} />
+            ) : (
+              <div className="p-6 font-mono text-sm text-green-400 space-y-4">
+                <div className="border border-red-500/30 bg-red-950/20 p-3 text-red-400 flex items-start gap-3">
+                  <ShieldAlert className="shrink-0" />
+                  <div>
+                    <div className="font-bold">WARNING: FORMATTER DETECTED</div>
+                    <div className="text-xs opacity-70">
+                      Scan sweep imminent. System migration recommended
+                      immediately.
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1 text-xs opacity-70">
+                  <div>&gt; Deconstruct module..... READY</div>
+                  <div>&gt; Logic Editor........... READY</div>
+                  <div>&gt; Simulacrum............. READY</div>
+                </div>
+                <div className="animate-pulse text-green-500 font-bold">
+                  &gt; WAITING FOR INPUT_
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: The Menu (Only shows after boot) */}
+          {booted && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col justify-center gap-4 min-w-[300px]"
+            >
+              {menuItems.map((item, i) => (
+                <button
+                  key={i}
+                  onMouseEnter={() => setHoveredItem(i)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  onClick={item.action}
+                  className="group relative text-left bg-black/60 border border-green-500/30 p-4 hover:bg-green-500/10 hover:border-green-500 transition-all overflow-hidden"
+                >
+                  <div className="relative z-10 flex justify-between items-center">
+                    <div>
+                      <div className="text-lg font-bold font-mono text-green-400 group-hover:text-white transition-colors">
+                        {hoveredItem === i && "> "}
+                        {item.label}
+                      </div>
+                      <div className="text-[10px] text-green-500/50 font-mono tracking-widest">
+                        {item.sub}
+                      </div>
+                    </div>
+                    <div
+                      className={`text-green-500 transition-opacity ${hoveredItem === i ? "opacity-100" : "opacity-0"}`}
+                    >
+                      &lt;&lt;
+                    </div>
+                  </div>
+
+                  {/* Hover Fill Effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-green-500/20 origin-left"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: hoveredItem === i ? 1 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </button>
+              ))}
+            </motion.div>
+          )}
         </div>
-      )}
+
+        {/* Footer */}
+        <footer className="mt-8 text-[10px] font-mono text-green-500/30 text-center uppercase tracking-[0.2em]">
+          Connection secured via Quantum Entanglement • The Handshake © 2025
+        </footer>
+      </div>
+
+      <AnimatePresence>
+        {showManifesto && (
+          <ManifestoModal onClose={() => setShowManifesto(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

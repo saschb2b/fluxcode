@@ -4,7 +4,6 @@ import {
   Float,
   Sparkles,
   Box,
-  Cylinder,
   Icosahedron,
   Octahedron,
   MeshDistortMaterial,

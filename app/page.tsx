@@ -334,11 +334,7 @@ export default function Home() {
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <FighterClassManager
             customClasses={gameState.playerProgress.customFighterClasses || []}
-            selectedClassId={
-              gameState.playerProgress.selectedConstructSlot || null
-            }
             onSaveClasses={handleSaveCustomClasses}
-            onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
           />
         </main>
