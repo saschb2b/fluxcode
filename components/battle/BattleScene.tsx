@@ -7,11 +7,7 @@ import { UnifiedIntegrityBar } from "../unified-integrity-bar";
 import type { GameState } from "@/types/game";
 import type { FighterCustomization } from "@/lib/fighter-parts";
 import { ArenaEnvironment } from "./ArenaEnvironment";
-import {
-  AmbientParticles,
-  FloatingGeometry,
-  StarField,
-} from "../cyberpunk-background";
+import { FloatingGeometry, StarField } from "../cyberpunk-background";
 import { VisualEffects } from "./VisualEffects";
 
 interface BattleSceneProps {

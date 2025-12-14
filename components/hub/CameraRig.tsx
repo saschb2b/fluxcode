@@ -11,7 +11,7 @@ interface CameraRigProps {
 
 export function CameraRig({ activeTab, selectedMode }: CameraRigProps) {
   const controlsRef = useRef<CameraControls>(null);
-  const { size } = useThree(); // Get current canvas dimensions
+  const { size } = useThree();
 
   useEffect(() => {
     if (controlsRef.current) {
@@ -26,24 +26,17 @@ export function CameraRig({ activeTab, selectedMode }: CameraRigProps) {
       }
 
       // --- RESPONSIVE LOGIC ---
-      // We assume the design was built for a standard 16:9 screen (aspect ~1.77)
       const targetAspect = 1.77;
       const currentAspect = size.width / size.height;
-
-      // If screen is narrower than target, we need to pull back (increase distance)
-      // We calculate a multiplier based on how "squished" the width is
       const fitRatio =
         currentAspect < targetAspect ? targetAspect / currentAspect : 1;
 
-      // Calculate the vector from LookAt -> Position
       const lookAtVec = new THREE.Vector3(...config.look);
       const posVec = new THREE.Vector3(...config.pos);
       const direction = new THREE.Vector3().subVectors(posVec, lookAtVec);
 
-      // Multiply the distance by our fit ratio so we stay far enough away to see everything
       direction.multiplyScalar(fitRatio);
 
-      // New Final Position
       const finalPos = new THREE.Vector3().addVectors(lookAtVec, direction);
 
       controlsRef.current.setLookAt(
@@ -53,19 +46,22 @@ export function CameraRig({ activeTab, selectedMode }: CameraRigProps) {
         lookAtVec.x,
         lookAtVec.y,
         lookAtVec.z,
-        true, // Animate
+        true, // Keep 'true' to enable transition, but we control speed via props below
       );
     }
-  }, [activeTab, selectedMode, size.width, size.height]); // Re-run on resize
+  }, [activeTab, selectedMode, size.width, size.height]);
 
   return (
     <>
       <CameraControls
         ref={controlsRef}
+        // SNAPPY MOVEMENT SETTINGS
+        smoothTime={0.1} // Reduced from default (~0.25) for digital/robotic feel
+        draggingSmoothTime={0.1} // Responsive if we allowed drag
         maxPolarAngle={Math.PI / 2.1}
         minPolarAngle={0.1}
         minDistance={2}
-        maxDistance={50} // Increased max distance to allow pulling back on mobile
+        maxDistance={50}
         mouseButtons={{ left: 0, right: 0, middle: 0, wheel: 0 }}
         touches={{ one: 0, two: 0, three: 0 }}
       />

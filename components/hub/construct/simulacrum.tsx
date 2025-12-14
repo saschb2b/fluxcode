@@ -37,7 +37,7 @@ import {
   FloatingGeometry,
   StarField,
 } from "../../cyberpunk-background";
-import { LogicLogEntry, LogicStream } from "@/components/battle/LogicStream";
+import { LogicStream } from "@/components/battle/LogicStream";
 
 const TRAINING_DUMMY_CUSTOMIZATION: FighterCustomization = {
   head: HEAD_SHAPES.find((h) => h.id === "cylinder-head") || HEAD_SHAPES[0],
