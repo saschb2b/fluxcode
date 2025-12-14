@@ -266,6 +266,16 @@ export type ActionResult =
       duration: number;
     };
 
+export interface AIExecutionResult {
+  result: ActionResult;
+  metadata: {
+    actionId: string;
+    triggerName: string;
+    actionName: string;
+    cooldown: number;
+  };
+}
+
 export interface TriggerActionPair {
   trigger: Trigger;
   action: Action;
@@ -313,11 +323,21 @@ export interface BattleHistoryPoint {
   enemyHP: number;
 }
 
+export interface ExecutedProtocol {
+  id: string; // UUID for React keys
+  timestamp: number;
+  source: "movement" | "tactical";
+  actionId: string;
+  triggerName: string; // e.g. "Enemy < 50% HP"
+  actionName: string; // e.g. "Heavy Shot"
+  cooldown: number; // e.g. 1500 (ms)
+}
+
 export interface BattleUpdate {
   playerPos?: Position;
   playerHP?: number;
-  playerShields?: number; // Added player shields
-  playerArmor?: number; // Added player armor
+  playerShields?: number;
+  playerArmor?: number;
   enemyPos?: Position;
   enemyHP?: number;
   enemyShields?: number;
@@ -328,6 +348,7 @@ export interface BattleUpdate {
   playerWon?: boolean;
   battleHistory?: BattleHistoryPoint[];
   damageDealt?: { type: DamageType; amount: number };
+  executedProtocols?: ExecutedProtocol[];
 }
 
 export interface Construct {

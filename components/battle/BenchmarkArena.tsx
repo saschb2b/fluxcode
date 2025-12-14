@@ -2,14 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { X, Zap, Swords, RotateCcw } from "lucide-react";
-import {
-  FloatingGeometry,
-  StarField,
-  AmbientParticles,
-} from "../cyberpunk-background";
 
 // Logic Imports
 import { BattleEngine } from "@/lib/battleEngine/BattleEngine";

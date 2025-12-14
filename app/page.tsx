@@ -3,15 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { BattleArena } from "@/components/battle-arena";
 import { GameUI } from "@/components/game-ui";
-import { StartScreen } from "@/components/start-screen";
-import { Hub } from "@/components/hub";
-import { ConstructSelection } from "@/components/construct-selection";
-import { FighterCustomization } from "@/components/fighter-customization";
-import { MetaShop } from "@/components/meta-shop";
-import { Codex } from "@/components/codex";
-import { NetworkContractsView } from "@/components/network-contracts-view";
-import { FighterClassManager } from "@/components/fighter-class-manager";
-import { ConstructSlotManager } from "@/components/construct-slot-manager";
+import { StartScreen } from "@/components/startScreen/StartScreen";
+import Hub from "@/components/hub/Hub";
+import { ConstructSelection } from "@/components/hub/construct/construct-selection";
+import { FighterCustomization } from "@/components/hub/construct/fighter-customization";
+import { FighterClassManager } from "@/components/hub/construct/fighter-class-manager";
+import { ConstructSlotManager } from "@/components/hub/construct/construct-slot-manager";
 import { WelcomeDialog } from "@/components/welcome-dialog";
 import { useGameState } from "@/hooks/use-game-state";
 import { DEFAULT_CUSTOMIZATION } from "@/lib/fighter-parts";
@@ -43,9 +40,6 @@ export default function Home() {
   const [fighterCustomization, setFighterCustomization] =
     useState<FighterCustomizationType>(DEFAULT_CUSTOMIZATION);
   const [showCustomization, setShowCustomization] = useState(false);
-  const [showMetaShop, setShowMetaShop] = useState(false);
-  const [showCodex, setShowCodex] = useState(false);
-  const [showContracts, setShowContracts] = useState(false);
   const [showSlotManager, setShowSlotManager] = useState(false);
   const [showFighterClassEditor, setShowFighterClassEditor] = useState(false);
   const [pendingSlotAssignment, setPendingSlotAssignment] = useState<
@@ -120,10 +114,6 @@ export default function Home() {
     setShowCustomization(false);
   };
 
-  const handleBackToStart = () => {
-    setGamePhase("start");
-  };
-
   const handleBackToHub = () => {
     setGamePhase("hub");
   };
@@ -139,39 +129,6 @@ export default function Home() {
       gameState.resetGame();
       setGamePhase("game");
     }
-  };
-
-  const handleOpenConstructSelect = () => {
-    setPendingSlotAssignment("slot-1"); // Default to slot-1 if opened from hub
-    setGamePhase("construct-select");
-  };
-
-  const handleOpenCustomization = () => {
-    setShowCustomization(true);
-  };
-
-  const handleOpenMetaShop = () => {
-    setShowMetaShop(true);
-  };
-
-  const handleCloseMetaShop = () => {
-    setShowMetaShop(false);
-  };
-
-  const handleOpenCodex = () => {
-    setShowCodex(true);
-  };
-
-  const handleCloseCodex = () => {
-    setShowCodex(false);
-  };
-
-  const handleOpenContracts = () => {
-    setShowContracts(true);
-  };
-
-  const handleCloseContracts = () => {
-    setShowContracts(false);
   };
 
   const handleOpenSlotManager = () => {
@@ -219,10 +176,6 @@ export default function Home() {
   const handleCloseCalibration = () => {
     setShowFighterClassEditor(false);
     setView(GameView.HUB);
-  };
-
-  const handleOpenClassManager = () => {
-    setGamePhase("class-manager");
   };
 
   function handleOpenBattleArena(): void {
@@ -349,23 +302,20 @@ export default function Home() {
 
           <Hub
             selectedConstruct={gameState.selectedConstruct}
-            fighterCustomization={fighterCustomization}
-            playerProgress={gameState.playerProgress}
-            playerMaxHp={gameState.player.maxHp}
-            playerMaxShields={gameState.player.maxShields}
-            playerMaxArmor={gameState.player.maxArmor}
             onStartRun={handleStartRun}
-            onSelectConstruct={handleOpenConstructSelect}
-            onCustomizeFighter={handleOpenCustomization}
-            onOpenShop={handleOpenMetaShop}
-            onOpenCodex={handleOpenCodex}
-            onOpenContracts={handleOpenContracts}
-            onOpenSlotManager={handleOpenSlotManager}
             onOpenCalibration={handleOpenCalibration}
-            onOpenClassManager={handleOpenClassManager}
+            onOpenSlotManager={handleOpenSlotManager}
             onOpenBattleArena={handleOpenBattleArena}
-            bgmAudioRef={audioRef}
-            isInHub={true}
+            progress={gameState.playerProgress}
+            onProgressUpdate={gameState.updatePlayerProgress}
+            dailyContracts={
+              gameState.playerProgress.contractProgress?.dailyContracts || []
+            }
+            weeklyContracts={
+              gameState.playerProgress.contractProgress?.weeklyContracts || []
+            }
+            onClaimReward={handleClaimContractReward}
+            onForceRefresh={handleForceRefreshContracts}
           />
         </main>
       )}
@@ -384,11 +334,7 @@ export default function Home() {
         <main className="relative w-full h-dvh overflow-hidden bg-background">
           <FighterClassManager
             customClasses={gameState.playerProgress.customFighterClasses || []}
-            selectedClassId={
-              gameState.playerProgress.selectedConstructSlot || null
-            }
             onSaveClasses={handleSaveCustomClasses}
-            onSelectClass={handleSelectClass}
             onClose={handleBackToHub}
           />
         </main>
@@ -416,11 +362,7 @@ export default function Home() {
             />
           </div>
 
-          <GameUI
-            gameState={gameState}
-            onNewRun={handleNewRun}
-            onOpenMetaShop={handleOpenMetaShop}
-          />
+          <GameUI gameState={gameState} onNewRun={handleNewRun} />
         </main>
       )}
 
@@ -471,8 +413,6 @@ export default function Home() {
                 },
               },
             ]}
-            selectedClassId={gameState.selectedConstruct.id}
-            skipSelection={true}
             onSaveClasses={(classes) => {
               const updatedClass = classes[0];
 
@@ -582,37 +522,9 @@ export default function Home() {
               }
               handleCloseCalibration();
             }}
-            onSelectClass={() => {}}
             onClose={handleCloseCalibration}
           />
         )}
-
-      {showCodex && <Codex isOpen={showCodex} onClose={handleCloseCodex} />}
-
-      {showMetaShop && (
-        <MetaShop
-          progress={gameState.playerProgress}
-          onClose={handleCloseMetaShop}
-          onPurchase={gameState.updatePlayerProgress}
-        />
-      )}
-
-      {showContracts && gameState.playerProgress.contractProgress && (
-        <NetworkContractsView
-          dailyContracts={
-            gameState.playerProgress.contractProgress.dailyContracts
-          }
-          weeklyContracts={
-            gameState.playerProgress.contractProgress.weeklyContracts
-          }
-          onClose={handleCloseContracts}
-          onClaimReward={handleClaimContractReward}
-          onForceRefresh={handleForceRefreshContracts}
-          completedContractIds={
-            gameState.playerProgress.contractProgress.completedContractIds
-          }
-        />
-      )}
     </>
   );
 }

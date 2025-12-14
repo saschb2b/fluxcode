@@ -37,7 +37,6 @@ function usePillarData() {
 
 function CyberPillars() {
   const data = usePillarData();
-  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
 
   return (
     <group>
