@@ -7,7 +7,7 @@ export const VIEW_CONFIG = {
   PLAY: { pos: [0, 8, 9], look: [0, 0, 0] },
   CONSTRUCT: { pos: [0, 2, 8], look: [0, 1, 0] },
   SHOP: { pos: [0, 2, 14], look: [0, 2, 0] },
-  NETWORK: { pos: [0, 1, 16], look: [0, 1, 0] },
+  NETWORK: { pos: [0, 1, 12], look: [0, 1, 0] },
   ARCHIVE: { pos: [0, 2, 14], look: [0, 2, 0] },
 
   // --- GAME MODES (Zoomed In) ---

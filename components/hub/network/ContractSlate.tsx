@@ -11,7 +11,6 @@ import * as THREE from "three";
 import type { NetworkContractWithClaimed } from "@/lib/network-contracts";
 
 // --- HOLOGRAPHIC ICONS ---
-// Different 3D shapes based on contract type
 const ContractIcon = ({ type, color }: { type: string; color: string }) => {
   const mesh = useRef<THREE.Mesh>(null);
   useFrame((state, delta) => {
@@ -64,7 +63,6 @@ interface ContractSlateProps {
 
 export function ContractSlate({
   contract,
-  index,
   position,
   onClick,
 }: ContractSlateProps) {
@@ -73,21 +71,18 @@ export function ContractSlate({
 
   // Theme Colors
   const isDaily = contract.refreshType === "daily";
-  const themeColor = isDaily ? "#fbbf24" : "#d946ef"; // Amber vs Fuschia
+  const themeColor = isDaily ? "#fbbf24" : "#d946ef";
   const difficultyColor =
     contract.difficulty === "elite" ? "#ef4444" : themeColor;
 
-  // Tilt Logic Ref
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Smooth Tilt towards mouse
     if (hovered) {
-      // Convert mouse screen pos to slight rotation
-      const targetX = state.pointer.y * 0.2; // Tilt X based on Mouse Y
-      const targetY = state.pointer.x * 0.2; // Tilt Y based on Mouse X
+      const targetX = state.pointer.y * 0.2;
+      const targetY = state.pointer.x * 0.2;
 
       groupRef.current.rotation.x = THREE.MathUtils.lerp(
         groupRef.current.rotation.x,
@@ -99,14 +94,12 @@ export function ContractSlate({
         targetY,
         delta * 10,
       );
-      // Slight lift
       groupRef.current.position.z = THREE.MathUtils.lerp(
         groupRef.current.position.z,
         position[2] + 0.5,
         delta * 10,
       );
     } else {
-      // Return to rest
       groupRef.current.rotation.x = THREE.MathUtils.lerp(
         groupRef.current.rotation.x,
         0,
@@ -145,88 +138,92 @@ export function ContractSlate({
         setHover(false);
       }}
     >
-      {/* 1. GLASS SLATE BODY */}
+      {/* 1. OCCLUSION BACKING (Prevents background bleed-through) */}
+      <mesh position={[0, 0, -0.05]}>
+        <boxGeometry args={[2.7, 3.4, 0.05]} />
+        <meshBasicMaterial color="#000000" />
+      </mesh>
+
+      {/* 2. MAIN BODY (Matte Black Metal) */}
       <RoundedBox args={[2.8, 3.5, 0.1]} radius={0.1} smoothness={4}>
-        <meshPhysicalMaterial
-          color="#000"
-          roughness={0.2}
-          metalness={0.9}
-          transmission={0} // Opaque metal look like Warframe UI
-          clearcoat={1}
+        <meshStandardMaterial
+          color="#111111" // Dark Grey/Black
+          roughness={0.6} // Less shiny
+          metalness={0.8}
           emissive={themeColor}
-          emissiveIntensity={hovered ? 0.3 : 0}
+          emissiveIntensity={hovered ? 0.15 : 0}
+          envMapIntensity={0} // CRITICAL: Disables green reflections from Hub
         />
       </RoundedBox>
 
-      {/* 2. GLOWING BORDER FRAME */}
+      {/* 3. GLOWING BORDER FRAME */}
       <mesh position={[0, 0, -0.06]}>
         <boxGeometry args={[2.9, 3.6, 0.05]} />
         <meshBasicMaterial color={difficultyColor} />
       </mesh>
 
-      {/* 3. CONTENT CONTAINER (Floating slightly above card) */}
+      {/* 4. CONTENT */}
       <group position={[0, 0, 0.1]}>
-        {/* Header: Title */}
         <Text
           position={[0, 1.6, 0]}
-          fontSize={0.2} // Slightly smaller
+          fontSize={0.2}
           color={hovered ? "#fff" : themeColor}
           anchorX="center"
-          anchorY="top" // Grow downwards
-          maxWidth={2.4} // Constrain width inside card
+          anchorY="top"
+          maxWidth={2.4}
           textAlign="center"
           lineHeight={1.2}
         >
           {contract.name.toUpperCase()}
         </Text>
 
-        {/* Center: Holographic Icon Viewport */}
-        {/* Use Portal to simulate depth "inside" the card */}
+        {/* PORTAL VIEWPORT */}
         <group position={[0, 0.2, 0]}>
           <mesh>
             <circleGeometry args={[0.8, 32]} />
-            <MeshPortalMaterial>
-              <color attach="background" args={["#000"]} />
-              <ambientLight intensity={1} />
+            <MeshPortalMaterial resolution={512} blur={0.5}>
+              {/* Opaque Portal Background */}
+              <color attach="background" args={["#050505"]} />
+
+              <ambientLight intensity={1.5} />
               <Float speed={2}>
                 <ContractIcon type={contract.type} color={themeColor} />
               </Float>
-              {/* Grid inside portal */}
+              {/* Portal Grid */}
               <gridHelper
-                args={[5, 10, themeColor, themeColor]}
+                args={[5, 10, themeColor, "#222"]}
                 position={[0, -1, 0]}
               />
             </MeshPortalMaterial>
           </mesh>
-          {/* Ring around portal */}
-          <mesh>
+
+          {/* Ring Border */}
+          <mesh position={[0, 0, 0.01]}>
             <ringGeometry args={[0.8, 0.85, 32]} />
             <meshBasicMaterial color={themeColor} />
           </mesh>
         </group>
 
-        {/* Footer: Progress Bar */}
+        {/* Progress Bar */}
         <group position={[0, -1.0, 0]}>
-          <Text position={[0, 0.3, 0]} fontSize={0.12} color="#aaa">
+          <Text position={[0, 0, 0]} fontSize={0.12} color="#efefef">
             {contract.progress} / {contract.maxProgress}
           </Text>
-          {/* Bar Background */}
           <mesh position={[0, 0, 0]}>
             <planeGeometry args={[2.2, 0.15]} />
-            <meshBasicMaterial color="#333" />
+            <meshBasicMaterial color="#222" />
           </mesh>
-          {/* Bar Fill */}
           <mesh position={[-1.1 + 1.1 * progressPct, 0, 0.01]}>
             <planeGeometry args={[2.2 * progressPct, 0.15]} />
             <meshBasicMaterial color={isComplete ? "#4ade80" : themeColor} />
           </mesh>
         </group>
 
-        {/* Reward Pill */}
+        {/* Reward */}
         <group position={[0, -1.4, 0]}>
           <mesh rotation={[0, 0, Math.PI / 2]}>
             <capsuleGeometry args={[0.15, 0.8, 4, 8]} />
-            <meshBasicMaterial color="#333" />
+            <meshBasicMaterial color="#222" />
           </mesh>
           <Text
             position={[0, 0, 0.16]}
@@ -238,7 +235,6 @@ export function ContractSlate({
           </Text>
         </group>
 
-        {/* Claim Overlay */}
         {isComplete && (
           <Text position={[0, 0, 0.5]} fontSize={0.4} color="#4ade80">
             READY

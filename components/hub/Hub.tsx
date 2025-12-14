@@ -81,6 +81,8 @@ export default function Hub(props: HubProps) {
     }
   };
 
+  const showGlobalEnv = activeTab === "PLAY" || activeTab === "CONSTRUCT";
+
   return (
     <div className="w-full h-dvh bg-black relative overflow-hidden">
       {/* 2D LAYER */}
@@ -100,32 +102,7 @@ export default function Hub(props: HubProps) {
       <Canvas shadows dpr={[1, 2]}>
         <color attach="background" args={["#020202"]} />
         <fog attach="fog" args={["#020202", 5, 25]} />
-        {/* --- GLOBAL VEIL OS ENVIRONMENT --- */}
 
-        {/* 1. Circuit Board Floor */}
-        <Grid
-          position={[0, -0.51, 0]}
-          args={[40, 40]}
-          cellSize={1}
-          sectionSize={5}
-          fadeDistance={25}
-          sectionColor="#15803d" // Green-700
-          cellColor="#052e16" // Green-950
-          sectionThickness={1.5}
-          cellThickness={1}
-          infiniteGrid
-        />
-
-        {/* 2. "Raw Data" Floating in the air (Green Code Fragments) */}
-        <Sparkles
-          count={200}
-          scale={[20, 10, 20]}
-          size={2}
-          speed={0.2}
-          opacity={0.4}
-          color="#4ade80" // Green-400
-          position={[0, 5, 0]}
-        />
         {/* Camera Controller */}
         <CameraRig activeTab={activeTab} selectedMode={selectedMode} />
 
@@ -164,6 +141,33 @@ export default function Hub(props: HubProps) {
         )}
 
         {activeTab === "ARCHIVE" && <ArchiveTab />}
+
+        {/* --- GLOBAL ENVIRONMENT (Conditional) --- */}
+        {showGlobalEnv && (
+          <>
+            <Grid
+              position={[0, -0.51, 0]}
+              args={[40, 40]}
+              cellSize={1}
+              sectionSize={5}
+              fadeDistance={25}
+              sectionColor="#15803d"
+              cellColor="#052e16"
+              sectionThickness={1.5}
+              cellThickness={1}
+              infiniteGrid
+            />
+            <Sparkles
+              count={200}
+              scale={[20, 10, 20]}
+              size={2}
+              speed={0.2}
+              opacity={0.4}
+              color="#4ade80"
+              position={[0, 5, 0]}
+            />
+          </>
+        )}
 
         {/* GLOBAL EFFECTS */}
         <EffectComposer>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, Cylinder, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { ContractGrid } from "./ContractGrid";
 import type { NetworkContractWithClaimed } from "@/lib/network-contracts";
 import { ContractDetail } from "./ContractDetail";
@@ -9,42 +9,6 @@ interface NetworkTabProps {
   weeklyContracts: NetworkContractWithClaimed[];
   onClose: () => void;
   onClaimReward: (contractId: string, refreshType: "daily" | "weekly") => void;
-}
-
-// --- 3D ENVIRONMENT (Background) ---
-function CommsEnvironment() {
-  return (
-    <group position={[0, -5, -2]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[15, 64]} />
-        <meshStandardMaterial color="#1a1405" roughness={0.3} metalness={0.6} />
-      </mesh>
-      {/* Background Array */}
-      <Cylinder
-        args={[0.5, 2, 10]}
-        position={[-8, 5, -5]}
-        rotation={[0, 0, 0.2]}
-      >
-        <meshStandardMaterial color="#1c1917" />
-      </Cylinder>
-      <Cylinder
-        args={[0.5, 2, 10]}
-        position={[8, 5, -5]}
-        rotation={[0, 0, -0.2]}
-      >
-        <meshStandardMaterial color="#1c1917" />
-      </Cylinder>
-      <Sparkles
-        color="#fbbf24"
-        count={80}
-        scale={[25, 15, 10]}
-        size={6}
-        speed={0.5}
-        opacity={0.3}
-        position={[0, 5, 0]}
-      />
-    </group>
-  );
 }
 
 // --- MAIN EXPORT ---
@@ -68,10 +32,8 @@ export default function NetworkTab({
       />
       <pointLight position={[-10, 5, 5]} intensity={10} color="#d97706" />
 
-      <CommsEnvironment />
-
       {/* THE 3D BOARD */}
-      <group position={[0, 5, 0]}>
+      <group position={[0, 3, 0]}>
         <ContractGrid
           dailyContracts={dailyContracts}
           weeklyContracts={weeklyContracts}
