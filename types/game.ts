@@ -458,59 +458,111 @@ export interface EnemyState {
   attackDuration?: number;
 }
 
-export interface GameState {
-  battleState: "idle" | "fighting" | "victory" | "defeat";
-  wave: number;
-  player: Fighter;
-  enemy: Fighter; // Keep for backwards compatibility, but will use enemies array
-  enemies: Fighter[]; // Added enemies array for multi-enemy support
-  projectiles: Projectile[];
-  triggerActionPairs: TriggerActionPair[];
-  movementPairs?: TriggerActionPair[]; // Added separate movement and tactical protocol arrays for dual-core system
-  tacticalPairs?: TriggerActionPair[];
-  unlockedTriggers: Trigger[];
-  unlockedActions: Action[];
-  startBattle: () => void;
-  nextWave: () => void;
-  resetGame: () => void;
-  addTriggerActionPair: (trigger: Trigger, action: Action) => void;
-  removeTriggerActionPair: (index: number) => void;
-  addMovementPair?: (trigger: Trigger, action: Action) => void; // Added dual-core protocol management functions
-  addTacticalPair?: (trigger: Trigger, action: Action) => void;
-  removeMovementPair?: (index: number) => void;
-  removeTacticalPair?: (index: number) => void;
-  updateMovementPriority?: (index: number, priority: number) => void;
-  updateTacticalPriority?: (index: number, priority: number) => void;
-  toggleMovementPair?: (index: number, enabled: boolean) => void;
-  toggleTacticalPair?: (index: number, enabled: boolean) => void;
-  showRewardSelection: boolean;
-  availableRewardTriggers: Trigger[];
-  availableRewardActions: Action[];
-  selectRewardTrigger: (trigger: Trigger) => void;
-  selectRewardAction: (action: Action) => void;
-  rerollsRemaining: number;
-  rerollRewards: () => void;
-  selectedCharacter: CharacterPreset | null;
-  selectedConstruct: Construct | null;
+interface ConstructState {
+  // Identity
   activeSlot: ActiveConstructSlot | null;
-  setConstruct: (construct: Construct, slotId: string) => void;
-  setCharacter: (character: CharacterPreset) => void;
+  selectedConstruct: Construct | null;
+  selectedCharacter: CharacterPreset | null;
+
+  // Visuals
   fighterCustomization: FighterCustomization | null;
   setCustomization: (customization: FighterCustomization) => void;
-  enemyCustomization: FighterCustomization;
-  enemyCustomizations: FighterCustomization[]; // Added array for multiple enemy customizations
-  battleHistory: any[]; // Temporary fix for BattleHistoryPoint undeclared variable
+  setConstruct: (construct: Construct, slotId: string) => void;
+  setCharacter: (character: CharacterPreset) => void;
+
+  // The Installed Logic (Data only)
+  movementPairs: TriggerActionPair[];
+  tacticalPairs: TriggerActionPair[];
+
+  // Legacy / Deprecated?
+  triggerActionPairs: TriggerActionPair[];
+}
+
+interface ProtocolEditorActions {
+  // Dual-Core Management
+  addMovementPair: (trigger: Trigger, action: Action) => void;
+  addTacticalPair: (trigger: Trigger, action: Action) => void;
+
+  removeMovementPair: (index: number) => void;
+  removeTacticalPair: (index: number) => void;
+
+  updateMovementPriority: (index: number, priority: number) => void;
+  updateTacticalPriority: (index: number, priority: number) => void;
+
+  toggleMovementPair: (index: number, enabled: boolean) => void;
+  toggleTacticalPair: (index: number, enabled: boolean) => void;
+
+  // Legacy / Deprecated?
+  addTriggerActionPair: (trigger: Trigger, action: Action) => void;
+  removeTriggerActionPair: (index: number) => void;
+}
+
+interface CombatState {
+  // Flow Control
+  battleState: "idle" | "fighting" | "victory" | "defeat";
+  startBattle: () => void;
+  resetGame: () => void; // Maybe renames to resetBattle?
+
+  // Entities
+  player: Fighter;
+  enemies: Fighter[];
+  enemy: Fighter; // Legacy
+  projectiles: Projectile[];
+
+  // Visuals / UI state during battle
+  battleHistory: BattleHistoryPoint[];
   showEnemyIntro: boolean;
   continueAfterIntro: () => void;
-  playerProgress: PlayerProgress;
-  updatePlayerProgress: (progress: PlayerProgress) => void;
+
+  // Enemy appearance for the current fight
+  enemyCustomization: FighterCustomization;
+  enemyCustomizations: FighterCustomization[];
+}
+
+interface CampaignState {
+  // Progression
   networkLayers: NetworkLayer[];
   currentLayerIndex: number;
   currentNodeIndex: number;
+
+  // Wave Logic (Specific to Breach nodes)
+  wave: number;
+  nextWave: () => void;
   isGuardianBattle: boolean;
-  extractFromBreach: () => void;
-  justEarnedReward: { type: "trigger" | "action"; name: string } | null;
+
+  // Run Lifecycle
+  extractFromBreach: () => void; // Cash out and leave
 }
+
+interface MetaState {
+  // Currency & Stats
+  playerProgress: PlayerProgress;
+  updatePlayerProgress: (progress: PlayerProgress) => void;
+
+  // The "Library" of available cards
+  unlockedTriggers: Trigger[];
+  unlockedActions: Action[];
+
+  // Reward Logic (RNG generation for new drops)
+  showRewardSelection: boolean;
+  availableRewardTriggers: Trigger[];
+  availableRewardActions: Action[];
+  rerollsRemaining: number;
+  justEarnedReward: { type: "trigger" | "action"; name: string } | null;
+
+  // Actions
+  selectRewardTrigger: (trigger: Trigger) => void;
+  selectRewardAction: (action: Action) => void;
+  rerollRewards: () => void;
+}
+
+export interface GameState
+  extends
+    CampaignState,
+    MetaState,
+    CombatState,
+    ProtocolEditorActions,
+    ConstructState {}
 
 import type { FighterCustomization } from "@/lib/fighter-parts";
 import type { PlayerProgress } from "@/lib/meta-progression";
