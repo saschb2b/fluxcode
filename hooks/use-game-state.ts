@@ -772,155 +772,6 @@ export function useGameState(): GameState {
     calculateDifficultyMultiplier,
   ]);
 
-  const continueToNextWave = useCallback(() => {
-    setShowEnemyIntro(false);
-
-    const nextWave = wave + 1;
-    setWave(nextWave);
-
-    let baseHp: number;
-
-    if (nextWave <= 3) {
-      baseHp = 30 + nextWave * 10;
-    } else if (nextWave <= 6) {
-      baseHp = 40 + nextWave * 10;
-    } else if (nextWave <= 15) {
-      baseHp = 40 + nextWave * 10;
-    } else {
-      baseHp = 100 + Math.pow(nextWave - 15, 1.3) * 20;
-    }
-
-    const difficultyMultiplier =
-      nextWave > 3 ? calculateDifficultyMultiplier(nextWave) : 1.0;
-    baseHp = Math.floor(baseHp * difficultyMultiplier);
-
-    const currentNodeIsGuardian =
-      networkLayers.length > 0 &&
-      networkLayers[currentLayerIndex] &&
-      networkLayers[currentLayerIndex].nodes[currentNodeIndex]?.type ===
-        "guardian";
-    const enemyMaxHp = currentNodeIsGuardian
-      ? Math.floor(baseHp * 1.5)
-      : baseHp;
-
-    let enemyCount = 1;
-    if (currentNodeIsGuardian) {
-      const roll = Math.random();
-      if (roll < 0.5) enemyCount = 2;
-      else if (roll < 0.8) enemyCount = 3;
-      else enemyCount = 4;
-    } else {
-      if (nextWave >= 6) {
-        const roll = Math.random();
-        if (roll < 0.1) enemyCount = 3;
-        else if (roll < 0.3) enemyCount = 2;
-      } else if (nextWave >= 3) {
-        if (Math.random() < 0.2) enemyCount = 2;
-      }
-    }
-
-    const totalHpBudget = currentNodeIsGuardian
-      ? Math.floor(enemyMaxHp * 1.5)
-      : enemyMaxHp;
-    const enemiesArray: Array<any> = [];
-
-    if (currentNodeIsGuardian && enemyCount > 1) {
-      const guardianHp = Math.floor(totalHpBudget * 0.6);
-      const pawnHpBudget = totalHpBudget - guardianHp;
-      const pawnHp = Math.floor(pawnHpBudget / (enemyCount - 1));
-
-      enemiesArray.push({
-        position: { x: 4, y: 1 },
-        hp: guardianHp,
-        maxHp: guardianHp,
-        shields: 0,
-        maxShields: 0,
-        armor: 0,
-        maxArmor: 0,
-        resistances: {},
-        statusEffects: [],
-        name: `Guardian-${currentLayerIndex}`,
-      });
-
-      for (let i = 1; i < enemyCount; i++) {
-        enemiesArray.push({
-          position: { x: 5, y: i % 2 === 0 ? 0 : 2 },
-          hp: pawnHp,
-          maxHp: pawnHp,
-          shields: 0,
-          maxShields: 0,
-          armor: 0,
-          maxArmor: 0,
-          resistances: {},
-          statusEffects: [],
-          name: `Pawn-${i}`,
-          isPawn: true,
-        });
-      }
-    } else {
-      const hpPerEnemy = Math.floor(totalHpBudget / enemyCount);
-      const positions: Position[] = [
-        { x: 4, y: 1 },
-        { x: 5, y: 0 },
-        { x: 5, y: 2 },
-      ];
-
-      for (let i = 0; i < enemyCount; i++) {
-        enemiesArray.push({
-          position: positions[i] || { x: 4, y: 1 },
-          hp: hpPerEnemy,
-          maxHp: hpPerEnemy,
-          shields: 0,
-          maxShields: 0,
-          armor: 0,
-          maxArmor: 0,
-          resistances: {},
-          statusEffects: [],
-          name: `Enemy-${i}`,
-        });
-      }
-    }
-
-    const currentLayerData = networkLayers[currentLayerIndex];
-    const customizationsArray: FighterCustomization[] = [];
-    for (let i = 0; i < enemyCount; i++) {
-      const isGuardian = currentNodeIsGuardian && i === 0;
-      const isPawn = currentNodeIsGuardian && i > 0;
-
-      const customization = generateRandomCustomization();
-
-      if (isPawn) {
-        enemiesArray[i].isPawn = true;
-      }
-
-      customizationsArray.push(customization);
-    }
-
-    setPlayer((prev) => ({
-      ...prev,
-      position: { x: 1, y: 1 },
-      hp: prev.maxHp,
-      shields: prev.maxShields,
-      armor: prev.maxArmor,
-    }));
-
-    setEnemies(enemiesArray);
-    setEnemy(enemiesArray[0]);
-    setProjectiles([]);
-    setBattleHistory([]);
-    setEnemyCustomization(customizationsArray[0]);
-    setEnemyCustomizations(customizationsArray);
-    setBattleState("idle");
-    setShowRewardSelection(false);
-  }, [
-    wave,
-    playerProgress,
-    networkLayers,
-    currentLayerIndex,
-    currentNodeIndex,
-    calculateDifficultyMultiplier,
-  ]);
-
   const resetGame = useCallback(() => {
     const latestProgress = loadProgress();
     setPlayerProgress(latestProgress);
@@ -1363,7 +1214,6 @@ export function useGameState(): GameState {
     unlockedTriggers,
     unlockedActions,
     startBattle,
-    prepareNextWave,
     resetGame,
     addTriggerActionPair,
     removeTriggerActionPair,
@@ -1374,7 +1224,6 @@ export function useGameState(): GameState {
     selectRewardAction,
     rerollsRemaining,
     rerollRewards,
-    continueToNextWave,
     nextWave,
     continueAfterIntro,
     setCharacter,
